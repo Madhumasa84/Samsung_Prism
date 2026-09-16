@@ -7,6 +7,7 @@ name = "flowcontext-phase1"
 version = "0.1.0"
 description = "Phase 1 foundation for Samsung PRISM Theme 4 Streaming Live RAG"
 readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.11,<3.13"
 dependencies = [
     "pydantic>=2.13,<3",
