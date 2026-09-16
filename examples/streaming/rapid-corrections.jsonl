@@ -1,0 +1,4 @@
+{"session_id":"phase2-rapid-corrections","utterance_id":"phase2-rapid-utterance","event_id":"phase2-rapid-001","sequence_number":1,"source_timestamp_s":0.0,"text":"Which venue","is_final":false,"text_mode":"incremental"}
+{"session_id":"phase2-rapid-corrections","utterance_id":"phase2-rapid-utterance","event_id":"phase2-rapid-002","sequence_number":2,"source_timestamp_s":0.05,"text":"Actually, venue in Pune","is_final":false,"text_mode":"cumulative"}
+{"session_id":"phase2-rapid-corrections","utterance_id":"phase2-rapid-utterance","event_id":"phase2-rapid-003","sequence_number":3,"source_timestamp_s":0.10,"text":"Actually, cancellation policy","is_final":false,"text_mode":"cumulative"}
+{"session_id":"phase2-rapid-corrections","utterance_id":"phase2-rapid-utterance","event_id":"phase2-rapid-004","sequence_number":4,"source_timestamp_s":0.15,"text":"Actually, cancellation policy?","is_final":true,"text_mode":"cumulative"}

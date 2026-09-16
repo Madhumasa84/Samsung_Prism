@@ -1,0 +1,5 @@
+{"session_id":"synthetic-session-001","utterance_id":"synthetic-utterance-001","event_id":"synthetic-event-001","sequence_number":1,"source_timestamp_s":0.0,"text":"I need to plan a customer workshop","is_final":false,"text_mode":"incremental"}
+{"session_id":"synthetic-session-001","utterance_id":"synthetic-utterance-001","event_id":"synthetic-event-002","sequence_number":2,"source_timestamp_s":0.8,"text":" in Pune for 30 people, ","is_final":false,"text_mode":"incremental"}
+{"session_id":"synthetic-session-001","utterance_id":"synthetic-utterance-001","event_id":"synthetic-event-003","sequence_number":3,"source_timestamp_s":1.6,"text":"and I need the cancellation policy and catering options.","is_final":false,"text_mode":"incremental"}
+{"session_id":"synthetic-session-001","utterance_id":"synthetic-utterance-001","event_id":"synthetic-event-004","sequence_number":4,"source_timestamp_s":2.1,"text":"I need to plan a customer workshop in Pune for 30 people, and I need the cancellation policy and catering options.","is_final":true,"text_mode":"cumulative"}
+

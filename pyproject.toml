@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flowcontext-phase1"
+version = "0.1.0"
+description = "Phase 1 foundation for Samsung PRISM Theme 4 Streaming Live RAG"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    "pydantic>=2.13,<3",
+]
+
+[project.optional-dependencies]
+dense = [
+    "sentence-transformers>=3,<6",
+]
+
+[project.scripts]
+flowcontext = "flowcontext.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

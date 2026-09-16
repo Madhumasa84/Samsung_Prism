@@ -1,0 +1,2 @@
+{"session_id":"phase2-correction-session","utterance_id":"phase2-correction-utterance","event_id":"phase2-correction-001","sequence_number":1,"source_timestamp_s":0.0,"text":"I need a venue","is_final":false,"text_mode":"cumulative"}
+{"session_id":"phase2-correction-session","utterance_id":"phase2-correction-utterance","event_id":"phase2-correction-002","sequence_number":2,"source_timestamp_s":0.2,"text":"Actually, I need cancellation policy?","is_final":true,"text_mode":"cumulative"}

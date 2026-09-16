@@ -1,0 +1,89 @@
+{
+  "report_version": "flowcontext.phase2.controller-smoke.v1",
+  "status": "historical_pre_scheduler_snapshot",
+  "evaluation_label": "phase2-controller-engineering-smoke",
+  "asset_status": "synthetic_fixture",
+  "competition_performance_claim": false,
+  "official_assets_available": false,
+  "execution_mode": "accelerated",
+  "warm_cold_condition": "fresh CLI process per command; lexical index loaded for each replay",
+  "corpus": {
+    "source_kind": "synthetic_fixture",
+    "document_count": 3,
+    "chunk_count": 4,
+    "corpus_id": "corpus-3762c90f2912589e",
+    "index_id": "index-03e98680ae845e95",
+    "source_fingerprint": "3762c90f2912589e2bed44f3311ad369f406264c89ccefbb90b8561e76c2a234",
+    "build_fingerprint": "03e98680ae845e95e42aefb18868af26debc6e1245e1cbb4c023b2e763b7ab9e",
+    "retrieval_backend": "lexical"
+  },
+  "controller": {
+    "schema_version": "flowcontext.phase2.v1",
+    "mode": "explainable_streaming_controller",
+    "debounce_source_s": 0.35,
+    "generation": "not_run_in_historical_snapshot",
+    "scheduler": "not_implemented_at_historical_snapshot"
+  },
+  "measured_replays": [
+    {
+      "input": "examples/streaming/early-retrieval.jsonl",
+      "run_status": "completed",
+      "transcript_event_count": 2,
+      "retrieval_attempt_count": 2,
+      "early_retrieval_count": 1,
+      "final_retrieval_count": 1,
+      "suppressed_duplicate_query_count": 0,
+      "stale_retrieval_count": 0,
+      "unnecessary_retrieval_count": 0,
+      "trace_events": 11,
+      "execution_duration_ms": 0.5651860010402743,
+      "final_reason_code": "final_new_topic_information"
+    },
+    {
+      "input": "examples/streaming/cumulative-correction.jsonl",
+      "run_status": "completed",
+      "transcript_event_count": 2,
+      "retrieval_attempt_count": 2,
+      "early_retrieval_count": 1,
+      "final_retrieval_count": 1,
+      "suppressed_duplicate_query_count": 0,
+      "stale_retrieval_count": 0,
+      "unnecessary_retrieval_count": 0,
+      "trace_events": 11,
+      "execution_duration_ms": 0.5865999992238358,
+      "final_reason_code": "explicit_correction"
+    },
+    {
+      "input": "examples/streaming/formatting-needs-context.jsonl",
+      "run_status": "needs_context",
+      "transcript_event_count": 1,
+      "retrieval_attempt_count": 0,
+      "early_retrieval_count": 0,
+      "final_retrieval_count": 0,
+      "suppressed_duplicate_query_count": 0,
+      "stale_retrieval_count": 0,
+      "unnecessary_retrieval_count": 0,
+      "trace_events": 5,
+      "execution_duration_ms": 0.24753099933150224,
+      "final_reason_code": "formatting_needs_previous_answer_context"
+    }
+  ],
+  "verification": {
+    "repeated_build_status": "up_to_date",
+    "phase1_baseline_mode": "wait_for_complete_utterance",
+    "phase1_baseline_schema": "flowcontext.phase1.v1",
+    "phase2_trace_schema_validation": "passed",
+    "phase2_manifest_schema_validation": "passed",
+    "unit_test_count": 37,
+    "unit_tests": "passed",
+    "offline_smoke": "passed"
+  },
+  "limitations": [
+    "This is synthetic fixture and lexical retrieval engineering evidence, not competition performance.",
+    "Accelerated replay and synchronous execution duration are not real-time latency evidence.",
+    "Unnecessary retrieval counts only revision-superseded work; semantic usefulness was not evaluated.",
+    "Real dense retrieval, real generation, official assets, and answer-support review remain unverified.",
+    "No asynchronous retrieval scheduler, generation, decomposition, or selective answer update is implemented."
+  ],
+  "created_at_utc": "2026-09-15T19:32:47.131333+00:00"
+}

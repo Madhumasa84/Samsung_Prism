@@ -1,0 +1,2 @@
+{"case_id":"synthetic-workshop-001","session_id":"synthetic-session-001","asset_status":"synthetic_fixture","expected_answer_substrings":["Venue A","Venue B","full refund","vegetarian and non-vegetarian"],"expected_citation_chunk_ids":["synthetic.venue-options#chunk-0000","synthetic.cancellation-policy#chunk-0000","synthetic.catering-options#chunk-0000"],"require_wait_until_final":true}
+

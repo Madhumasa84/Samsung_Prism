@@ -1,0 +1,2 @@
+{"session_id":"phase2-example-session","utterance_id":"phase2-example-utterance","event_id":"phase2-example-001","sequence_number":1,"source_timestamp_s":0.0,"text":"Which venue in Pune","is_final":false,"text_mode":"cumulative"}
+{"session_id":"phase2-example-session","utterance_id":"phase2-example-utterance","event_id":"phase2-example-002","sequence_number":2,"source_timestamp_s":0.1,"text":"Which venue in Pune?","is_final":true,"text_mode":"cumulative"}

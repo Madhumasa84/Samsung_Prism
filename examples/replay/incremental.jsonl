@@ -1,0 +1,3 @@
+{"session_id":"example-incremental-session","utterance_id":"example-incremental-utterance","event_id":"example-incremental-001","sequence_number":1,"source_timestamp_s":0.0,"text":"Which ","is_final":false,"text_mode":"incremental"}
+{"session_id":"example-incremental-session","utterance_id":"example-incremental-utterance","event_id":"example-incremental-002","sequence_number":2,"source_timestamp_s":0.4,"text":"venue ","is_final":false,"text_mode":"incremental"}
+{"session_id":"example-incremental-session","utterance_id":"example-incremental-utterance","event_id":"example-incremental-003","sequence_number":3,"source_timestamp_s":0.8,"text":"in Pune?","is_final":true,"text_mode":"incremental"}

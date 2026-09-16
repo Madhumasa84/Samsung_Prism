@@ -1,0 +1,2 @@
+{"session_id":"example-duplicate-session","utterance_id":"example-duplicate-utterance","event_id":"example-duplicate-001","sequence_number":1,"source_timestamp_s":0.0,"text":"Which venue in Pune?","is_final":true,"text_mode":"cumulative"}
+{"session_id":"example-duplicate-session","utterance_id":"example-duplicate-utterance","event_id":"example-duplicate-002","sequence_number":2,"source_timestamp_s":0.2,"text":"Which venue in Pune?","is_final":true,"text_mode":"cumulative"}

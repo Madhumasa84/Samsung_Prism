@@ -1,0 +1,1345 @@
+{
+  "schema_version": "flowcontext.phase1.v1",
+  "report_version": "flowcontext.evaluation.v1",
+  "evaluation_label": "phase1-baseline-suite",
+  "asset_status": "synthetic_fixture",
+  "selected_split": "all",
+  "development_case_count": 5,
+  "held_out_case_count": 5,
+  "labels_status": "provisional_generated",
+  "competition_performance_claim": false,
+  "passed": true,
+  "created_at_utc": "2026-09-15T18:55:32.751229+00:00",
+  "code_revision": null,
+  "configuration": {
+    "baseline_mode": "wait_for_complete_utterance",
+    "early_retrieval": "absent",
+    "evaluation_asset": "development=data/evaluation/development.jsonl;held_out=data/evaluation/held_out.jsonl",
+    "index": {
+      "manifest_version": "flowcontext.index.v1",
+      "index_id": "index-03e98680ae845e95",
+      "build_fingerprint": "03e98680ae845e95e42aefb18868af26debc6e1245e1cbb4c023b2e763b7ab9e",
+      "source_fingerprint": "3762c90f2912589e2bed44f3311ad369f406264c89ccefbb90b8561e76c2a234"
+    },
+    "embedding": {
+      "backend": "lexical",
+      "provider": "flowcontext.lexical",
+      "model_name": null,
+      "revision": null,
+      "license": null,
+      "dimensions": null,
+      "normalize": false,
+      "model_card_url": null,
+      "download_required": false
+    },
+    "retrieval": {
+      "backend": "lexical",
+      "top_k": 5
+    },
+    "chunking": {
+      "max_chars": 1200,
+      "overlap_chars": 0
+    },
+    "generation": {
+      "backend": "mock",
+      "provider": "flowcontext.mock",
+      "model": "mock-grounded-v1",
+      "timeout_s": 30.0,
+      "max_retries": 2,
+      "max_repair_attempts": 1,
+      "max_output_tokens": 600,
+      "api_key_env": "FLOWCONTEXT_GENERATION_API_KEY",
+      "api_key_configured": false,
+      "input_price_per_million": null,
+      "output_price_per_million": null
+    },
+    "labels_status": "provisional_generated",
+    "claim_support_status": "not_evaluated"
+  },
+  "corpus_id": "corpus-3762c90f2912589e",
+  "index_id": "index-03e98680ae845e95",
+  "model_identities": {
+    "retrieval": "flowcontext.lexical:lexical",
+    "generation": "flowcontext.mock:mock-grounded-v1"
+  },
+  "execution_mode": "accelerated",
+  "warm_cold_condition": "cold CLI process; index/retriever/provider initialized once and reused across cases; per-case timings exclude process startup",
+  "environment": {
+    "python_version": "3.11.15",
+    "python_implementation": "CPython",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+    "os_name": "posix",
+    "executable": "/home/masa84/samsung/.venv/bin/python"
+  },
+  "hardware": {
+    "machine": "x86_64",
+    "cpu_count": "12",
+    "gpu": "not_detected_by_phase1"
+  },
+  "sections": {
+    "mock": {
+      "section_id": "mock",
+      "status": "measured",
+      "result_group": "mock_fixture",
+      "asset_status": "synthetic_fixture",
+      "corpus_id": "corpus-3762c90f2912589e",
+      "index_id": "index-03e98680ae845e95",
+      "corpus_source_kind": "synthetic_fixture",
+      "retrieval_backend": "lexical",
+      "generation_backend": "mock",
+      "generation_model": "mock-grounded-v1",
+      "execution_mode": "accelerated",
+      "warm_cold_condition": "cold CLI process; index/retriever/provider initialized once and reused across cases; per-case timings exclude process startup",
+      "case_count": 10,
+      "answerable_case_count": 8,
+      "unanswerable_case_count": 2,
+      "case_results": [
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "dev-venue-simple-001",
+          "split": "development",
+          "answerability": "answerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [
+            "synthetic.venue-options#chunk-0000"
+          ],
+          "retrieved_chunk_ids": [
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.venue-options#chunk-0001"
+          ],
+          "retrieval_labels_available": true,
+          "retrieval_recall_at_k": {
+            "recall_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "recall_at_5": 1.0
+          },
+          "retrieval_reciprocal_rank": 1.0,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 2,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": false,
+          "generation_status": "success",
+          "run_status": "completed",
+          "retrieval_latency_ms": 0.023775000954628922,
+          "answer_latency_ms": 0.3188899991073413,
+          "generation_usage": {
+            "input_tokens": 44,
+            "output_tokens": 138,
+            "total_tokens": 182,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "deferred capabilities: early_retrieval, selective_answer_updates"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "dev-compound-001",
+          "split": "development",
+          "answerability": "answerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.cancellation-policy#chunk-0000",
+            "synthetic.catering-options#chunk-0000"
+          ],
+          "retrieved_chunk_ids": [
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.venue-options#chunk-0001",
+            "synthetic.cancellation-policy#chunk-0000",
+            "synthetic.catering-options#chunk-0000"
+          ],
+          "retrieval_labels_available": true,
+          "retrieval_recall_at_k": {
+            "recall_at_1": 0.3333333333333333,
+            "recall_at_3": 0.6666666666666666,
+            "recall_at_5": 1.0
+          },
+          "retrieval_reciprocal_rank": 1.0,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 4,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": false,
+          "generation_status": "success",
+          "run_status": "completed",
+          "retrieval_latency_ms": 0.029521999749704264,
+          "answer_latency_ms": 0.31205699997371994,
+          "generation_usage": {
+            "input_tokens": 114,
+            "output_tokens": 292,
+            "total_tokens": 406,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "deferred capabilities: query_decomposition, multi_intent_parallel_retrieval"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "dev-unsupported-001",
+          "split": "development",
+          "answerability": "unanswerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [],
+          "retrieved_chunk_ids": [],
+          "retrieval_labels_available": false,
+          "retrieval_recall_at_k": {},
+          "retrieval_reciprocal_rank": null,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 0,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": true,
+          "generation_status": "skipped",
+          "run_status": "abstained",
+          "retrieval_latency_ms": 0.015184999938355759,
+          "answer_latency_ms": 0.07675899905734695,
+          "generation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "no retrieval hits",
+            "deferred capabilities: external_web_search"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "dev-correction-001",
+          "split": "development",
+          "answerability": "answerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [
+            "synthetic.venue-options#chunk-0000"
+          ],
+          "retrieved_chunk_ids": [
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.venue-options#chunk-0001"
+          ],
+          "retrieval_labels_available": true,
+          "retrieval_recall_at_k": {
+            "recall_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "recall_at_5": 1.0
+          },
+          "retrieval_reciprocal_rank": 1.0,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 2,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": false,
+          "generation_status": "success",
+          "run_status": "completed",
+          "retrieval_latency_ms": 0.023005999537417665,
+          "answer_latency_ms": 0.31561700052407105,
+          "generation_usage": {
+            "input_tokens": 45,
+            "output_tokens": 138,
+            "total_tokens": 183,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "deferred capabilities: early_retrieval, selective_answer_updates"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "dev-formatting-001",
+          "split": "development",
+          "answerability": "answerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [
+            "synthetic.cancellation-policy#chunk-0000"
+          ],
+          "retrieved_chunk_ids": [
+            "synthetic.cancellation-policy#chunk-0000"
+          ],
+          "retrieval_labels_available": true,
+          "retrieval_recall_at_k": {
+            "recall_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "recall_at_5": 1.0
+          },
+          "retrieval_reciprocal_rank": 1.0,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 1,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": false,
+          "generation_status": "success",
+          "run_status": "completed",
+          "retrieval_latency_ms": 0.01510800029791426,
+          "answer_latency_ms": 0.29741800062765833,
+          "generation_usage": {
+            "input_tokens": 44,
+            "output_tokens": 119,
+            "total_tokens": 163,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "deferred capabilities: selective_answer_updates, streaming_formatting_updates"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "heldout-catering-001",
+          "split": "held_out",
+          "answerability": "answerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [
+            "synthetic.catering-options#chunk-0000"
+          ],
+          "retrieved_chunk_ids": [
+            "synthetic.catering-options#chunk-0000"
+          ],
+          "retrieval_labels_available": true,
+          "retrieval_recall_at_k": {
+            "recall_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "recall_at_5": 1.0
+          },
+          "retrieval_reciprocal_rank": 1.0,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 1,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": false,
+          "generation_status": "success",
+          "run_status": "completed",
+          "retrieval_latency_ms": 0.014041999747860245,
+          "answer_latency_ms": 0.6360159986797953,
+          "generation_usage": {
+            "input_tokens": 31,
+            "output_tokens": 95,
+            "total_tokens": 126,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "deferred capabilities: early_retrieval, selective_answer_updates"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "heldout-venue-001",
+          "split": "held_out",
+          "answerability": "answerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [
+            "synthetic.venue-options#chunk-0000"
+          ],
+          "retrieved_chunk_ids": [
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.venue-options#chunk-0001"
+          ],
+          "retrieval_labels_available": true,
+          "retrieval_recall_at_k": {
+            "recall_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "recall_at_5": 1.0
+          },
+          "retrieval_reciprocal_rank": 1.0,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 2,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": false,
+          "generation_status": "success",
+          "run_status": "completed",
+          "retrieval_latency_ms": 0.025475999791524373,
+          "answer_latency_ms": 0.27001499984180555,
+          "generation_usage": {
+            "input_tokens": 46,
+            "output_tokens": 138,
+            "total_tokens": 184,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "deferred capabilities: query_decomposition"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "heldout-cancellation-001",
+          "split": "held_out",
+          "answerability": "answerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [
+            "synthetic.cancellation-policy#chunk-0000"
+          ],
+          "retrieved_chunk_ids": [
+            "synthetic.cancellation-policy#chunk-0000",
+            "synthetic.catering-options#chunk-0000",
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.venue-options#chunk-0001"
+          ],
+          "retrieval_labels_available": true,
+          "retrieval_recall_at_k": {
+            "recall_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "recall_at_5": 1.0
+          },
+          "retrieval_reciprocal_rank": 1.0,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 4,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": false,
+          "generation_status": "success",
+          "run_status": "completed",
+          "retrieval_latency_ms": 0.02871799915737938,
+          "answer_latency_ms": 0.3218199999537319,
+          "generation_usage": {
+            "input_tokens": 112,
+            "output_tokens": 292,
+            "total_tokens": 404,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "deferred capabilities: selective_answer_updates"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "heldout-formatting-001",
+          "split": "held_out",
+          "answerability": "answerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [
+            "synthetic.catering-options#chunk-0000"
+          ],
+          "retrieved_chunk_ids": [
+            "synthetic.catering-options#chunk-0000",
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.venue-options#chunk-0001"
+          ],
+          "retrieval_labels_available": true,
+          "retrieval_recall_at_k": {
+            "recall_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "recall_at_5": 1.0
+          },
+          "retrieval_reciprocal_rank": 1.0,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 3,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": false,
+          "generation_status": "success",
+          "run_status": "completed",
+          "retrieval_latency_ms": 0.021100999219925143,
+          "answer_latency_ms": 0.2689339999051299,
+          "generation_usage": {
+            "input_tokens": 70,
+            "output_tokens": 203,
+            "total_tokens": 273,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "deferred capabilities: streaming_formatting_updates, selective_answer_updates"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "heldout-unsupported-001",
+          "split": "held_out",
+          "answerability": "unanswerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [],
+          "retrieved_chunk_ids": [],
+          "retrieval_labels_available": false,
+          "retrieval_recall_at_k": {},
+          "retrieval_reciprocal_rank": null,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 0,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": true,
+          "generation_status": "skipped",
+          "run_status": "abstained",
+          "retrieval_latency_ms": 0.009020001016324386,
+          "answer_latency_ms": 0.055959999372134916,
+          "generation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "no retrieval hits",
+            "deferred capabilities: external_web_search"
+          ]
+        }
+      ],
+      "metrics": {
+        "case_pass_rate": 1.0,
+        "citation_id_validation_case_rate": 1.0,
+        "semantic_support_evaluation_rate": 0.0,
+        "wait_until_final_rate": 1.0,
+        "trace_completeness_rate": 1.0,
+        "error_case_rate": 0.0,
+        "early_retrieval_event_count": 0.0,
+        "retrieval_labelled_case_count": 8.0,
+        "retrieval_recall_at_1": 0.9166666666666666,
+        "retrieval_recall_at_3": 0.9583333333333334,
+        "retrieval_recall_at_5": 1.0,
+        "retrieval_mrr": 1.0,
+        "answerable_case_count": 8.0,
+        "unanswerable_case_count": 2.0,
+        "answerable_abstention_rate": 0.0,
+        "unanswerable_abstention_rate": 1.0,
+        "citation_id_sample_count": 19.0,
+        "citation_id_validity_rate": 1.0
+      },
+      "retrieval_latency": {
+        "sample_count": 10,
+        "p50_ms": 0.022053499378671404,
+        "p95_ms": 0.029160199483158067
+      },
+      "answer_latency": {
+        "sample_count": 10,
+        "p50_ms": 0.30473750030068913,
+        "p95_ms": 0.49462779925306644
+      },
+      "generation_usage": {
+        "input_tokens": 506,
+        "output_tokens": 1415,
+        "total_tokens": 1921,
+        "estimated": true
+      },
+      "generation_cost": "unavailable",
+      "claim_support": {
+        "status": "not_evaluated",
+        "procedure": "For each factual claim, a human reviewer reads the cited source chunk(s), checks whether the text entails the claim, and records supported, unsupported, or uncertain. Reviewers must not treat a valid chunk ID as evidence of support.",
+        "reviewed_claim_count": 0,
+        "supported_claim_count": 0,
+        "unsupported_claim_count": 0,
+        "uncertain_claim_count": 0,
+        "judge_model": null,
+        "judge_rubric": null,
+        "limitations": [
+          "No human review labels were supplied or performed for this local run.",
+          "No model judge was run; there is no judge model or judge score."
+        ]
+      },
+      "error_count": 0,
+      "trace_complete_count": 10,
+      "trace_required_event_set": [
+        "replay_started",
+        "transcript_event_received",
+        "utterance_finalized",
+        "retrieval_started",
+        "retrieval_completed",
+        "generation_started",
+        "generation_completed or generation_abstained or generation_skipped",
+        "answer_completed or answer_failed",
+        "replay_completed"
+      ],
+      "early_retrieval": "absent",
+      "limitations": [
+        "Official corpus/evaluation assets were not supplied; this is a local synthetic fixture run.",
+        "Relevance labels are provisional generated labels and are not human-verified ground truth.",
+        "Claim support is not evaluated; citation-ID validity only checks identifier traceability.",
+        "Phase 1 early retrieval is intentionally absent; all retrieval waits for the final event.",
+        "Accelerated replay latency is not evidence of real-time latency.",
+        "Mock generation is an engineering provider, not model-quality evidence."
+      ]
+    },
+    "fixture": {
+      "section_id": "fixture",
+      "status": "measured",
+      "result_group": "mock_fixture",
+      "asset_status": "synthetic_fixture",
+      "corpus_id": "corpus-3762c90f2912589e",
+      "index_id": "index-03e98680ae845e95",
+      "corpus_source_kind": "synthetic_fixture",
+      "retrieval_backend": "lexical",
+      "generation_backend": "mock",
+      "generation_model": "mock-grounded-v1",
+      "execution_mode": "accelerated",
+      "warm_cold_condition": "cold CLI process; index/retriever/provider initialized once and reused across cases; per-case timings exclude process startup",
+      "case_count": 10,
+      "answerable_case_count": 8,
+      "unanswerable_case_count": 2,
+      "case_results": [
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "dev-venue-simple-001",
+          "split": "development",
+          "answerability": "answerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [
+            "synthetic.venue-options#chunk-0000"
+          ],
+          "retrieved_chunk_ids": [
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.venue-options#chunk-0001"
+          ],
+          "retrieval_labels_available": true,
+          "retrieval_recall_at_k": {
+            "recall_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "recall_at_5": 1.0
+          },
+          "retrieval_reciprocal_rank": 1.0,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 2,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": false,
+          "generation_status": "success",
+          "run_status": "completed",
+          "retrieval_latency_ms": 0.023775000954628922,
+          "answer_latency_ms": 0.3188899991073413,
+          "generation_usage": {
+            "input_tokens": 44,
+            "output_tokens": 138,
+            "total_tokens": 182,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "deferred capabilities: early_retrieval, selective_answer_updates"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "dev-compound-001",
+          "split": "development",
+          "answerability": "answerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.cancellation-policy#chunk-0000",
+            "synthetic.catering-options#chunk-0000"
+          ],
+          "retrieved_chunk_ids": [
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.venue-options#chunk-0001",
+            "synthetic.cancellation-policy#chunk-0000",
+            "synthetic.catering-options#chunk-0000"
+          ],
+          "retrieval_labels_available": true,
+          "retrieval_recall_at_k": {
+            "recall_at_1": 0.3333333333333333,
+            "recall_at_3": 0.6666666666666666,
+            "recall_at_5": 1.0
+          },
+          "retrieval_reciprocal_rank": 1.0,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 4,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": false,
+          "generation_status": "success",
+          "run_status": "completed",
+          "retrieval_latency_ms": 0.029521999749704264,
+          "answer_latency_ms": 0.31205699997371994,
+          "generation_usage": {
+            "input_tokens": 114,
+            "output_tokens": 292,
+            "total_tokens": 406,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "deferred capabilities: query_decomposition, multi_intent_parallel_retrieval"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "dev-unsupported-001",
+          "split": "development",
+          "answerability": "unanswerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [],
+          "retrieved_chunk_ids": [],
+          "retrieval_labels_available": false,
+          "retrieval_recall_at_k": {},
+          "retrieval_reciprocal_rank": null,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 0,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": true,
+          "generation_status": "skipped",
+          "run_status": "abstained",
+          "retrieval_latency_ms": 0.015184999938355759,
+          "answer_latency_ms": 0.07675899905734695,
+          "generation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "no retrieval hits",
+            "deferred capabilities: external_web_search"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "dev-correction-001",
+          "split": "development",
+          "answerability": "answerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [
+            "synthetic.venue-options#chunk-0000"
+          ],
+          "retrieved_chunk_ids": [
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.venue-options#chunk-0001"
+          ],
+          "retrieval_labels_available": true,
+          "retrieval_recall_at_k": {
+            "recall_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "recall_at_5": 1.0
+          },
+          "retrieval_reciprocal_rank": 1.0,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 2,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": false,
+          "generation_status": "success",
+          "run_status": "completed",
+          "retrieval_latency_ms": 0.023005999537417665,
+          "answer_latency_ms": 0.31561700052407105,
+          "generation_usage": {
+            "input_tokens": 45,
+            "output_tokens": 138,
+            "total_tokens": 183,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "deferred capabilities: early_retrieval, selective_answer_updates"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "dev-formatting-001",
+          "split": "development",
+          "answerability": "answerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [
+            "synthetic.cancellation-policy#chunk-0000"
+          ],
+          "retrieved_chunk_ids": [
+            "synthetic.cancellation-policy#chunk-0000"
+          ],
+          "retrieval_labels_available": true,
+          "retrieval_recall_at_k": {
+            "recall_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "recall_at_5": 1.0
+          },
+          "retrieval_reciprocal_rank": 1.0,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 1,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": false,
+          "generation_status": "success",
+          "run_status": "completed",
+          "retrieval_latency_ms": 0.01510800029791426,
+          "answer_latency_ms": 0.29741800062765833,
+          "generation_usage": {
+            "input_tokens": 44,
+            "output_tokens": 119,
+            "total_tokens": 163,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "deferred capabilities: selective_answer_updates, streaming_formatting_updates"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "heldout-catering-001",
+          "split": "held_out",
+          "answerability": "answerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [
+            "synthetic.catering-options#chunk-0000"
+          ],
+          "retrieved_chunk_ids": [
+            "synthetic.catering-options#chunk-0000"
+          ],
+          "retrieval_labels_available": true,
+          "retrieval_recall_at_k": {
+            "recall_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "recall_at_5": 1.0
+          },
+          "retrieval_reciprocal_rank": 1.0,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 1,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": false,
+          "generation_status": "success",
+          "run_status": "completed",
+          "retrieval_latency_ms": 0.014041999747860245,
+          "answer_latency_ms": 0.6360159986797953,
+          "generation_usage": {
+            "input_tokens": 31,
+            "output_tokens": 95,
+            "total_tokens": 126,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "deferred capabilities: early_retrieval, selective_answer_updates"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "heldout-venue-001",
+          "split": "held_out",
+          "answerability": "answerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [
+            "synthetic.venue-options#chunk-0000"
+          ],
+          "retrieved_chunk_ids": [
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.venue-options#chunk-0001"
+          ],
+          "retrieval_labels_available": true,
+          "retrieval_recall_at_k": {
+            "recall_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "recall_at_5": 1.0
+          },
+          "retrieval_reciprocal_rank": 1.0,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 2,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": false,
+          "generation_status": "success",
+          "run_status": "completed",
+          "retrieval_latency_ms": 0.025475999791524373,
+          "answer_latency_ms": 0.27001499984180555,
+          "generation_usage": {
+            "input_tokens": 46,
+            "output_tokens": 138,
+            "total_tokens": 184,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "deferred capabilities: query_decomposition"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "heldout-cancellation-001",
+          "split": "held_out",
+          "answerability": "answerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [
+            "synthetic.cancellation-policy#chunk-0000"
+          ],
+          "retrieved_chunk_ids": [
+            "synthetic.cancellation-policy#chunk-0000",
+            "synthetic.catering-options#chunk-0000",
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.venue-options#chunk-0001"
+          ],
+          "retrieval_labels_available": true,
+          "retrieval_recall_at_k": {
+            "recall_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "recall_at_5": 1.0
+          },
+          "retrieval_reciprocal_rank": 1.0,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 4,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": false,
+          "generation_status": "success",
+          "run_status": "completed",
+          "retrieval_latency_ms": 0.02871799915737938,
+          "answer_latency_ms": 0.3218199999537319,
+          "generation_usage": {
+            "input_tokens": 112,
+            "output_tokens": 292,
+            "total_tokens": 404,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "deferred capabilities: selective_answer_updates"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "heldout-formatting-001",
+          "split": "held_out",
+          "answerability": "answerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [
+            "synthetic.catering-options#chunk-0000"
+          ],
+          "retrieved_chunk_ids": [
+            "synthetic.catering-options#chunk-0000",
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.venue-options#chunk-0001"
+          ],
+          "retrieval_labels_available": true,
+          "retrieval_recall_at_k": {
+            "recall_at_1": 1.0,
+            "recall_at_3": 1.0,
+            "recall_at_5": 1.0
+          },
+          "retrieval_reciprocal_rank": 1.0,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 3,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": false,
+          "generation_status": "success",
+          "run_status": "completed",
+          "retrieval_latency_ms": 0.021100999219925143,
+          "answer_latency_ms": 0.2689339999051299,
+          "generation_usage": {
+            "input_tokens": 70,
+            "output_tokens": 203,
+            "total_tokens": 273,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "deferred capabilities: streaming_formatting_updates, selective_answer_updates"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase1.v1",
+          "case_id": "heldout-unsupported-001",
+          "split": "held_out",
+          "answerability": "unanswerable",
+          "answer_substrings_passed": true,
+          "missing_answer_substrings": [],
+          "expected_evidence_chunk_ids": [],
+          "retrieved_chunk_ids": [],
+          "retrieval_labels_available": false,
+          "retrieval_recall_at_k": {},
+          "retrieval_reciprocal_rank": null,
+          "citation_ids_valid": true,
+          "citation_ids_checked": 0,
+          "unknown_citation_ids": [],
+          "semantic_support_evaluated": false,
+          "claim_support_status": "not_evaluated",
+          "missing_expected_citations": [],
+          "waited_until_final": true,
+          "abstained": true,
+          "generation_status": "skipped",
+          "run_status": "abstained",
+          "retrieval_latency_ms": 0.009020001016324386,
+          "answer_latency_ms": 0.055959999372134916,
+          "generation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "generation_cost": "unavailable",
+          "trace_complete": true,
+          "missing_trace_events": [],
+          "errors": [],
+          "passed": true,
+          "notes": [
+            "citation IDs validated against known and supplied chunks; semantic claim support not evaluated",
+            "accelerated/realtime latency interpretation is recorded by the run execution mode",
+            "fixture-only result; not competition performance",
+            "no retrieval hits",
+            "deferred capabilities: external_web_search"
+          ]
+        }
+      ],
+      "metrics": {
+        "case_pass_rate": 1.0,
+        "citation_id_validation_case_rate": 1.0,
+        "semantic_support_evaluation_rate": 0.0,
+        "wait_until_final_rate": 1.0,
+        "trace_completeness_rate": 1.0,
+        "error_case_rate": 0.0,
+        "early_retrieval_event_count": 0.0,
+        "retrieval_labelled_case_count": 8.0,
+        "retrieval_recall_at_1": 0.9166666666666666,
+        "retrieval_recall_at_3": 0.9583333333333334,
+        "retrieval_recall_at_5": 1.0,
+        "retrieval_mrr": 1.0,
+        "answerable_case_count": 8.0,
+        "unanswerable_case_count": 2.0,
+        "answerable_abstention_rate": 0.0,
+        "unanswerable_abstention_rate": 1.0,
+        "citation_id_sample_count": 19.0,
+        "citation_id_validity_rate": 1.0
+      },
+      "retrieval_latency": {
+        "sample_count": 10,
+        "p50_ms": 0.022053499378671404,
+        "p95_ms": 0.029160199483158067
+      },
+      "answer_latency": {
+        "sample_count": 10,
+        "p50_ms": 0.30473750030068913,
+        "p95_ms": 0.49462779925306644
+      },
+      "generation_usage": {
+        "input_tokens": 506,
+        "output_tokens": 1415,
+        "total_tokens": 1921,
+        "estimated": true
+      },
+      "generation_cost": "unavailable",
+      "claim_support": {
+        "status": "not_evaluated",
+        "procedure": "For each factual claim, a human reviewer reads the cited source chunk(s), checks whether the text entails the claim, and records supported, unsupported, or uncertain. Reviewers must not treat a valid chunk ID as evidence of support.",
+        "reviewed_claim_count": 0,
+        "supported_claim_count": 0,
+        "unsupported_claim_count": 0,
+        "uncertain_claim_count": 0,
+        "judge_model": null,
+        "judge_rubric": null,
+        "limitations": [
+          "No human review labels were supplied or performed for this local run.",
+          "No model judge was run; there is no judge model or judge score."
+        ]
+      },
+      "error_count": 0,
+      "trace_complete_count": 10,
+      "trace_required_event_set": [
+        "replay_started",
+        "transcript_event_received",
+        "utterance_finalized",
+        "retrieval_started",
+        "retrieval_completed",
+        "generation_started",
+        "generation_completed or generation_abstained or generation_skipped",
+        "answer_completed or answer_failed",
+        "replay_completed"
+      ],
+      "early_retrieval": "absent",
+      "limitations": [
+        "Official corpus/evaluation assets were not supplied; this is a local synthetic fixture run.",
+        "Relevance labels are provisional generated labels and are not human-verified ground truth.",
+        "Claim support is not evaluated; citation-ID validity only checks identifier traceability.",
+        "Phase 1 early retrieval is intentionally absent; all retrieval waits for the final event.",
+        "Accelerated replay latency is not evidence of real-time latency.",
+        "Mock generation is an engineering provider, not model-quality evidence."
+      ]
+    },
+    "real_model": {
+      "section_id": "real_model",
+      "status": "not_verified",
+      "result_group": "not_run",
+      "asset_status": "synthetic_fixture",
+      "corpus_id": "corpus-3762c90f2912589e",
+      "index_id": "index-03e98680ae845e95",
+      "corpus_source_kind": "synthetic_fixture",
+      "retrieval_backend": null,
+      "generation_backend": null,
+      "generation_model": null,
+      "execution_mode": null,
+      "warm_cold_condition": "cold CLI process; index/retriever/provider initialized once and reused across cases; per-case timings exclude process startup",
+      "case_count": 0,
+      "answerable_case_count": 0,
+      "unanswerable_case_count": 0,
+      "case_results": [],
+      "metrics": {},
+      "retrieval_latency": {
+        "sample_count": 0,
+        "p50_ms": null,
+        "p95_ms": null
+      },
+      "answer_latency": {
+        "sample_count": 0,
+        "p50_ms": null,
+        "p95_ms": null
+      },
+      "generation_usage": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "total_tokens": 0,
+        "estimated": true
+      },
+      "generation_cost": "unavailable",
+      "claim_support": {
+        "status": "not_evaluated",
+        "procedure": "For each factual claim, a human reviewer reads the cited source chunk(s), checks whether the text entails the claim, and records supported, unsupported, or uncertain. Reviewers must not treat a valid chunk ID as evidence of support.",
+        "reviewed_claim_count": 0,
+        "supported_claim_count": 0,
+        "unsupported_claim_count": 0,
+        "uncertain_claim_count": 0,
+        "judge_model": null,
+        "judge_rubric": null,
+        "limitations": [
+          "No human review labels were supplied or performed for this local run.",
+          "No model judge was run; there is no judge model or judge score."
+        ]
+      },
+      "error_count": 0,
+      "trace_complete_count": 0,
+      "trace_required_event_set": [
+        "replay_started",
+        "transcript_event_received",
+        "utterance_finalized",
+        "retrieval_started",
+        "retrieval_completed",
+        "generation_started",
+        "generation_completed or generation_abstained or generation_skipped",
+        "answer_completed or answer_failed",
+        "replay_completed"
+      ],
+      "early_retrieval": "absent",
+      "limitations": [
+        "Official corpus/evaluation assets were not supplied; this is a local synthetic fixture run.",
+        "Relevance labels are provisional generated labels and are not human-verified ground truth.",
+        "Claim support is not evaluated; citation-ID validity only checks identifier traceability.",
+        "Phase 1 early retrieval is intentionally absent; all retrieval waits for the final event.",
+        "Accelerated replay latency is not evidence of real-time latency.",
+        "Mock generation is an engineering provider, not model-quality evidence.",
+        "No real generation credentials/model access were available for this run."
+      ]
+    }
+  },
+  "official_assets_available": false,
+  "limitations": [
+    "Official corpus/evaluation assets were not supplied; this is a local synthetic fixture run.",
+    "Relevance labels are provisional generated labels and are not human-verified ground truth.",
+    "Claim support is not evaluated; citation-ID validity only checks identifier traceability.",
+    "Phase 1 early retrieval is intentionally absent; all retrieval waits for the final event.",
+    "Accelerated replay latency is not evidence of real-time latency.",
+    "Mock generation is an engineering provider, not model-quality evidence."
+  ]
+}
