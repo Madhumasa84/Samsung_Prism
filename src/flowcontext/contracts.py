@@ -47,6 +47,49 @@ def _optional_non_blank(value: str | None) -> str | None:
     return value
 
 
+class TextSpan(ContractModel):
+    """A character-offset reference into the original transcript or evidence text."""
+
+    start: int = Field(ge=0)
+    end: int = Field(ge=1)
+    text: str = Field(min_length=1)
+
+    _text_is_non_blank = field_validator("text")(_non_blank)
+
+    @model_validator(mode="after")
+    def span_has_positive_width(self) -> TextSpan:
+        if self.end <= self.start:
+            raise ValueError("text spans must have end greater than start")
+        if self.end - self.start != len(self.text):
+            raise ValueError("text span width must equal the supplied text length")
+        return self
+
+    @property
+    def start_char(self) -> int:
+        """Compatibility spelling for callers that use explicit char names."""
+        return self.start
+
+    @property
+    def end_char(self) -> int:
+        return self.end
+
+
+class Usage(ContractModel):
+    """Token accounting for retrieval or generation, with estimation status."""
+
+    input_tokens: int = Field(default=0, ge=0)
+    output_tokens: int = Field(default=0, ge=0)
+    total_tokens: int = Field(default=0, ge=0)
+    estimated: bool = True
+
+    @model_validator(mode="after")
+    def total_is_consistent(self) -> Usage:
+        expected = self.input_tokens + self.output_tokens
+        if self.total_tokens != expected:
+            raise ValueError("total_tokens must equal input_tokens + output_tokens")
+        return self
+
+
 class ChunkingConfig(ContractModel):
     """Deterministic chunking settings recorded in every index manifest."""
 
@@ -435,6 +478,7 @@ class EvidencePassage(ContractModel):
     intent_ranks: dict[str, int] = Field(default_factory=dict)
     intent_scores: dict[str, float] = Field(default_factory=dict)
     rrf_score: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     _values_are_non_blank = field_validator("chunk_id", "source_location", "text", "retrieval_method")(
         _non_blank
@@ -465,13 +509,17 @@ class EvidencePassage(ContractModel):
 class GenerationRequest(ContractModel):
     """Structured generation input containing only the configured corpus hits."""
 
-    schema_version: Literal[SCHEMA_VERSION] = SCHEMA_VERSION
+    schema_version: Literal[SCHEMA_VERSION, PHASE3_SCHEMA_VERSION] = SCHEMA_VERSION
     query: str = Field(min_length=1)
     passages: list[EvidencePassage] = Field(min_length=1)
     repair_feedback: str | None = None
     attempt: int = Field(default=1, ge=1)
     intent_queries: list[str] = Field(default_factory=list)
     unsupported_intent_queries: list[str] = Field(default_factory=list)
+    decomposed_intents: list[dict[str, Any]] = Field(default_factory=list)
+    shared_constraints: list[dict[str, Any]] = Field(default_factory=list)
+    intent_evidence: dict[str, list[EvidencePassage]] = Field(default_factory=dict)
+    transcript_revision: int | None = None
 
     _query_is_non_blank = field_validator("query")(_non_blank)
     _repair_feedback_is_non_blank = field_validator("repair_feedback")(_optional_non_blank)
@@ -498,17 +546,65 @@ class RetrievalResponse(ContractModel):
     _values_are_non_blank = field_validator("query", "index_id")(_non_blank)
 
 
+IntentSynthesisStatus = Literal["answered", "insufficient_evidence", "conflicting_evidence", "needs_clarification"]
+
+
+class IntentStatusRecord(ContractModel):
+    """Synthesis status and explanation for one sub-question/intent."""
+
+    schema_version: Literal[PHASE3_SCHEMA_VERSION] = PHASE3_SCHEMA_VERSION
+    intent_id: str = Field(min_length=1)
+    status: IntentSynthesisStatus
+    reason: str | None = None
+    addressed_by_claim_ids: list[str] = Field(default_factory=list)
+
+    _intent_id_is_non_blank = field_validator("intent_id")(_non_blank)
+    _reason_is_non_blank = field_validator("reason")(_optional_non_blank)
+
+
+class ClaimVerificationVerdict(ContractModel):
+    """Verdict from automated semantic verification of an atomic claim."""
+
+    schema_version: Literal[PHASE3_SCHEMA_VERSION] = PHASE3_SCHEMA_VERSION
+    claim_id: str = Field(min_length=1)
+    verdict: Literal["supported", "unsupported", "uncertain"]
+    reason: str = Field(min_length=1)
+    cited_chunk_ids: list[str] = Field(default_factory=list)
+    cross_entity_violation: bool = False
+    contradiction_detected: bool = False
+
+    _strings_are_non_blank = field_validator("claim_id", "reason")(_non_blank)
+
+
+class SemanticVerificationReport(ContractModel):
+    """Audit report for claim verification with model identity, latency, and explicit limitations."""
+
+    schema_version: Literal[PHASE3_SCHEMA_VERSION] = PHASE3_SCHEMA_VERSION
+    verifier_model: str = Field(min_length=1)
+    latency_ms: float = Field(ge=0.0)
+    verdicts: list[ClaimVerificationVerdict] = Field(default_factory=list)
+    limitations: str = Field(min_length=1)
+    usage: Usage = Field(default_factory=Usage)
+
+    _strings_are_non_blank = field_validator("verifier_model", "limitations")(_non_blank)
+
+
 class FactualClaim(ContractModel):
     """A claim whose supporting chunk IDs must be checked before presentation."""
 
-    schema_version: Literal[SCHEMA_VERSION] = SCHEMA_VERSION
+    schema_version: Literal[SCHEMA_VERSION, PHASE3_SCHEMA_VERSION] = SCHEMA_VERSION
     claim_id: str = Field(min_length=1)
     claim_text: str = Field(min_length=1)
     supporting_chunk_ids: list[str] = Field(min_length=1)
     intent_id: str | None = None
+    intent_ids: list[str] = Field(default_factory=list)
+    supporting_excerpts: list[str] = Field(default_factory=list)
+    supporting_spans: list[TextSpan] = Field(default_factory=list)
+    semantic_support: str | None = None
 
     _ids_are_non_blank = field_validator("claim_id", "claim_text")(_non_blank)
     _intent_id_is_non_blank = field_validator("intent_id")(_optional_non_blank)
+    _semantic_support_is_non_blank = field_validator("semantic_support")(_optional_non_blank)
 
     @field_validator("supporting_chunk_ids")
     @classmethod
@@ -519,36 +615,37 @@ class FactualClaim(ContractModel):
             raise ValueError("supporting_chunk_ids must be unique per claim")
         return values
 
+    @field_validator("supporting_excerpts")
+    @classmethod
+    def excerpts_are_non_blank(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("supporting_excerpts must not contain blank strings")
+        return values
+
+    @model_validator(mode="after")
+    def sync_intent_fields(self) -> FactualClaim:
+        if self.intent_id and not self.intent_ids:
+            self.intent_ids = [self.intent_id]
+        elif self.intent_ids and not self.intent_id:
+            self.intent_id = self.intent_ids[0]
+        return self
+
 
 class Answer(ContractModel):
-    """Grounded answer state for Phase 1's complete-utterance baseline."""
+    """Grounded answer state for complete-utterance baseline and unified Phase 3 synthesis."""
 
-    schema_version: Literal[SCHEMA_VERSION] = SCHEMA_VERSION
+    schema_version: Literal[SCHEMA_VERSION, PHASE3_SCHEMA_VERSION] = SCHEMA_VERSION
     answer_text: str = Field(min_length=1)
     factual_claims: list[FactualClaim] = Field(default_factory=list)
     uncertainty: str = Field(min_length=1)
     answer_version: int = Field(ge=1)
+    intent_statuses: list[IntentStatusRecord] = Field(default_factory=list)
+    verification_audit: dict[str, Any] | None = None
 
     @field_validator("answer_text", "uncertainty")
     @classmethod
     def answer_values_are_non_blank(cls, value: str) -> str:
         return _non_blank(value)
-
-
-class Usage(ContractModel):
-    """Token accounting for retrieval or generation, with estimation status."""
-
-    input_tokens: int = Field(default=0, ge=0)
-    output_tokens: int = Field(default=0, ge=0)
-    total_tokens: int = Field(default=0, ge=0)
-    estimated: bool = True
-
-    @model_validator(mode="after")
-    def total_is_consistent(self) -> Usage:
-        expected = self.input_tokens + self.output_tokens
-        if self.total_tokens != expected:
-            raise ValueError("total_tokens must equal input_tokens + output_tokens")
-        return self
 
 
 class GenerationResult(ContractModel):
@@ -1516,34 +1613,6 @@ class StreamingEvaluationReport(ContractModel):
                 "real_backend, and official_assets sections"
             )
         return self
-
-
-class TextSpan(ContractModel):
-    """A character-offset reference into the original transcript."""
-
-    start: int = Field(ge=0)
-    end: int = Field(ge=1)
-    text: str = Field(min_length=1)
-
-    _text_is_non_blank = field_validator("text")(_non_blank)
-
-    @model_validator(mode="after")
-    def span_has_positive_width(self) -> TextSpan:
-        if self.end <= self.start:
-            raise ValueError("text spans must have end greater than start")
-        if self.end - self.start != len(self.text):
-            raise ValueError("text span width must equal the supplied text length")
-        return self
-
-    @property
-    def start_char(self) -> int:
-        """Compatibility spelling for callers that use explicit char names."""
-
-        return self.start
-
-    @property
-    def end_char(self) -> int:
-        return self.end
 
 
 class DecompositionConstraint(ContractModel):

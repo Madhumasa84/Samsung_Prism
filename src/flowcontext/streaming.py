@@ -857,6 +857,8 @@ async def replay_streaming_transcript(
     multi_intent_max_workers: int | None = None,
     multi_intent_rrf_k: int = 60,
     multi_intent_reranking_enabled: bool = False,
+    is_generation_superseded: Callable[[], bool] | None = None,
+    semantic_verifier: Any = None,
 ) -> StreamingReplayResult:
     """Replay events, schedule early retrieval, and answer only after finality.
 
@@ -1271,6 +1273,10 @@ async def replay_streaming_transcript(
                 selected_generation_provider,
                 intent_queries=final_intent_queries,
                 unsupported_intent_queries=unsupported_intent_queries,
+                decomposition=final_intent_plan,
+                verifier=semantic_verifier,
+                is_superseded=is_generation_superseded,
+                transcript_revision=final_event.sequence_number if final_event else None,
             )
         else:
             traces.add(
@@ -1294,6 +1300,10 @@ async def replay_streaming_transcript(
                 selected_generation_provider,
                 intent_queries=final_intent_queries,
                 unsupported_intent_queries=unsupported_intent_queries,
+                decomposition=final_intent_plan,
+                verifier=semantic_verifier,
+                is_superseded=is_generation_superseded,
+                transcript_revision=final_event.sequence_number if final_event else None,
             )
     except Exception as exc:
         generation_error = TraceError(error_type=type(exc).__name__, message=str(exc))
@@ -1327,7 +1337,7 @@ async def replay_streaming_transcript(
         generation_cost = generation_outcome.cost
         generation_attempts = generation_outcome.attempts
         generation_repair_attempts = generation_outcome.repair_attempts
-        if generation_outcome.error_type:
+        if generation_outcome.error_type and generation_outcome.status != "stale_rejected":
             generation_error = TraceError(
                 error_type=generation_outcome.error_type,
                 message=generation_outcome.error_message or generation_outcome.error_type,
@@ -1350,7 +1360,9 @@ async def replay_streaming_transcript(
         )
     else:
         generation_terminal_event = (
-            "streaming_generation_skipped"
+            "streaming_generation_stale_rejected"
+            if generation_status == "stale_rejected"
+            else "streaming_generation_skipped"
             if generation_status == "skipped" or (generation_attempts == 0 and not final_evidence_hits)
             else "streaming_generation_completed"
         )
@@ -1367,6 +1379,21 @@ async def replay_streaming_transcript(
                 "generation_status": generation_status,
                 "attempts": generation_attempts,
                 "repair_attempts": generation_repair_attempts,
+                "generation_usage": (
+                    generation_outcome.generation_usage.model_dump(mode="json")
+                    if generation_outcome and generation_outcome.generation_usage
+                    else None
+                ),
+                "repair_usage": (
+                    generation_outcome.repair_usage.model_dump(mode="json")
+                    if generation_outcome and generation_outcome.repair_usage
+                    else None
+                ),
+                "verification_usage": (
+                    generation_outcome.verification_usage.model_dump(mode="json")
+                    if generation_outcome and generation_outcome.verification_usage
+                    else None
+                ),
                 "citation_ids": [
                     chunk_id
                     for claim in answer.factual_claims
@@ -1395,10 +1422,11 @@ async def replay_streaming_transcript(
                 for chunk_id in claim.supporting_chunk_ids
             ],
             "citation_id_validation": "performed_by_generation_pipeline",
-            "semantic_support_evaluated": False,
+            "semantic_support_evaluated": bool(generation_outcome and generation_outcome.verification_report),
             "streamed": False,
             "latency_metric": "complete_answer_latency_ms",
             "answer_latency_metric": "answer_latency_from_final_event_delivery_ms",
+            "generation_status": generation_status,
         },
     )
 
@@ -1488,7 +1516,7 @@ async def replay_streaming_transcript(
         run_status = "failed"
     elif generation_error is not None:
         run_status = "failed"
-    elif generation_status in {"abstained", "skipped"}:
+    elif generation_status in {"abstained", "skipped", "stale_rejected"}:
         run_status = "abstained"
     else:
         run_status = "completed"
@@ -1630,7 +1658,9 @@ async def replay_streaming_transcript(
         timed_out_request_count=scheduler.timed_out_request_count,
         generation_backend=selected_generation_provider.config.backend,
         generation_model=selected_generation_identity,
-        generation_status=generation_status,
+        generation_status=(
+            "abstained" if generation_status == "stale_rejected" else generation_status
+        ),
         generation_usage=generation_usage,
         generation_cost=generation_cost,
         generation_attempts=generation_attempts,

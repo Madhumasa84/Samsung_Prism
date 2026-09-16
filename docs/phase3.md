@@ -55,16 +55,72 @@ harness are not supplied, so no official or competition result is claimed.
    global-rank filling. A total token budget and `top_k` bound apply to the
    final set; `missing_intent_ids` records intents not represented after those
    bounds. Retrieval score is not treated as factual support.
-8. Grounded synthesis receives the parent query, ordered intent queries, and
-   only corpus-resolved passages. Provider citations are still validated
-   against the supplied chunk IDs. Missing intent evidence is surfaced as
-   uncertainty; a completed search with no hits is an abstention, not a
-   transport failure.
+8. Grounded synthesis receives the parent query, ordered intent queries,
+   decomposed intents, shared constraints, and evidence passages grouped by intent.
+   Provider citations are deterministically validated against supplied chunk IDs and
+   source text excerpts. Missing intent evidence is surfaced as uncertainty; a
+   completed search with no hits is an abstention, not a transport failure.
 9. Streaming uses the same revision/session guards as Phase 2. Final evidence
    must be current and pass the final-intent coverage check before it is sent
    to generation. An early result with valid IDs but insufficient final-query
    support is not reusable. Citation-ID validity is traceability, not semantic
    entailment.
+
+### Unified Grounded Answer Synthesis Architecture
+
+Unified synthesis (`flowcontext.synthesis`) combines retrieved evidence across
+decomposed sub-questions into an auditable, structured answer:
+
+- **Structured Input**: `GenerationRequest` carries `decomposed_intents`,
+  `shared_constraints`, and `intent_evidence` mapping each intent ID to its
+  retrieved passages. Untrusted passage text is treated strictly as data, never
+  as instructions (`_INSTRUCTION_PATTERN` guards prevent prompt injection).
+- **Structured Output**: Synthesis produces an `Answer` contract containing:
+  - `answer_text`: Unified response covering all sub-questions.
+  - `factual_claims`: Sequence of atomic `FactualClaim` records, each mapping to
+    its addressed `intent_ids`, supporting `chunk_ids`, exact supporting
+    excerpts, character spans, and semantic support verdict.
+  - `intent_statuses`: Per-intent `IntentStatusRecord` reporting `answered`,
+    `insufficient_evidence`, `conflicting_evidence`, or `needs_clarification`.
+  - `verification_audit`: `SemanticVerificationReport` detailing the verifier
+    model, per-claim verdicts, latency, and explicit limitations.
+- **Answer Consistency**: To prevent the user-visible answer from asserting facts
+  missing from structured claims, the answer is rendered directly from validated
+  claim records (`render_unified_answer`) or verified consistent via
+  `check_answer_consistency`.
+- **Citation Provenance vs Semantic Support**:
+  - Deterministic provenance validation (`validate_citations_and_excerpts`) checks
+    that every cited chunk ID was actually supplied for this generation and that
+    every cited excerpt matches source chunk text verbatim.
+  - *Provenance is not truth*: exact excerpt matching proves only that the text
+    appears in the document, not that the passage supports the proposition.
+  - Pluggable semantic verification (`SemanticVerifier`, `RuleBasedSemanticVerifier`,
+    `MockSemanticVerifier`) evaluates proposition support, lexical overlap, negation
+    signals, and entity isolation. Claims failing semantic support are pruned or
+    marked uncertain. Automated verification explicitly records that it does not
+    guarantee real-world ground truth.
+- **Conflicting Evidence Resolution**: When passages make contradictory claims,
+  `resolve_conflicting_evidence` applies deterministic precedence rules:
+  1. *Date precedence*: Later publication dates (`source_date`) supersede earlier ones.
+  2. *Authority precedence*: Official policy (`official_policy`) supersedes drafts (`draft`)
+     or preliminary guidelines.
+  3. *Unresolvable conflict*: When metadata is insufficient to break ties, the conflict
+     is reported explicitly with `conflicting_evidence` intent status.
+- **Cross-Entity Evidence Isolation**: `check_cross_entity_match` prevents attributes,
+  rules, or policies of one entity from being attributed to another entity.
+- **Finalisation-Only Generation & Stale Guard**: Generation executes only on
+  utterance finalisation. If transcript revisions advance while generation is in
+  flight, `is_superseded` rejects the late result with `StaleGenerationError`
+  and records `streaming_generation_stale_rejected` in trace logs.
+- **Usage Accounting**: Token usage is recorded separately for initial generation
+  (`generation_usage`), bounded validation repair (`repair_usage`), and semantic
+  verification (`verification_usage`). Unknown/unpriced costs are reported as
+  `"unavailable"`.
+- **Provider Status**: Real provider API keys (OpenAI/Anthropic) are absent from
+  the execution environment. Deterministic mock providers are used for verification
+  and contract testing; mock outputs are clearly distinguished from live provider calls.
+- **Scope Boundary**: Selective cross-turn answer updates across later turns belong
+  to Phase 4 and are explicitly excluded from Phase 3.
 
 Selective claim updates across later follow-up turns, early answer generation,
 and provider token streaming are outside this phase. They belong to a later

@@ -176,13 +176,17 @@ class GenerationOutcome:
     """Validated answer plus execution metadata for replay and traces."""
 
     answer: Answer
-    status: Literal["success", "abstained", "skipped"]
+    status: Literal["success", "abstained", "skipped", "stale_rejected"]
     usage: Usage
     cost: float | Literal["unavailable"]
     attempts: int
     repair_attempts: int
     error_type: str | None = None
     error_message: str | None = None
+    generation_usage: Usage | None = None
+    repair_usage: Usage | None = None
+    verification_usage: Usage | None = None
+    verification_report: dict[str, Any] | None = None
 
 
 def generation_config_for_settings(settings: Settings) -> GenerationConfig:
@@ -224,7 +228,18 @@ class MockGenerationProvider:
         self,
         *,
         config: GenerationConfig | None = None,
-        mode: Literal["valid", "unknown_citation", "invalid_json", "timeout", "instruction_safe"] = "valid",
+        mode: Literal[
+            "valid",
+            "unknown_citation",
+            "invalid_json",
+            "timeout",
+            "instruction_safe",
+            "invalid_excerpt",
+            "semantic_unsupported",
+            "wrong_entity",
+            "conflicting",
+            "partial_support",
+        ] = "valid",
         timeout_delay_s: float | None = None,
     ) -> None:
         self._config = config or GenerationConfig(
@@ -269,6 +284,130 @@ class MockGenerationProvider:
                     "answer_version": 1,
                 }
             )
+        elif self.mode == "invalid_excerpt":
+            target_iid = request.decomposed_intents[0]["intent_id"] if request.decomposed_intents else "mock-intent"
+            cid = request.passages[0].chunk_id if request.passages else "chunk-mock"
+            raw_text = json.dumps(
+                {
+                    "answer_text": "Answer citing invalid excerpt.",
+                    "factual_claims": [
+                        {
+                            "claim_id": "mock-invalid-excerpt",
+                            "claim_text": "Claim citing non-existent excerpt.",
+                            "supporting_chunk_ids": [cid],
+                            "supporting_excerpts": ["THIS_EXCERPT_DOES_NOT_EXIST_IN_CHUNK"],
+                            "intent_ids": [target_iid],
+                        }
+                    ],
+                    "intent_statuses": [{"intent_id": target_iid, "status": "answered", "reason": "Claim created."}],
+                    "uncertainty": "Mock invalid excerpt test.",
+                    "answer_version": 1,
+                }
+            )
+        elif self.mode == "semantic_unsupported":
+            target_iid = request.decomposed_intents[0]["intent_id"] if request.decomposed_intents else "mock-intent"
+            cid = request.passages[0].chunk_id if request.passages else "chunk-mock"
+            excerpt = request.passages[0].text[:min(20, len(request.passages[0].text))] if request.passages else "excerpt"
+            raw_text = json.dumps(
+                {
+                    "answer_text": "Answer with unsupported semantic claim.",
+                    "factual_claims": [
+                        {
+                            "claim_id": "mock-unsupported-claim",
+                            "claim_text": "Unrelated proposition: cancellation refunds are processed within 24 hours under all circumstances.",
+                            "supporting_chunk_ids": [cid],
+                            "supporting_excerpts": [excerpt],
+                            "intent_ids": [target_iid],
+                        }
+                    ],
+                    "intent_statuses": [{"intent_id": target_iid, "status": "answered", "reason": "Claim created."}],
+                    "uncertainty": "Mock semantic unsupported test.",
+                    "answer_version": 1,
+                }
+            )
+        elif self.mode == "wrong_entity":
+            target_iid = request.decomposed_intents[0]["intent_id"] if request.decomposed_intents else "mock-intent"
+            cid = request.passages[0].chunk_id if request.passages else "chunk-mock"
+            excerpt = request.passages[0].text[:min(20, len(request.passages[0].text))] if request.passages else "excerpt"
+            raw_text = json.dumps(
+                {
+                    "answer_text": "Answer with wrong entity attribution.",
+                    "factual_claims": [
+                        {
+                            "claim_id": "mock-wrong-entity-claim",
+                            "claim_text": request.passages[0].text if request.passages else "claim",
+                            "supporting_chunk_ids": [cid],
+                            "supporting_excerpts": [excerpt],
+                            "intent_ids": [target_iid],
+                        }
+                    ],
+                    "intent_statuses": [{"intent_id": target_iid, "status": "answered", "reason": "Wrong entity claim."}],
+                    "uncertainty": "Mock wrong entity test.",
+                    "answer_version": 1,
+                }
+            )
+        elif self.mode == "conflicting":
+            target_iid = request.decomposed_intents[0]["intent_id"] if request.decomposed_intents else "mock-intent"
+            claims = []
+            for i, p in enumerate(request.passages[:2], start=1):
+                claims.append(
+                    {
+                        "claim_id": f"mock-conflict-{i:02d}",
+                        "claim_text": p.text,
+                        "supporting_chunk_ids": [p.chunk_id],
+                        "supporting_excerpts": [p.text[:min(20, len(p.text))]],
+                        "intent_ids": [target_iid],
+                    }
+                )
+            raw_text = json.dumps(
+                {
+                    "answer_text": "Answer with conflicting claims.",
+                    "factual_claims": claims,
+                    "intent_statuses": [{"intent_id": target_iid, "status": "answered", "reason": "Conflicting claims."}],
+                    "uncertainty": "Mock conflicting test.",
+                    "answer_version": 1,
+                }
+            )
+        elif self.mode == "partial_support":
+            claims = []
+            statuses = []
+            if request.decomposed_intents and len(request.decomposed_intents) >= 2:
+                intent0 = request.decomposed_intents[0]
+                intent1 = request.decomposed_intents[1]
+                p0 = request.intent_evidence.get(intent0["intent_id"], request.passages[:1])
+                if p0:
+                    claims.append(
+                        {
+                            "claim_id": "mock-partial-claim-01",
+                            "claim_text": p0[0].text,
+                            "supporting_chunk_ids": [p0[0].chunk_id],
+                            "supporting_excerpts": [p0[0].text[:min(20, len(p0[0].text))]],
+                            "intent_ids": [intent0["intent_id"]],
+                        }
+                    )
+                    statuses.append(
+                        {
+                            "intent_id": intent0["intent_id"],
+                            "status": "answered",
+                            "reason": "Supported by evidence.",
+                        }
+                    )
+                statuses.append(
+                    {
+                        "intent_id": intent1["intent_id"],
+                        "status": "insufficient_evidence",
+                        "reason": "No evidence retrieved for this sub-question.",
+                    }
+                )
+            raw_text = json.dumps(
+                {
+                    "answer_text": "Mock partial support answer.",
+                    "factual_claims": claims,
+                    "intent_statuses": statuses,
+                    "uncertainty": "Mock partial support test.",
+                    "answer_version": 1,
+                }
+            )
         else:
             passages = list(request.passages)
             if self.mode == "instruction_safe":
@@ -280,14 +419,55 @@ class MockGenerationProvider:
                     "uncertainty": "No safe supporting passage was available; no outside knowledge was used.",
                     "answer_version": 1,
                 }
+            elif request.decomposed_intents:
+                claims = []
+                intent_statuses = []
+                for intent in request.decomposed_intents:
+                    iid = intent["intent_id"]
+                    matching = request.intent_evidence.get(iid, [])
+                    if matching:
+                        p = matching[0]
+                        claims.append(
+                            {
+                                "claim_id": f"mock-claim-{iid}",
+                                "claim_text": p.text,
+                                "supporting_chunk_ids": [p.chunk_id],
+                                "supporting_excerpts": [p.text[:min(30, len(p.text))]],
+                                "intent_ids": [iid],
+                            }
+                        )
+                        intent_statuses.append(
+                            {
+                                "intent_id": iid,
+                                "status": "answered",
+                                "reason": "Supported by retrieved evidence.",
+                            }
+                        )
+                    else:
+                        intent_statuses.append(
+                            {
+                                "intent_id": iid,
+                                "status": "insufficient_evidence",
+                                "reason": "No evidence retrieved for this sub-question.",
+                            }
+                        )
+                payload = {
+                    "answer_text": "Mock grounded answer using only supplied corpus passages:\n"
+                    + "\n".join(f"- [{claim['supporting_chunk_ids'][0]}] {claim['claim_text']}" for claim in claims),
+                    "factual_claims": claims,
+                    "intent_statuses": intent_statuses,
+                    "uncertainty": "Mock execution. " + GROUNDING_CAVEAT,
+                    "answer_version": 1,
+                }
             else:
                 claims = [
-                        {
-                            "claim_id": f"mock-claim-{position:02d}",
-                            "claim_text": passage.text,
-                            "supporting_chunk_ids": [passage.chunk_id],
-                            "intent_id": passage.intent_id,
-                        }
+                    {
+                        "claim_id": f"mock-claim-{position:02d}",
+                        "claim_text": passage.text,
+                        "supporting_chunk_ids": [passage.chunk_id],
+                        "intent_id": passage.intent_id,
+                        "supporting_excerpts": [passage.text[:min(20, len(passage.text))]],
+                    }
                     for position, passage in enumerate(passages, start=1)
                 ]
                 payload = {
@@ -340,8 +520,14 @@ class OpenAICompatibleGenerationProvider:
                     "content": json.dumps(
                         {
                             "question": request.query,
+                            "intents": request.decomposed_intents,
+                            "shared_constraints": request.shared_constraints,
                             "intent_queries": request.intent_queries,
                             "unsupported_intent_queries": request.unsupported_intent_queries,
+                            "evidence_by_intent": {
+                                iid: [p.model_dump(mode="json") for p in plist]
+                                for iid, plist in request.intent_evidence.items()
+                            },
                             "retrieved_passages": [passage.model_dump(mode="json") for passage in request.passages],
                             "repair_feedback": request.repair_feedback,
                         },
@@ -467,6 +653,7 @@ def _passages_from_hits(hits: Sequence[RetrievalHit], corpus: CorpusIndex) -> li
                 intent_ranks=dict(hit.intent_ranks),
                 intent_scores=dict(hit.intent_scores),
                 rrf_score=hit.rrf_score,
+                metadata=dict(chunk.metadata),
             )
         )
     return passages
@@ -591,8 +778,59 @@ async def generate_grounded_answer(
     *,
     intent_queries: Sequence[str] | None = None,
     unsupported_intent_queries: Sequence[str] | None = None,
+    decomposition: Any = None,
+    verifier: Any = None,
+    render_from_validated_records: bool = True,
+    is_superseded: Callable[[], bool] | None = None,
+    transcript_revision: int | None = None,
 ) -> GenerationOutcome:
     """Generate from supplied corpus hits, repairing or abstaining on failure."""
+
+    if decomposition is not None:
+        from .synthesis import StaleGenerationError, synthesize_unified_answer
+
+        passages = _passages_from_hits(hits, corpus)
+        try:
+            return await synthesize_unified_answer(
+                query,
+                passages,
+                provider,
+                decomposition=decomposition,
+                unsupported_intent_queries=unsupported_intent_queries,
+                verifier=verifier,
+                render_from_validated_records=render_from_validated_records,
+                is_superseded=is_superseded,
+                transcript_revision=transcript_revision,
+            )
+        except StaleGenerationError as exc:
+            return GenerationOutcome(
+                answer=_abstention("Generation request was superseded before publishing."),
+                status="stale_rejected",
+                usage=Usage(),
+                cost="unavailable",
+                attempts=0,
+                repair_attempts=0,
+                error_type="StaleGenerationError",
+                error_message=str(exc),
+                generation_usage=Usage(),
+                repair_usage=Usage(),
+                verification_usage=Usage(),
+            )
+
+    if is_superseded is not None and is_superseded():
+        return GenerationOutcome(
+            answer=_abstention("Generation request was superseded before publishing."),
+            status="stale_rejected",
+            usage=Usage(),
+            cost="unavailable",
+            attempts=0,
+            repair_attempts=0,
+            error_type="StaleGenerationError",
+            error_message="generation request was superseded",
+            generation_usage=Usage(),
+            repair_usage=Usage(),
+            verification_usage=Usage(),
+        )
 
     config = provider.config
     passages = _passages_from_hits(hits, corpus)
@@ -612,9 +850,13 @@ async def generate_grounded_answer(
             cost="unavailable",
             attempts=0,
             repair_attempts=0,
+            generation_usage=Usage(),
+            repair_usage=Usage(),
+            verification_usage=Usage(),
         )
 
-    usages: list[Usage] = []
+    generation_usages: list[Usage] = []
+    repair_usages: list[Usage] = []
     total_attempts = 0
     repair_attempts = 0
     feedback: str | None = None
@@ -631,7 +873,26 @@ async def generate_grounded_answer(
         try:
             result, attempts = await _call_with_retries(provider, request)
             total_attempts += attempts
-            usages.append(result.usage)
+            if repair_number == 0:
+                generation_usages.append(result.usage)
+            else:
+                repair_usages.append(result.usage)
+
+            if is_superseded is not None and is_superseded():
+                return GenerationOutcome(
+                    answer=_abstention("Generation request was superseded before publishing."),
+                    status="stale_rejected",
+                    usage=_combined_usage(generation_usages + repair_usages),
+                    cost="unavailable",
+                    attempts=total_attempts,
+                    repair_attempts=repair_attempts,
+                    error_type="StaleGenerationError",
+                    error_message="generation request was superseded",
+                    generation_usage=_combined_usage(generation_usages),
+                    repair_usage=_combined_usage(repair_usages),
+                    verification_usage=Usage(),
+                )
+
             try:
                 answer = _parse_answer(result.raw_text)
                 _validate_citations(answer, {passage.chunk_id for passage in passages})
@@ -640,7 +901,9 @@ async def generate_grounded_answer(
             else:
                 answer = _add_intent_uncertainty(answer, list(unsupported_intent_queries or []))
                 answer = _add_grounding_caveat(answer)
-                combined_usage = _combined_usage(usages)
+                combined_usage = _combined_usage(generation_usages + repair_usages)
+                gen_u = _combined_usage(generation_usages)
+                rep_u = _combined_usage(repair_usages)
                 if not answer.factual_claims:
                     partial_note = (
                         " Evidence was unavailable for one or more requested intents."
@@ -659,6 +922,9 @@ async def generate_grounded_answer(
                         cost=_cost_for_usage(combined_usage, config),
                         attempts=total_attempts,
                         repair_attempts=repair_attempts,
+                        generation_usage=gen_u,
+                        repair_usage=rep_u,
+                        verification_usage=Usage(),
                     )
                 return GenerationOutcome(
                     answer=answer,
@@ -667,6 +933,9 @@ async def generate_grounded_answer(
                     cost=_cost_for_usage(combined_usage, config),
                     attempts=total_attempts,
                     repair_attempts=repair_attempts,
+                    generation_usage=gen_u,
+                    repair_usage=rep_u,
+                    verification_usage=Usage(),
                 )
         except GenerationCallFailed as exc:
             total_attempts += exc.attempts
@@ -676,16 +945,15 @@ async def generate_grounded_answer(
         if repair_number == config.max_repair_attempts:
             break
         repair_attempts += 1
-        # Do not echo provider-controlled output (including a malicious citation
-        # string) into the next prompt.  The repair request needs only the
-        # local error class and the invariant being repaired.
         feedback = (
             f"Previous output failed local validation ({type(last_error).__name__}). "
             "Return only a corrected JSON object and cite only chunk IDs present "
             "in retrieved_passages."
         )
 
-    combined_usage = _combined_usage(usages)
+    combined_usage = _combined_usage(generation_usages + repair_usages)
+    gen_u = _combined_usage(generation_usages)
+    rep_u = _combined_usage(repair_usages)
     error = last_error or GenerationError("generation failed")
     return GenerationOutcome(
         answer=_abstention(
@@ -699,4 +967,7 @@ async def generate_grounded_answer(
         repair_attempts=repair_attempts,
         error_type=type(error).__name__,
         error_message=str(error),
+        generation_usage=gen_u,
+        repair_usage=rep_u,
+        verification_usage=Usage(),
     )

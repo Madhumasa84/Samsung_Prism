@@ -19,6 +19,21 @@ opt-in path while preserving the Phase 1 baseline and Phase 2 streaming mode.
 - [x] Final-query reuse validation beyond chunk-ID equality.
 - [x] Grounded synthesis receives intent queries and reports unsupported intent
   evidence as uncertainty/abstention.
+- [x] Unified answer synthesis producing structured output: answer text, atomic
+  claims, intent IDs, supporting chunk IDs, supporting excerpts/spans, and
+  per-intent statuses (`answered`, `insufficient_evidence`, `conflicting_evidence`,
+  `needs_clarification`).
+- [x] Deterministic citation validity and excerpt matching (verifies provenance
+  against supplied chunk text; provenance != truth).
+- [x] Pluggable semantic verification recording model, verdicts, latency, and
+  limitations; unsupported claims marked uncertain, pruned, or repaired.
+- [x] Explicit conflicting evidence handling via documented date and authority
+  precedence rules or explicit conflict marking.
+- [x] Cross-entity evidence isolation preventing policy attribution across distinct entities.
+- [x] Finalisation-only generation and stale generation guard (`is_superseded` rejects
+  generations completing after request revision advances).
+- [x] Separate token usage accounting for generation, repair, and verification
+  stages (reporting cost as "unavailable" when unknown).
 - [x] Streaming revision protection rejects stale or incomplete final evidence.
 - [ ] Selective claim updates across follow-up turns (Phase 4; intentionally
   excluded).

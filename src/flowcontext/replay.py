@@ -555,6 +555,7 @@ async def _execute_after_final(
             generation_provider,
             intent_queries=effective_intent_queries,
             unsupported_intent_queries=unsupported_intent_queries,
+            decomposition=decomposition,
         )
     except Exception as exc:
         traces.add_error(
@@ -586,9 +587,12 @@ async def _execute_after_final(
         "generation_model": generation_config.model,
         "generation_attempts": generation_outcome.attempts,
         "generation_repair_attempts": generation_outcome.repair_attempts,
+        "generation_usage": generation_outcome.generation_usage.model_dump(mode="json") if generation_outcome.generation_usage else None,
+        "repair_usage": generation_outcome.repair_usage.model_dump(mode="json") if generation_outcome.repair_usage else None,
+        "verification_usage": generation_outcome.verification_usage.model_dump(mode="json") if generation_outcome.verification_usage else None,
         "citation_chunk_ids": citation_ids,
         "citation_ids_validated": generation_outcome.status == "success",
-        "semantic_support_evaluated": False,
+        "semantic_support_evaluated": bool(generation_outcome.verification_report),
         "model_call": generation_outcome.attempts > 0,
         "streaming_observed": False,
         "latency_metric": "complete_answer_latency_ms",
@@ -983,7 +987,9 @@ async def replay_transcript(
         retrieval_backend=selected_backend,
         generation_backend=generation_config.backend,
         generation_model=generation_config.model,
-        generation_status=generation_outcome.status,
+        generation_status=(
+            "abstained" if generation_outcome.status == "stale_rejected" else generation_outcome.status
+        ),
         generation_usage=generation_outcome.usage,
         generation_cost=generation_outcome.cost,
         generation_attempts=generation_outcome.attempts,
