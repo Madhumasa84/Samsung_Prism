@@ -47,6 +47,7 @@ from .multi_intent import (
     DecompositionProvider,
     MultiIntentRetriever,
     StructuredMultiIntentDecomposer,
+    filter_single_query_evidence,
     intent_metadata_from_hits,
     make_multi_intent_retriever,
 )
@@ -429,7 +430,12 @@ async def _execute_after_final(
     )
     retrieval_started = time.perf_counter()
     try:
-        hits = retriever.search(query)
+        candidates = retriever.search(query)
+        if isinstance(retriever, MultiIntentRetriever):
+            hits = candidates
+            evidence_filter_decisions: list[dict[str, Any]] = []
+        else:
+            hits, evidence_filter_decisions = filter_single_query_evidence(query, candidates)
     except Exception as exc:
         traces.add_error(
             "retrieval_failed",
@@ -458,6 +464,7 @@ async def _execute_after_final(
                 "context_budget_tokens": retrieval_details.get("context_budget_tokens"),
                 "context_tokens_used": retrieval_details.get("context_tokens_used"),
                 "assembly_decisions": retrieval_details.get("assembly_decisions", []),
+                "evidence_filter_decisions": evidence_filter_decisions,
             },
         )
     decomposition = getattr(retriever, "last_decomposition", None)
@@ -501,12 +508,14 @@ async def _execute_after_final(
             total_tokens=len(query_tokens),
             estimated=True,
         ),
-            attributes={
-                "hit_count": len(hits),
+        attributes={
+            "hit_count": len(hits),
+            "candidate_hit_count": len(candidates),
+            "candidate_chunk_ids": [hit.chunk_id for hit in candidates],
             "multi_intent": decomposition is not None,
-                "intent_metadata": intent_metadata_from_hits(hits),
-                "unsupported_intent_count": len(unsupported_intent_queries),
-                "selected_retrieval_backend": retriever.backend,
+            "intent_metadata": intent_metadata_from_hits(hits),
+            "unsupported_intent_count": len(unsupported_intent_queries),
+            "selected_retrieval_backend": retriever.backend,
             "selected_retrieval_model": retrieval_model_identity,
             "retrieval_method": getattr(retriever, "method", retriever.backend),
             "scheduled_time_s": scheduled_trace.monotonic_execution_time_s,

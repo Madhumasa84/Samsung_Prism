@@ -1,0 +1,48 @@
+{
+  "schema_version": "flowcontext.phase3-implementation-change-log.v1",
+  "status": "synthetic_fixture_audit",
+  "changes": [
+    {
+      "change_id": "P3-IMPL-001",
+      "description": "Keep Phase 2 single-query evidence validation at the parent-query boundary; do not implicitly decompose it.",
+      "informed_by_case_ids": ["p3-dev-independent-003"],
+      "verification": "A/B matched replay regression"
+    },
+    {
+      "change_id": "P3-IMPL-002",
+      "description": "Audit shared constraints and dependency-aware complete-request evidence coverage separately from top-level retrieval recall.",
+      "informed_by_case_ids": ["p3-dev-shared-004", "p3-dev-dependent-005"],
+      "verification": "Phase 3 decomposition and per-intent coverage checks"
+    },
+    {
+      "change_id": "P3-IMPL-003",
+      "description": "Retain negation and entity-specific constraint labels and treat positive/other-entity passages as labeled distractors.",
+      "informed_by_case_ids": ["p3-dev-negation-006"],
+      "verification": "Decomposition constraint audit and retrieval labels"
+    },
+    {
+      "change_id": "P3-IMPL-004",
+      "description": "Expose comparison, conflict, and cross-entity evidence outcomes without treating valid IDs as semantic support.",
+      "informed_by_case_ids": ["p3-dev-comparison-007", "p3-dev-entity-009", "p3-heldout-conflict-004"],
+      "verification": "Evidence provenance and synthesis audit"
+    },
+    {
+      "change_id": "P3-IMPL-005",
+      "description": "Measure supported portions and explicit uncertainty on partially answerable requests so all-abstention is not a success metric.",
+      "informed_by_case_ids": ["p3-dev-partial-008"],
+      "verification": "Supported-answer coverage and uncertainty checks"
+    },
+    {
+      "change_id": "P3-IMPL-006",
+      "description": "Keep correction-time retrieval revision guards visible and count stale-result acceptance as a correctness invariant.",
+      "informed_by_case_ids": ["p3-dev-correction-010"],
+      "verification": "Phase 2 stale-result and session-isolation regressions"
+    },
+    {
+      "change_id": "P3-IMPL-007",
+      "description": "Record retrieval, generation-provider, and decomposition-provider failures as explicit operational outcomes with no silent backend substitution.",
+      "informed_by_case_ids": ["p3-dev-retrieval-failure-011", "p3-dev-generation-failure-012", "p3-heldout-decomposer-failure-005", "p3-heldout-retrieval-timeout-006"],
+      "verification": "Fault-injection traces and failure denominators"
+    }
+  ]
+}

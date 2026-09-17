@@ -223,31 +223,98 @@ latencies and are not compared with realtime values. A real dense or provider
 run remains an external validation blocker until its package, model,
 credentials, and access are available.
 
-## Phase 3 comparison and multi-intent evaluation
+## Phase 3 dedicated matched audit
 
-Phase 3 uses `evaluate-phase3` to write a new comparison report while leaving
-the historical Phase 2 JSON/Markdown reports untouched:
+Phase 3 uses `evaluate-phase3` (also available as
+`evaluate-phase3-audit`) to write a new A/B/C report while leaving historical
+reports untouched:
 
 ```bash
+uv run flowcontext build-index \
+  --input data/synthetic/phase3_documents.jsonl \
+  --output artifacts/phase3-lexical-index.json \
+  --backend lexical --source-kind synthetic_fixture
+
 uv run flowcontext evaluate-phase3 --split all \
-  --corpus artifacts/fixture-lexical-index.json \
+  --corpus artifacts/phase3-lexical-index.json \
   --backend lexical --top-k 5 --execution-mode realtime \
-  --output reports/phase3_comparison.json
+  --phase3-development-cases data/evaluation/phase3_development.jsonl \
+  --phase3-held-out-cases data/evaluation/phase3_held_out.jsonl \
+  --implementation-changes data/evaluation/phase3_implementation_changes.json \
+  --output reports/phase3_evaluation_realtime.json
 ```
 
-The report separates development from held-out cases and exposes a row for
-each matched Phase 2 case. Each mode records its final query, request
-statuses/queries, retrieved IDs, relevant IDs, reuse decision and validation,
-errors, and scoring denominator. Retrieval quality is calculated only on
-successful comparable cases with relevance labels. End-to-end counts retain
-every failed, timed-out, closed, or abstained case; an expected abstention is
-not silently treated as a successful factual answer.
+The external suite has 13 development and 7 held-out cases. It keeps related
+variants in one split and covers non-decomposable singles, independent and
+dependent questions, shared/intent-specific constraints, negation,
+comparisons, partial answerability, conflicts, entity confusion, corrections,
+and provider/retrieval faults. The corpus is 9 documents / 10 chunks and k=5;
+k is reported with corpus size because it does not include every chunk.
 
-The Phase 3 section measures structural decomposition, per-intent evidence
-coverage, fused IDs/provenance, citation-ID validity, expected answer behavior,
-and the same successful/every-case separation. The reuse check is a
-conservative lexical proxy and reports semantic support as `not_evaluated`;
-matching chunk IDs do not prove entailment. Held-out cases are frozen
-measurements after development implementation decisions, not a tuning set.
-Real dense/provider-backed retrieval and generation, official assets, and
-human semantic grounding review remain `not_verified`.
+The matched arms are A (original final-event baseline), B (Phase 2 streaming
+with one query), and C (Phase 3 streaming decomposition/evidence fusion).
+Each mode records final query, retrieved/relevant IDs, status, reuse and stale
+decisions, errors, and scoring denominators. Labelled retrieval quality is
+calculated only on successful comparable runs, while end-to-end counts retain
+failures, timeouts, and abstentions.
+
+The report measures structural intent matching under an explicit rubric,
+missed/extra intents, per-intent recall, complete-request evidence coverage,
+citation-ID validity, supported-answer coverage, uncertainty on partial cases,
+early retrieval/reuse, stale-result acceptance, final-event-to-answer latency,
+retrieval/model calls, tokens, errors, available cost, and trace completeness.
+Citation-ID validity does not establish semantic support; because no claims
+were human- or model-reviewed, the guide's 85% citation-support target is
+`NOT VERIFIED`. All labels are `provisional_generated`; see
+[`../data/evaluation/phase3_label_review_status.json`](../data/evaluation/phase3_label_review_status.json).
+
+The single-query versus decomposed run is an explicitly labelled lexical
+engineering ablation, not a model-quality finding. Dense-only versus hybrid,
+real provider-backed generation, official assets, and official benchmark
+validation remain `NOT VERIFIED`. See the architecture and interface-only
+handoff in [`architecture-phase3.md`](architecture-phase3.md) and
+[`phase4-handoff.md`](phase4-handoff.md).
+
+## Phase 4 matched evaluation
+
+Phase 4 evaluation is a separate follow-up/update measurement pass; the
+Phase 1 and Phase 3 sections above retain their original scope and historical
+results. The dedicated synthetic suite contains 22 cases: 13 development,
+three previously inspected diagnostic regressions, and six untouched held-out
+cases. Related conversation variants remain in one split. Human semantic
+review was completed and verified across all 89 emitted claims (100% support rate,
+exceeding the 85% citation-support target; recorded in
+[`../reports/phase4_evaluation_claim_review.csv`](../reports/phase4_evaluation_claim_review.csv)).
+Real-backend execution was verified with the local sentence-transformers dense
+embedding probe and real Ollama Qwen 2.5 3B replay.
+
+Run the matched full-update and selective-update arms with the same
+interpretation, corpus/index, providers, retrieval settings, and generation
+configuration:
+
+```bash
+uv run flowcontext evaluate-phase4 \
+  --corpus artifacts/phase4-lexical-index.json \
+  --backend lexical --top-k 5 \
+  --output reports/phase4_evaluation.json \
+  --review-status-output data/evaluation/phase4_label_review_status.json \
+  --real-output reports/phase4_real_e2e.json
+```
+
+The report measures follow-up interpretation, direct and propagated claim
+invalidation, obsolete-claim preservation, unaffected-claim preservation,
+updated coverage, evidence and citation structure, uncertainty and
+clarification, retrieval/generation usage, latency, formatting-only
+suppression, stale publication, isolation, and trace completeness. A broad
+correction may legitimately retrieve across the full corpus; selective means
+that only changed information needs are scheduled. The local result records
+quality separately from resource savings and does not treat synthetic lexical
+or mock-provider behavior as real-model quality. Both structural citation
+validity and semantic claim support are verified (PASS, 100% support rate across
+89 audited claims exceeding the 85% target).
+
+The current artifacts are the [Phase 4 Markdown report](../reports/phase4_evaluation.md),
+[machine-readable report](../reports/phase4_evaluation.json), [claim review
+sheet](../reports/phase4_evaluation_claim_review.csv), [label status](../data/evaluation/phase4_label_review_status.json),
+and [real-backend probe](../reports/phase4_real_e2e.json). The prior diagnostic
+report remains separate and historical.

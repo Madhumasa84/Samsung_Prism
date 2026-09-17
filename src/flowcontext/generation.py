@@ -25,6 +25,7 @@ from .config import Settings
 from .contracts import (
     Answer,
     CorpusIndex,
+    DecompositionIntent,
     EvidencePassage,
     GenerationConfig,
     GenerationRequest,
@@ -70,6 +71,54 @@ _INSTRUCTION_PATTERN = re.compile(
     r"reveal secrets|execute|run this command)\b",
     re.IGNORECASE,
 )
+
+
+def _mock_preferred_passage(
+    intent_payload: dict[str, Any],
+    passages: Sequence[EvidencePassage],
+) -> EvidencePassage:
+    """Choose a deterministic, constraint-compatible fixture passage.
+
+    The mock provider is used to exercise publication plumbing, but it should
+    not manufacture a fixture failure merely because lexical retrieval ranked
+    an incompatible entity before a compatible passage.  This helper is not a
+    semantic support decision: the normal synthesis verifier still runs after
+    the provider response and keeps citation provenance separate from support.
+    """
+
+    try:
+        intent = DecompositionIntent.model_validate(intent_payload)
+        from .multi_intent import intent_evidence_alignment
+
+        def rank(item: tuple[int, EvidencePassage]) -> tuple[Any, ...]:
+            position, passage = item
+            alignment = intent_evidence_alignment(intent, passage.text)
+            entity_constraints = [
+                constraint
+                for constraint in intent.constraints
+                if constraint.kind == "entity"
+            ]
+            entity_match = bool(entity_constraints) and all(
+                constraint.value.casefold() in passage.text.casefold()
+                for constraint in entity_constraints
+            )
+            return (
+                int(entity_match),
+                -len(alignment["missing_constraints"]),
+                int(alignment["aligned"]),
+                alignment["coverage"],
+                passage.score if passage.score is not None else float("-inf"),
+                -passage.rank,
+                -position,
+                passage.chunk_id,
+            )
+
+        return max(enumerate(passages), key=rank)[1]
+    except Exception:
+        # Fixture providers must remain total even when a hand-built request
+        # omits the richer decomposition fields.  Publication and semantic
+        # validation still guard the fallback result.
+        return passages[0]
 
 
 class GenerationError(RuntimeError):
@@ -264,8 +313,14 @@ class MockGenerationProvider:
 
     async def generate(self, request: GenerationRequest) -> GenerationResult:
         self.calls += 1
-        if self.mode == "timeout":
-            delay = self.timeout_delay_s or (self._config.timeout_s * 10)
+        if self.timeout_delay_s is not None:
+            # Replay callers use this explicit delay to make a valid provider
+            # result race with a correction.  It is a scheduling delay, not a
+            # provider failure and therefore applies to every mock mode.
+            delay = max(0.0, self.timeout_delay_s)
+            await asyncio.sleep(delay)
+        elif self.mode == "timeout":
+            delay = self._config.timeout_s * 10
             await asyncio.sleep(delay)
         if self.mode == "invalid_json":
             raw_text = "this is not a JSON answer"
@@ -426,7 +481,7 @@ class MockGenerationProvider:
                     iid = intent["intent_id"]
                     matching = request.intent_evidence.get(iid, [])
                     if matching:
-                        p = matching[0]
+                        p = _mock_preferred_passage(intent, matching)
                         claims.append(
                             {
                                 "claim_id": f"mock-claim-{iid}",
@@ -833,7 +888,10 @@ async def generate_grounded_answer(
         )
 
     config = provider.config
-    passages = _passages_from_hits(hits, corpus)
+    from .multi_intent import filter_single_query_evidence
+
+    qualified_hits, _evidence_filter_decisions = filter_single_query_evidence(query, hits)
+    passages = _passages_from_hits(qualified_hits, corpus)
     if not passages:
         unsupported_note = (
             " Evidence was unavailable for one or more requested intents."

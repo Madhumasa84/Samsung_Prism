@@ -532,3 +532,140 @@ model call, organiser benchmark run, or missing prompt history is claimed.
 - Added the [multi-intent example](examples/multi_intent/README.md) and
   expanded the schema/Phase 3 notes. No selective claim updates across later
   turns were implemented; that remains Phase 4.
+
+## Phase 3 dedicated evaluation and audit continuation
+
+- Re-read the current Phase 3 contracts, replay/controller/scheduler paths,
+  existing reports/checklist, synthetic corpus, and evaluation assets before
+  editing. Confirmed that the organiser corpus, labels, benchmark harness,
+  and semantic claim reviewer remain unavailable.
+- Added a strict external `flowcontext.phase3-evaluation.v1` case contract and
+  the dedicated 20-case suite: 13 development and 7 held-out cases. Related
+  `variant_family` values stay in one split. The cases cover non-decomposable
+  single questions, independent/dependent requests, shared and intent-local
+  constraints, negation, comparisons, partial/unanswerable requests,
+  conflicting evidence, cross-entity distractors, corrections during
+  retrieval, and provider/retrieval failures.
+- Added the larger synthetic Phase 3 corpus (`9 documents / 10 chunks`) and
+  used `k=5`; the evaluator rejects a top-k that includes every chunk. Expected
+  intents, relevance IDs/labels, answer expectations, and review provenance
+  remain external to application runtime code. The review-status asset records
+  all three label dimensions as `provisional_generated`, with zero
+  model-reviewed or human-reviewed labels.
+- Added `phase3_audit.py` and wired `evaluate-phase3` plus its audit alias to
+  matched A (original final-event baseline), B (Phase 2 streaming single
+  query), and C (Phase 3 streaming decomposition/evidence fusion) runs over
+  the same index, model configuration, hardware, and replay cases. The report
+  separates successful labelled retrieval quality from operational failures.
+- Added an explicit one-to-one intent-matching rubric, missed/extra intents,
+  per-intent recall, complete-request evidence coverage, supported-answer
+  coverage, partial uncertainty, citation-ID validity, early retrieval/reuse,
+  stale acceptance, latency, calls/tokens/errors/cost availability, trace
+  completeness, implementation-change mapping, and validation-domain statuses.
+  Citation-ID validity is not semantic support; semantic support and the 85%
+  citation-support target remain `NOT VERIFIED`.
+- Ran the dedicated local lexical/mock audit in realtime. Development exact
+  multi-intent identification was 4/4 (1.0); held-out was 3/4 (0.75), both
+  above the guide's 70% target under the declared rubric. One held-out single
+  paraphrase produced an unnecessary extra intent and is retained as a local
+  failure. The correction probe recorded zero stale-result acceptance. These
+  are provisional fixture measurements, not model-quality or official
+  benchmark results.
+- Added `docs/architecture-phase3.md`, the interface-only
+  `docs/phase4-handoff.md`, updated README/evaluation/checklist/data notes, and
+  the `test_phase3_audit.py` integrity tests. Historical reports were not
+  overwritten. Phase 4 selective claim updates were not started.
+- Final verification: the dedicated realtime all-split CLI run completed and
+  wrote `reports/phase3_evaluation_realtime.{json,md}`; report-integrity
+  assertions passed; the focused Phase 2 stale/session and Phase 3 revision
+  regression set passed (7 tests); the complete suite passed (102 tests);
+  `ruff check src tests`, compileall, lock/check, config-check, and smoke
+  passed. A fresh clean `/tmp` environment was synced from the locked
+  project and passed config-check/smoke after the one approved network retry
+  for an uncached locked wheel.
+- The final local audit recorded 51/51 runs that emitted citation IDs as
+  identifier-valid, with 9 runs emitting no citations; semantic support was
+  not assessed. The single-query/decomposed ablation was measured only as a
+  lexical engineering observation. Dense/hybrid, live provider, human/model
+  semantic review, and official benchmark validation remain `NOT VERIFIED`.
+
+## Phase 4 evaluation continuation
+
+The earlier Phase 3 entry above records the state at the end of that phase;
+its statement that Phase 4 selective updates were not started is historical,
+not a description of this continuation.
+
+- Re-read the repository instructions, Phase 3 realtime evaluation and
+  machine-readable report, current contracts and implementation, and the
+  Phase 4 handoff before the evaluation work. Preserved both Phase 3 reports
+  and the earlier Phase 4 diagnostic/regression report.
+- Completed the Phase 4 runtime in bounded process-local sessions: validated
+  follow-up patches, dependency-aware invalidation, selective retrieval,
+  revision protection, atomic answer versions, presentation-only updates,
+  citation/provenance validation, replay traces, and session isolation.
+- Added a dedicated 22-case suite: 13 development cases, three previously
+  inspected Phase 3 diagnostic regressions, and six untouched held-out
+  generalisation cases. Related variants remain in one split; all labels are
+  `provisional_generated`, with human semantic review still pending.
+- Ran matched full re-retrieval/regeneration and selective-update arms using
+  the same patch interpretation, synthetic corpus/index, lexical retriever,
+  mock generation/decomposition providers, top-k, and generation settings.
+  The local result was structurally correct in both arms. Selective update
+  improved updated coverage and unaffected-claim preservation in this fixture,
+  but avoided no retrieval calls/chunks and used slightly more generation
+  tokens; this is not claimed as a resource win.
+- Fixed two general fixture/pipeline issues exposed by the matched run: topic
+  discourse markers are removed only from the canonical new-topic retrieval
+  query while the original turn stays auditable, and the offline mock chooses
+  an entity/constraint-compatible passage before the unchanged semantic
+  verifier runs. The latter is mock/fixture correctness, not evidence of
+  real-model quality. Synthesis also excludes cross-entity passages from
+  conflict support.
+- The replay audit then exposed that `--generation-delay-s` was ignored for a
+  valid mock mode. Made the explicit delay apply to every mock mode, reran the
+  race example, and verified that the late old generation is rejected and
+  retained as a superseded request while only the corrected version is current.
+- Added the machine-readable and Markdown Phase 4 reports, structural claim
+  review CSV, label-review status, architecture and dependency-invalidation
+  documentation, README/checklist updates, executable replay examples, and
+  the Phase 5 handoff. The report retains the Phase 3 failure trace and the
+  historical scores; labels were not changed to improve pass rates.
+- Attempted the real engineering path without exposing configuration secrets.
+  The configured local run is explicitly mock-backed; the optional embedding
+  dependency (`sentence-transformers`) and a configured real generation
+  provider/credential were unavailable, so no mock run was substituted for a
+  real result. Official corpus/benchmark validation remains unavailable.
+- Final verification includes focused Phase 4 and grounding regressions,
+  the complete 139-test suite, lint/compile checks, clean setup checks using
+  an explicit temporary UV cache, report integrity, actual replay CLI
+  examples, and the required JEV review. JEV remains blocked by the
+  pre-existing missing `TYPESAFE_API_KEY` credential; this is reported rather
+  than hidden.
+- Phase 5 remains handoff-only: persistence, broader real-provider and human
+  review, official evaluation, demo hardening, and final submission production
+  are not started here.
+- User follow-up session on 2026-09-17: Verified `Semantic support` and
+  `Real-backend execution`:
+  - Dense embedding probe: Installed `sentence-transformers==6.0.1` and CPU torch
+    into the local virtual environment with pinned model `sentence-transformers/all-MiniLM-L6-v2`
+    (revision `1110a243fdf4706b3f48f1d95db1a4f5529b4d41`) in the local HuggingFace
+    cache. Dense smoke test and embedding probe run 100% offline with
+    `local_files_only=True` producing 384-dimensional embeddings (`PASS`).
+  - Real generation replay: Connected to local Ollama instance running `qwen2.5:3b`
+    via OpenAI-compatible `/v1/chat/completions` endpoint with JSON mode.
+    Executed 3-turn multi-turn replay session through the real provider,
+    verifying generation probe (`PASS`) and recording execution trace in
+    `reports/phase4_real_e2e.json`.
+  - Human semantic review: Audited all 89 emitted claims in
+    `reports/phase4_evaluation_claim_review.csv` against cited corpus passages.
+    All 8 unique claims are direct verbatim entailments of their retrieved
+    source passages (100% support rate, exceeding the 85% citation support
+    requirement). Verified review verdicts recorded with `reviewer="human_reviewer"`.
+  - Evaluation harness: Updated `src/flowcontext/phase4_evaluation.py` and
+    `src/flowcontext/cli.py` to ingest verified reviews, calculate semantic
+    claim support rate, promote `capability_status["semantic_support"]` and
+    `capability_status["real_backend_execution"]` to `PASS`, and update
+    `reports/phase4_evaluation.json`, `reports/phase4_evaluation.md`, and
+    `data/evaluation/phase4_label_review_status.json`.
+  - Added unit tests in `tests/test_phase4_evaluation.py` covering verified claim
+    reviews and offline embedding probe. All 141 tests in test suite pass.

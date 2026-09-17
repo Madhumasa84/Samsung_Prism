@@ -26,31 +26,25 @@ The pipeline:
 
 from __future__ import annotations
 
-import asyncio
 import json
 import re
 import time
 from dataclasses import dataclass
 from datetime import date, datetime
-from typing import Any, Callable, Literal, Mapping, Protocol, Sequence
+from typing import Callable, Literal, Mapping, Protocol, Sequence
 
 from pydantic import ValidationError
 
 from .contracts import (
     Answer,
     ClaimVerificationVerdict,
-    CorpusIndex,
     DecompositionConstraint,
     DecompositionIntent,
     DecompositionResult,
     EvidencePassage,
     FactualClaim,
-    GenerationConfig,
     GenerationRequest,
-    GenerationResult,
     IntentStatusRecord,
-    IntentSynthesisStatus,
-    RetrievalHit,
     SemanticVerificationReport,
     TextSpan,
     Usage,
@@ -62,11 +56,9 @@ from .generation import (
     GenerationOutcome,
     GenerationOutputError,
     GenerationProvider,
-    GenerationProviderError,
     UnknownCitationError,
     _call_with_retries,
     _cost_for_usage,
-    _passages_from_hits,
 )
 
 
@@ -125,6 +117,107 @@ AUTHORITY_LEVELS: dict[str, int] = {
     "draft": 0,
 }
 
+_CONFLICT_CONTENT_STOP_WORDS = frozenset(
+    {
+        "a",
+        "an",
+        "and",
+        "are",
+        "at",
+        "be",
+        "by",
+        "for",
+        "from",
+        "in",
+        "is",
+        "of",
+        "on",
+        "or",
+        "the",
+        "to",
+        "with",
+    }
+)
+_CONFLICT_NEGATIVE_MARKERS = frozenset(
+    {
+        "not",
+        "no",
+        "never",
+        "none",
+        "prohibited",
+        "banned",
+        "disallowed",
+        "nonrefundable",
+    }
+)
+_CONFLICT_POSITIVE_MARKERS = frozenset(
+    {"allowed", "allow", "permitted", "permit", "refundable", "free", "included"}
+)
+_CONFLICT_COST_MARKERS = frozenset({"cost", "costs", "fee", "fees", "charged", "charge"})
+
+
+def _conflict_content_tokens(text: str) -> set[str]:
+    return {
+        token
+        for token in _TOKEN_PATTERN.findall(text.casefold())
+        if token not in _CONFLICT_CONTENT_STOP_WORDS and len(token) > 2
+    }
+
+
+def _passages_conflict(left: EvidencePassage, right: EvidencePassage) -> bool:
+    """Detect a narrow set of direct contradictions before precedence rules.
+
+    Multiple passages are often complementary.  Treating every pair as a
+    conflict causes supported answers to abstain merely because retrieval
+    returned more than one passage.
+    """
+
+    left_entity = left.metadata.get("entity")
+    right_entity = right.metadata.get("entity")
+    if (
+        isinstance(left_entity, str)
+        and isinstance(right_entity, str)
+        and left_entity.strip().casefold() != right_entity.strip().casefold()
+    ):
+        return False
+
+    left_tokens = _conflict_content_tokens(left.text)
+    right_tokens = _conflict_content_tokens(right.text)
+    shared = left_tokens & right_tokens
+    if not shared:
+        return False
+
+    left_numbers = set(re.findall(r"\b\d+(?:[.,]\d+)?\b", left.text))
+    right_numbers = set(re.findall(r"\b\d+(?:[.,]\d+)?\b", right.text))
+    if left_numbers and right_numbers and left_numbers != right_numbers:
+        return True
+
+    left_negative = left_tokens & _CONFLICT_NEGATIVE_MARKERS
+    right_negative = right_tokens & _CONFLICT_NEGATIVE_MARKERS
+    left_positive = left_tokens & _CONFLICT_POSITIVE_MARKERS
+    right_positive = right_tokens & _CONFLICT_POSITIVE_MARKERS
+    if (left_negative and right_positive) or (right_negative and left_positive):
+        return True
+
+    if (
+        "non" in left_tokens
+        and "refundable" in left_tokens
+        and "refundable" in right_tokens
+        and "non" not in right_tokens
+    ) or (
+        "non" in right_tokens
+        and "refundable" in right_tokens
+        and "refundable" in left_tokens
+        and "non" not in left_tokens
+    ):
+        return True
+
+    left_cost = left_tokens & _CONFLICT_COST_MARKERS
+    right_cost = right_tokens & _CONFLICT_COST_MARKERS
+    if ("free" in left_tokens and right_cost) or ("free" in right_tokens and left_cost):
+        return True
+    return False
+
 
 class SynthesisError(GenerationError):
     """Base error for unified answer synthesis."""
@@ -179,6 +272,21 @@ def resolve_conflicting_evidence(
             winning_passage=passages[0] if passages else None,
             superseded_passages=[],
             explanation="Single or no passage; no conflict.",
+        )
+
+    conflicting_pairs = [
+        (left, right)
+        for index, left in enumerate(passages)
+        for right in passages[index + 1 :]
+        if _passages_conflict(left, right)
+    ]
+    if not conflicting_pairs:
+        return PrecedenceResolution(
+            resolved=True,
+            rule_applied="none",
+            winning_passage=None,
+            superseded_passages=[],
+            explanation="Passages provide complementary or consistent evidence; no direct conflict was detected.",
         )
 
     # 1. Date Precedence Check
@@ -283,7 +391,19 @@ def check_cross_entity_match(
 
     passage_entity = passage.metadata.get("entity")
     if isinstance(passage_entity, str) and passage_entity.strip():
-        if passage_entity.casefold() != intent_entity.casefold():
+        passage_entity_cf = passage_entity.casefold().strip()
+        intent_entity_cf = intent_entity.casefold().strip()
+        # Corpus metadata may qualify a canonical entity with its location or
+        # other disambiguating context (for example ``Venue B in Pune``),
+        # while the request's typed entity constraint is ``Venue B``.  Treat
+        # that as the same entity only when one complete name contains the
+        # other; unrelated names still fail closed.
+        compatible_metadata = (
+            passage_entity_cf == intent_entity_cf
+            or re.search(rf"\b{re.escape(intent_entity_cf)}\b", passage_entity_cf) is not None
+            or re.search(rf"\b{re.escape(passage_entity_cf)}\b", intent_entity_cf) is not None
+        )
+        if not compatible_metadata:
             return False
 
     intent_cf = intent_entity.casefold()
@@ -381,6 +501,8 @@ class RuleBasedSemanticVerifier:
     ) -> SemanticVerificationReport:
         start_time = time.perf_counter()
         intent_map = {intent.intent_id: intent for intent in (intents or [])}
+        from .multi_intent import intent_evidence_alignment
+
         verdicts: list[ClaimVerificationVerdict] = []
 
         total_input_tokens = 0
@@ -421,6 +543,31 @@ class RuleBasedSemanticVerifier:
                         ),
                         cited_chunk_ids=claim.supporting_chunk_ids,
                         cross_entity_violation=True,
+                        contradiction_detected=False,
+                    )
+                )
+                continue
+
+            # A passage can be a valid citation and can even support the
+            # provider's wording while still answering a different intent.
+            # Keep that distinction explicit at the verifier boundary.
+            intent_alignment_failure = False
+            for intent_id in claim.intent_ids:
+                intent = intent_map.get(intent_id)
+                if intent is not None and not intent_evidence_alignment(intent, cited_text)["aligned"]:
+                    intent_alignment_failure = True
+                    break
+            if intent_alignment_failure:
+                verdicts.append(
+                    ClaimVerificationVerdict(
+                        claim_id=claim.claim_id,
+                        verdict="unsupported",
+                        reason=(
+                            f"Claim {claim.claim_id!r} cites a passage that does not align "
+                            "with the requested intent; citation provenance is not support."
+                        ),
+                        cited_chunk_ids=claim.supporting_chunk_ids,
+                        cross_entity_violation=False,
                         contradiction_detected=False,
                     )
                 )
@@ -673,20 +820,100 @@ async def synthesize_unified_answer(
 ) -> GenerationOutcome:
     """Execute unified answer synthesis covering all sub-questions."""
     config = provider.config
-    supplied_map = {p.chunk_id: p for p in passages}
-
     intents = decomposition.intents if decomposition else []
     shared_constraints = decomposition.shared_constraints if decomposition else []
+
+    # Retrieval candidates are not automatically evidence.  The multi-intent
+    # retriever normally performs this qualification before publication, but
+    # keep the synthesis boundary defensive for direct callers and provider
+    # integrations.  Citation IDs and exact excerpts are deliberately not
+    # consulted by this gate.
+    evidence_filter_decisions: list[dict[str, object]] = []
+    if decomposition:
+        from .multi_intent import intent_evidence_alignment
+
+        qualified_passages: list[EvidencePassage] = []
+        intent_by_id = {intent.intent_id: intent for intent in intents}
+        for passage in passages:
+            candidate_ids = list(passage.intent_ids)
+            if not candidate_ids and len(intents) == 1:
+                candidate_ids = [intents[0].intent_id]
+            qualified_ids: list[str] = []
+            alignments: dict[str, object] = {}
+            for intent_id in candidate_ids:
+                intent = intent_by_id.get(intent_id)
+                if intent is None:
+                    continue
+                alignment = intent_evidence_alignment(intent, passage.text)
+                requested_entity = extract_entity_from_text_or_constraints(
+                    intent.query,
+                    intent.constraints,
+                )
+                entity_compatible = (
+                    requested_entity is None
+                    or check_cross_entity_match(requested_entity, passage)
+                )
+                alignments[intent_id] = {
+                    **alignment,
+                    "cross_entity_compatible": entity_compatible,
+                    "semantic_support": "not_evaluated",
+                }
+                if alignment["aligned"] and entity_compatible:
+                    qualified_ids.append(intent_id)
+            if qualified_ids:
+                ordered_ids = [
+                    intent.intent_id
+                    for intent in intents
+                    if intent.intent_id in qualified_ids
+                ]
+                qualified_passages.append(
+                    passage.model_copy(
+                        update={
+                            "intent_id": ordered_ids[0],
+                            "intent_ids": ordered_ids,
+                        }
+                    )
+                )
+                evidence_filter_decisions.append(
+                    {
+                        "chunk_id": passage.chunk_id,
+                        "selected": True,
+                        "qualified_intent_ids": ordered_ids,
+                        "alignment": alignments,
+                        "semantic_support": "not_evaluated",
+                    }
+                )
+            else:
+                evidence_filter_decisions.append(
+                    {
+                        "chunk_id": passage.chunk_id,
+                        "selected": False,
+                        "qualified_intent_ids": [],
+                        "alignment": alignments,
+                        "reason": "no intent alignment",
+                        "semantic_support": "not_evaluated",
+                    }
+                )
+        passages = qualified_passages
+
+    supplied_map = {p.chunk_id: p for p in passages}
 
     intent_evidence: dict[str, list[EvidencePassage]] = {}
     for p in passages:
         for iid in p.intent_ids:
             intent_evidence.setdefault(iid, []).append(p)
 
+    effective_unsupported = list(unsupported_intent_queries or [])
+    if decomposition:
+        covered_intents = set(intent_evidence.keys())
+        for intent in decomposition.intents:
+            if intent.intent_id not in covered_intents and intent.query not in effective_unsupported:
+                effective_unsupported.append(intent.query)
+
     if not passages:
         unsupported_note = (
             " Evidence was unavailable for one or more requested intents."
-            if unsupported_intent_queries
+            if effective_unsupported
             else ""
         )
         empty_statuses = [
@@ -699,7 +926,7 @@ async def synthesize_unified_answer(
         ]
         answer = Answer(
             answer_text=(
-                render_unified_answer([], empty_statuses, intents, unsupported_intent_queries)
+                render_unified_answer([], empty_statuses, intents, effective_unsupported)
                 if intents
                 else "I cannot safely answer from the configured corpus because no supporting evidence was available."
             ),
@@ -727,13 +954,6 @@ async def synthesize_unified_answer(
         raise StaleGenerationError(
             f"Generation request was superseded before provider invocation (revision {transcript_revision})."
         )
-
-    effective_unsupported = list(unsupported_intent_queries or [])
-    if decomposition:
-        covered_intents = set(intent_evidence.keys())
-        for intent in decomposition.intents:
-            if intent.intent_id not in covered_intents and intent.query not in effective_unsupported:
-                effective_unsupported.append(intent.query)
 
     request = GenerationRequest(
         query=query,
@@ -933,6 +1153,7 @@ async def synthesize_unified_answer(
         "verification_latency_ms": verification_report.latency_ms,
         "verification_limitations": verification_report.limitations,
         "verdicts": [v.model_dump(mode="json") for v in verification_report.verdicts],
+        "evidence_filter_decisions": evidence_filter_decisions,
         "provenance_verified": True,
         "provenance_caveat": "Exact excerpt matching proves provenance, not semantic support.",
     }

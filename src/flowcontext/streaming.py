@@ -19,7 +19,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Literal, Mapping, Sequence
+from typing import Any, Callable, Literal, Mapping, Sequence
 
 from pydantic import ValidationError
 
@@ -52,10 +52,10 @@ from .multi_intent import (
     DecompositionProvider,
     MultiIntentRetriever,
     StructuredMultiIntentDecomposer,
-    evidence_is_appropriate,
     intent_metadata_from_hits,
     make_multi_intent_retriever,
     reuse_validation,
+    single_query_evidence_is_appropriate,
     unsupported_intent_queries_from_hits,
 )
 from .replay import (
@@ -1149,10 +1149,9 @@ async def replay_streaming_transcript(
                 parent_revision=controller.transcript_revision,
             ).get("lexical_relevance_proxy", False)
             if isinstance(selected_retriever, MultiIntentRetriever)
-            else evidence_is_appropriate(
+            else single_query_evidence_is_appropriate(
                 final_query,
                 final_retrieval_result.hits,
-                plan=final_intent_plan,
             )
         )
     )

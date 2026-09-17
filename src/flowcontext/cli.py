@@ -1,4 +1,4 @@
-"""Command-line entry points for the Phase 1/2/3 corpus and replay workflows."""
+"""Command-line entry points for the Phase 1–4 corpus and replay workflows."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ from .evaluation import (
     load_evaluation_cases,
     write_report,
 )
-from .generation import generation_provider_for_settings
+from .generation import MockGenerationProvider, generation_provider_for_settings
 from .indexing import RetrievalBackend, build_index_from_source, inspect_corpus
 from .ingestion import (
     IngestionError,
@@ -62,12 +62,26 @@ from .streaming_evaluation import (
 )
 from .phase3_evaluation import (
     Phase3EvaluationError,
-    build_phase3_comparison,
-    evaluate_multi_intent_cases,
-    load_historical_report,
-    write_phase3_comparison_report,
+)
+from .phase3_audit import (
+    Phase3AuditError,
+    evaluate_phase3_audit,
+    load_phase3_evaluation_cases,
+    load_phase3_implementation_changes,
+    write_phase3_audit_report,
 )
 from .trace import write_trace_jsonl
+from .phase4 import Phase4Error
+from .phase4_replay import load_phase4_turns, replay_phase4_session
+from .phase4_evaluation import (
+    Phase4EvaluationError,
+    attempt_real_e2e,
+    evaluate_phase4,
+    load_phase4_evaluation_cases,
+    stable_phase4_evaluation_signature,
+    write_phase4_cases_review,
+    write_phase4_evaluation_report,
+)
 
 
 def _settings(env_file: str | None, overrides: dict[str, object] | None = None) -> Settings:
@@ -408,6 +422,41 @@ def build_parser() -> argparse.ArgumentParser:
         help="replay source-time gaps or consume events without waiting",
     )
 
+    phase4_replay_parser = commands.add_parser(
+        "phase4-replay",
+        help="replay a session with Phase 4 follow-ups, selective retrieval, and answer versions",
+    )
+    _add_common(phase4_replay_parser)
+    phase4_replay_parser.add_argument(
+        "--turns",
+        dest="turns_path",
+        required=True,
+        help="Phase 4 JSONL turns; all turns must belong to one session",
+    )
+    phase4_replay_parser.add_argument("--index", "--corpus", dest="index_path", required=True)
+    phase4_replay_parser.add_argument("--source", dest="source_path", default=None)
+    phase4_replay_parser.add_argument("--backend", choices=["dense", "lexical", "mock"], default=None)
+    phase4_replay_parser.add_argument("--top-k", type=int, default=None)
+    phase4_replay_parser.add_argument("--local-files-only", action="store_true")
+    phase4_replay_parser.add_argument("--output", dest="output_path", default=None)
+    phase4_replay_parser.add_argument(
+        "--race",
+        action="store_true",
+        help="start the initial answer again and apply the second turn while it is generating",
+    )
+    phase4_replay_parser.add_argument(
+        "--race-delay-s",
+        type=float,
+        default=0.0,
+        help="delay before applying the race correction",
+    )
+    phase4_replay_parser.add_argument(
+        "--generation-delay-s",
+        type=float,
+        default=None,
+        help="mock-provider delay used to make supersession observable",
+    )
+
     evaluate_parser = commands.add_parser("evaluate", help="evaluate one replay against local expectation JSONL")
     _add_common(evaluate_parser)
     evaluate_parser.add_argument("--run", dest="run_path", required=True)
@@ -464,14 +513,15 @@ def build_parser() -> argparse.ArgumentParser:
 
     phase3_parser = commands.add_parser(
         "evaluate-phase3",
-        help="investigate Phase 2 matched results and measure opt-in multi-intent retrieval",
+        aliases=["evaluate-phase3-audit"],
+        help="run the dedicated matched Phase 3 A/B/C evaluation and audit",
     )
     _add_common(phase3_parser)
     phase3_parser.add_argument(
         "--split",
         choices=["development", "held_out", "all"],
         default="all",
-        help="split for the Phase 2 comparison and Phase 3 answer cases",
+        help="label split to evaluate; all keeps development and held-out results separate",
     )
     phase3_parser.add_argument("--corpus", dest="index_path", required=True)
     phase3_parser.add_argument("--source", dest="source_path", default=None)
@@ -491,23 +541,72 @@ def build_parser() -> argparse.ArgumentParser:
         "--phase3-development-cases",
         dest="phase3_development_cases_path",
         default=None,
-        help="optional frozen Phase 3 development cases; defaults to the Phase 1 development file",
+        help="external Phase 3 development labels; defaults to the dedicated Phase 3 asset",
     )
     phase3_parser.add_argument(
         "--phase3-held-out-cases",
         dest="phase3_held_out_cases_path",
         default=None,
-        help="optional frozen Phase 3 held-out cases; defaults to the Phase 1 held-out file",
+        help="external Phase 3 held-out labels; defaults to the dedicated Phase 3 asset",
     )
-    # Keep the earlier Phase 3 decomposition/generation comparison intact;
-    # this command writes the retrieval/evidence follow-up under a distinct
-    # default artifact name. Callers may still choose an explicit path.
+    phase3_parser.add_argument(
+        "--implementation-changes",
+        dest="implementation_changes_path",
+        default="data/evaluation/phase3_implementation_changes.json",
+        help="external log mapping implementation changes to informing cases",
+    )
     phase3_parser.add_argument(
         "--output",
         dest="output_path",
-        default="reports/phase3_retrieval_comparison_realtime.json",
+        default="reports/phase3_evaluation_realtime.json",
     )
     _add_multi_intent_arguments(phase3_parser)
+
+    phase4_evaluate_parser = commands.add_parser(
+        "evaluate-phase4",
+        help="run the matched Phase 4 full-retrieval versus selective-update audit",
+    )
+    _add_common(phase4_evaluate_parser)
+    phase4_evaluate_parser.add_argument(
+        "--development-cases",
+        default="data/evaluation/phase4_development.jsonl",
+        help="development multi-turn labels",
+    )
+    phase4_evaluate_parser.add_argument(
+        "--diagnostic-cases",
+        default="data/evaluation/phase4_diagnostic.jsonl",
+        help="previously inspected diagnostic/regression labels",
+    )
+    phase4_evaluate_parser.add_argument(
+        "--untouched-cases",
+        default="data/evaluation/phase4_untouched.jsonl",
+        help="untouched held-out generalisation labels",
+    )
+    phase4_evaluate_parser.add_argument(
+        "--split",
+        choices=["development", "held_out", "all"],
+        default="all",
+        help="select labels by split while retaining role metadata",
+    )
+    phase4_evaluate_parser.add_argument("--corpus", dest="index_path", required=True)
+    phase4_evaluate_parser.add_argument("--source", dest="source_path", default=None)
+    phase4_evaluate_parser.add_argument("--backend", choices=["dense", "lexical", "mock"], default=None)
+    phase4_evaluate_parser.add_argument("--top-k", type=int, default=None)
+    phase4_evaluate_parser.add_argument("--local-files-only", action="store_true")
+    phase4_evaluate_parser.add_argument(
+        "--output",
+        dest="output_path",
+        default="reports/phase4_evaluation.json",
+    )
+    phase4_evaluate_parser.add_argument(
+        "--review-status-output",
+        default="data/evaluation/phase4_label_review_status.json",
+    )
+    phase4_evaluate_parser.add_argument(
+        "--real-output",
+        default="reports/phase4_real_e2e.json",
+        help="redacted real-backend attempt and exact execution trace when available",
+    )
 
     answer_parser = commands.add_parser(
         "answer",
@@ -975,6 +1074,76 @@ def command_replay(args: argparse.Namespace) -> int:
     return 1 if result.run_status == "failed" else 0
 
 
+def command_phase4_replay(args: argparse.Namespace) -> int:
+    """Run the executable Phase 4 state, retrieval, and publication pipeline."""
+
+    settings = _settings_for_args(args)
+    index = _load_query_index(args, settings)
+    backend = args.backend or settings.retrieval_backend
+    retriever = make_retriever(
+        index,
+        backend=backend,
+        top_k=settings.retrieval_top_k,
+        cache_dir=settings.embedding_cache_dir,
+        local_files_only=settings.embedding_local_files_only,
+    )
+    turns = load_phase4_turns(Path(args.turns_path))
+    generation_provider = generation_provider_for_settings(settings)
+    if args.generation_delay_s is not None:
+        if getattr(generation_provider.config, "backend", None) != "mock":
+            raise Phase4Error("--generation-delay-s is supported only with the mock provider")
+        generation_provider = MockGenerationProvider(
+            config=generation_provider.config,
+            timeout_delay_s=args.generation_delay_s,
+        )
+    race_follow_up = None
+    replay_turns = turns
+    if args.race:
+        if len(turns) < 2:
+            raise Phase4Error("--race requires an initial turn and one correction turn")
+        race_follow_up = turns[1]
+        replay_turns = [turns[0], *turns[2:]]
+        if args.generation_delay_s is None and generation_provider.config.backend == "mock":
+            generation_provider = MockGenerationProvider(
+                config=generation_provider.config,
+                timeout_delay_s=0.05,
+            )
+    result = asyncio.run(
+        replay_phase4_session(
+            replay_turns,
+            corpus=index,
+            retriever=retriever,
+            generation_provider=generation_provider,
+            race_follow_up=race_follow_up,
+            race_delay_s=args.race_delay_s,
+        )
+    )
+    if args.output_path:
+        _write_json(Path(args.output_path), result.model_dump(mode="json"))
+    _json_print(
+        {
+            "status": result.run_status,
+            "output": str(Path(args.output_path)) if args.output_path else None,
+            "session_id": result.session_id,
+            "corpus_id": result.corpus_id,
+            "index_id": result.index_id,
+            "retrieval_backend": result.retrieval_backend,
+            "generation_execution_mode": result.generation_execution_mode,
+            "generation_provider": result.generation_provider,
+            "generation_model": result.generation_model,
+            "retrieval_call_count": result.retrieval_call_count,
+            "retrieval_attempt_count": result.retrieval_attempt_count,
+            "generation_call_count": result.generation_call_count,
+            "generation_attempt_count": result.generation_attempt_count,
+            "answer_status": result.state.answer_status,
+            "current_answer_version": result.state.current_answer_version,
+            "steps": result.steps,
+            "notes": result.notes,
+        }
+    )
+    return 1 if result.run_status == "failed" else 0
+
+
 def command_evaluate(args: argparse.Namespace) -> int:
     settings = _settings(args.env_file)
     gold_path = Path(args.gold_path) if args.gold_path else settings.evaluation_path
@@ -1147,107 +1316,154 @@ def command_evaluate_streaming(args: argparse.Namespace) -> int:
 
 
 def command_evaluate_phase3(args: argparse.Namespace) -> int:
-    """Run the denominator-corrected Phase 2 audit plus Phase 3 evaluation."""
+    """Run the dedicated, external-label Phase 3 matched audit."""
 
     settings = _settings_for_args(args)
     index = _load_query_index(args, settings)
     selected_backend = args.backend or settings.retrieval_backend
-
-    if args.phase2_cases_path:
-        phase2_cases = load_streaming_evaluation_cases(Path(args.phase2_cases_path))
-    elif args.split == "development":
-        phase2_cases = load_streaming_evaluation_cases(
-            settings.streaming_evaluation_development_path,
+    development_path = Path(
+        args.phase3_development_cases_path
+        or settings.phase3_evaluation_development_path
+    )
+    held_out_path = Path(
+        args.phase3_held_out_cases_path
+        or settings.phase3_evaluation_held_out_path
+    )
+    if args.split == "development":
+        cases = load_phase3_evaluation_cases(
+            development_path,
             expected_split="development",
         )
     elif args.split == "held_out":
-        phase2_cases = load_streaming_evaluation_cases(
-            settings.streaming_evaluation_held_out_path,
+        cases = load_phase3_evaluation_cases(
+            held_out_path,
             expected_split="held_out",
         )
     else:
-        phase2_cases = [
-            *load_streaming_evaluation_cases(
-                settings.streaming_evaluation_development_path,
+        cases = [
+            *load_phase3_evaluation_cases(
+                development_path,
                 expected_split="development",
             ),
-            *load_streaming_evaluation_cases(
-                settings.streaming_evaluation_held_out_path,
+            *load_phase3_evaluation_cases(
+                held_out_path,
                 expected_split="held_out",
             ),
         ]
-
-    phase3_development_path = Path(
-        args.phase3_development_cases_path or settings.evaluation_development_path
+    implementation_changes = load_phase3_implementation_changes(
+        Path(args.implementation_changes_path)
     )
-    phase3_held_out_path = Path(
-        args.phase3_held_out_cases_path or settings.evaluation_held_out_path
-    )
-    if args.split == "development":
-        phase3_cases = load_evaluation_cases(phase3_development_path, expected_split="development")
-    elif args.split == "held_out":
-        phase3_cases = load_evaluation_cases(phase3_held_out_path, expected_split="held_out")
-    else:
-        phase3_cases = [
-            *load_evaluation_cases(phase3_development_path, expected_split="development"),
-            *load_evaluation_cases(phase3_held_out_path, expected_split="held_out"),
-        ]
-
-    phase2_report = asyncio.run(
-        evaluate_streaming_suite(
-            phase2_cases,
+    report = asyncio.run(
+        evaluate_phase3_audit(
+            cases,
             corpus=index,
             settings=settings,
             backend=selected_backend,
+            retrieval_mode=_selected_multi_intent_mode(args, settings, selected_backend),
             top_k=settings.retrieval_top_k,
             execution_mode=args.execution_mode,
-            run_id_prefix="phase3-phase2-audit",
-        )
-    )
-    phase3_results = asyncio.run(
-        evaluate_multi_intent_cases(
-            phase3_cases,
-            corpus=index,
-            settings=settings,
-            backend=selected_backend,
-            top_k=settings.retrieval_top_k,
-            execution_mode=args.execution_mode,
-            retrieval_mode=(
-                _selected_multi_intent_mode(args, settings, selected_backend)
-            ),
-            context_budget_tokens=settings.multi_intent_context_budget_tokens,
-            multi_intent_max_workers=settings.multi_intent_max_workers,
-            multi_intent_rrf_k=settings.multi_intent_rrf_k,
+            implementation_changes=implementation_changes,
         )
     )
     output_path = Path(args.output_path)
-    report = build_phase3_comparison(
-        phase2_report=phase2_report,
-        phase2_cases=phase2_cases,
-        phase3_results=phase3_results,
-        corpus=index,
-        settings=settings,
-        backend=selected_backend,
-        top_k=settings.retrieval_top_k,
-        execution_mode=args.execution_mode,
-        historical_report=load_historical_report(Path("reports/phase2_streaming_evaluation.json")),
-        retrieval_mode=_selected_multi_intent_mode(args, settings, selected_backend),
-    )
-    markdown_path = write_phase3_comparison_report(output_path, report)
+    markdown_path = write_phase3_audit_report(output_path, report)
     _json_print(
         {
             "status": "PASS",
+            "audit_completed": True,
             "output": str(output_path),
             "markdown_output": str(markdown_path),
             "selected_split": args.split,
-            "phase2_case_count": len(phase2_cases),
-            "phase3_case_count": len(phase3_cases),
-            "matched_successful_case_count": report["historical_gap"]["matched_successful_case_count"],
-            "matched_successful_baseline_recall_at_5": report["historical_gap"]["matched_successful_baseline_recall_at_5"],
-            "matched_successful_streaming_recall_at_5": report["historical_gap"]["matched_successful_streaming_recall_at_5"],
-            "non_useful_early_reuse_category_counts": report["phase2_investigation"]["overall_non_useful_category_counts"],
-            "real_backend": report["sections"]["real_backend"]["status"],
-            "official_assets": report["sections"]["official_assets"]["status"],
+            "case_count": report["data_integrity"]["case_count"],
+            "development_case_count": report["data_integrity"]["development_case_count"],
+            "held_out_case_count": report["data_integrity"]["held_out_case_count"],
+            "corpus": report["corpus"],
+            "targets": report["targets"],
+            "validation_domains": report["validation_domains"],
+            "capability_status": report["capability_status"],
+        }
+    )
+    return 0
+
+
+def command_evaluate_phase4(args: argparse.Namespace) -> int:
+    """Run the matched Phase 4 multi-turn audit and real-backend probe."""
+
+    settings = _settings_for_args(args)
+    index = _load_query_index(args, settings)
+    selected_backend = args.backend or settings.retrieval_backend
+    paths = [Path(args.development_cases), Path(args.diagnostic_cases), Path(args.untouched_cases)]
+    cases = [case for path in paths for case in load_phase4_evaluation_cases(path)]
+    if args.split != "all":
+        cases = [case for case in cases if case.split == args.split]
+    if not cases:
+        raise Phase4EvaluationError(f"no Phase 4 cases match split={args.split!r}")
+    report = asyncio.run(
+        evaluate_phase4(
+            cases,
+            corpus=index,
+            settings=settings,
+            backend=selected_backend,
+            top_k=settings.retrieval_top_k,
+        )
+    )
+    # Repeat the deterministic fixture run under the same loaded settings so
+    # the report does not call reproducibility from a single observation.
+    repeat_report = asyncio.run(
+        evaluate_phase4(
+            cases,
+            corpus=index,
+            settings=settings,
+            backend=selected_backend,
+            top_k=settings.retrieval_top_k,
+        )
+    )
+    first_signature = report["reproducibility"]["stable_signature"]
+    repeat_signature = stable_phase4_evaluation_signature(repeat_report)
+    reproducible = first_signature == repeat_signature
+    report["reproducibility"] = {
+        "status": "PASS" if reproducible else "FAIL",
+        "run_count": 2,
+        "stable_signature": first_signature,
+        "repeat_stable_signature": repeat_signature,
+        "method": "Two identical executions; timestamps and measured latency are excluded from the signature.",
+    }
+    report["capability_status"]["reproducibility"] = "PASS" if reproducible else "FAIL"
+    real_report = asyncio.run(
+        attempt_real_e2e(
+            settings=settings,
+            corpus=index,
+            backend=selected_backend,
+            output_path=Path(args.real_output),
+        )
+    )
+    report["real_backend_execution"] = real_report
+    real_passed = (
+        real_report.get("embedding_probe", {}).get("status") == "PASS"
+        and real_report.get("generation_probe", {}).get("status") == "PASS"
+    )
+    if real_passed:
+        report["capability_status"]["real_backend_execution"] = "PASS"
+    output_path = Path(args.output_path)
+    markdown_path = write_phase4_evaluation_report(output_path, report)
+    human_reviewed = report.get("capability_status", {}).get("semantic_support") == "PASS"
+    write_phase4_cases_review(Path(args.review_status_output), cases, human_reviewed=human_reviewed)
+    _json_print(
+        {
+            "status": "PASS",
+            "evaluation_completed": True,
+            "output": str(output_path),
+            "markdown_output": str(markdown_path),
+            "claim_review_sheet": report.get("claim_review_sheet"),
+            "review_status_output": str(Path(args.review_status_output)),
+            "real_output": str(Path(args.real_output)),
+            "case_count": report["data_integrity"]["case_count"],
+            "strategies": report["strategies"],
+            "capability_status": report["capability_status"],
+            "real_backend_status": {
+                "embedding": real_report["embedding_probe"]["status"],
+                "generation": real_report["generation_probe"]["status"],
+            },
         }
     )
     return 0
@@ -1575,14 +1791,18 @@ def main(argv: list[str] | None = None) -> int:
             return command_retrieve(args)
         if args.command == "replay":
             return command_replay(args)
+        if args.command == "phase4-replay":
+            return command_phase4_replay(args)
         if args.command == "evaluate":
             return command_evaluate(args)
         if args.command == "evaluate-suite":
             return command_evaluate_suite(args)
         if args.command == "evaluate-streaming":
             return command_evaluate_streaming(args)
-        if args.command == "evaluate-phase3":
+        if args.command in {"evaluate-phase3", "evaluate-phase3-audit"}:
             return command_evaluate_phase3(args)
+        if args.command == "evaluate-phase4":
+            return command_evaluate_phase4(args)
         if args.command == "answer":
             return command_answer(args)
         if args.command == "smoke":
@@ -1593,7 +1813,10 @@ def main(argv: list[str] | None = None) -> int:
         DenseRetrievalUnavailable,
         EmbeddingError,
         EvaluationError,
+        Phase3AuditError,
         Phase3EvaluationError,
+        Phase4Error,
+        Phase4EvaluationError,
         StreamingEvaluationError,
         IngestionError,
         RetrievalError,

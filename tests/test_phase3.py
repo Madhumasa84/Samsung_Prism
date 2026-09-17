@@ -233,6 +233,30 @@ class Phase3Tests(unittest.TestCase):
         )
         self.assertEqual(len(noun_phrase.intents), 1)
 
+    def test_package_conjunction_is_one_information_need(self) -> None:
+        query = "What comes with the standard lunch and drinks package?"
+        plan = decompose_query(query)
+        self.assertEqual(len(plan.intents), 1)
+        self.assertEqual(plan.intents[0].source_span.text, query)
+        self.assertIn("lunch", plan.intents[0].query.casefold())
+        self.assertIn("drinks", plan.intents[0].query.casefold())
+
+    def test_weak_lexical_candidate_stays_out_of_answer_evidence(self) -> None:
+        query = "What is the organiser's registration tax number?"
+        plan = decompose_query(query)
+        candidate = _scripted_hit(
+            "parking",
+            "Synthetic workshop parking information is not specified in the available venue options.",
+        )
+        result = retrieve_multi_intent(
+            plan,
+            ScriptedRetriever("lexical", [candidate]),
+            top_k=5,
+        )
+        self.assertTrue(result.fused_hits)
+        self.assertFalse(result.answer_evidence_hits)
+        self.assertEqual(result.missing_intent_ids, plan.intent_ids)
+
     def test_one_question_preserves_multiple_constraints_and_spans(self) -> None:
         query = (
             "Which Pune venue can host at least 30 attendees and does not allow "

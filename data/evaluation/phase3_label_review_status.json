@@ -1,0 +1,66 @@
+{
+  "schema_version": "flowcontext.phase3-label-review.v1",
+  "asset_status": "synthetic_fixture",
+  "label_source": "local corpus-grounded engineering labels",
+  "review_policy": {
+    "intent_labels": "provisional_generated",
+    "relevance_labels": "provisional_generated",
+    "answer_expectations": "provisional_generated",
+    "semantic_claim_support": "not_evaluated"
+  },
+  "reviewers": {
+    "model_reviewer": null,
+    "human_reviewer": null
+  },
+  "counts": {
+    "cases": 20,
+    "intent_records": 28,
+    "relevant_chunk_labels": 27,
+    "answer_expectation_records": 53,
+    "intent_labels": {
+      "provisional_generated": 20,
+      "model_reviewed": 0,
+      "human_review_pending": 0,
+      "human_reviewed": 0
+    },
+    "relevance_labels": {
+      "provisional_generated": 20,
+      "model_reviewed": 0,
+      "human_review_pending": 0,
+      "human_reviewed": 0
+    },
+    "answer_expectations": {
+      "provisional_generated": 20,
+      "model_reviewed": 0,
+      "human_review_pending": 0,
+      "human_reviewed": 0
+    }
+  },
+  "case_status": {
+    "p3-dev-single-venue-001": "provisional_generated",
+    "p3-dev-single-coordinated-002": "provisional_generated",
+    "p3-dev-independent-003": "provisional_generated",
+    "p3-dev-shared-004": "provisional_generated",
+    "p3-dev-dependent-005": "provisional_generated",
+    "p3-dev-negation-006": "provisional_generated",
+    "p3-dev-comparison-007": "provisional_generated",
+    "p3-dev-partial-008": "provisional_generated",
+    "p3-dev-entity-009": "provisional_generated",
+    "p3-dev-correction-010": "provisional_generated",
+    "p3-dev-retrieval-failure-011": "provisional_generated",
+    "p3-dev-generation-failure-012": "provisional_generated",
+    "p3-dev-unsupported-013": "provisional_generated",
+    "p3-heldout-single-catering-001": "provisional_generated",
+    "p3-heldout-independent-002": "provisional_generated",
+    "p3-heldout-dependent-003": "provisional_generated",
+    "p3-heldout-conflict-004": "provisional_generated",
+    "p3-heldout-decomposer-failure-005": "provisional_generated",
+    "p3-heldout-retrieval-timeout-006": "provisional_generated",
+    "p3-heldout-unsupported-007": "provisional_generated"
+  },
+  "limitations": [
+    "No model reviewer or human reviewer has adjudicated these labels.",
+    "Citation-ID validity is not semantic claim support.",
+    "This asset is not an official benchmark label set."
+  ]
+}

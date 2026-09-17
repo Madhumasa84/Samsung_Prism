@@ -1,0 +1,2093 @@
+{
+  "schema_version": "flowcontext.phase4-real-e2e.v1",
+  "created_at_utc": "2026-09-17T17:27:18.718169+00:00",
+  "configuration": {
+    "app_name": "flowcontext-phase1",
+    "corpus_path": "data/synthetic/documents.jsonl",
+    "transcript_path": "data/synthetic/transcript.jsonl",
+    "evaluation_path": "data/synthetic/evaluation.jsonl",
+    "evaluation_development_path": "data/evaluation/development.jsonl",
+    "evaluation_held_out_path": "data/evaluation/held_out.jsonl",
+    "phase3_evaluation_development_path": "data/evaluation/phase3_development.jsonl",
+    "phase3_evaluation_held_out_path": "data/evaluation/phase3_held_out.jsonl",
+    "streaming_evaluation_development_path": "data/evaluation/streaming_development.jsonl",
+    "streaming_evaluation_held_out_path": "data/evaluation/streaming_held_out.jsonl",
+    "artifacts_dir": "artifacts",
+    "index_path": "artifacts/corpus-index.json",
+    "corpus_status": "synthetic_fixture",
+    "retrieval_backend": "lexical",
+    "retrieval_top_k": 5,
+    "chunk_max_chars": 1200,
+    "chunk_overlap_chars": 0,
+    "model_identity": "baseline.extractive.v1",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "embedding_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "embedding_license": "apache-2.0",
+    "embedding_dimensions": 384,
+    "embedding_model_card_url": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2",
+    "embedding_cache_dir": null,
+    "embedding_local_files_only": false,
+    "generation_backend": "openai_compatible",
+    "generation_provider": "ollama",
+    "generation_model": "qwen2.5:3b",
+    "generation_base_url": "http://localhost:11434/v1",
+    "generation_api_key_env": "FLOWCONTEXT_GENERATION_API_KEY",
+    "generation_timeout_s": 60.0,
+    "generation_max_retries": 2,
+    "generation_retry_backoff_s": 0.5,
+    "generation_max_repair_attempts": 1,
+    "generation_max_output_tokens": 600,
+    "generation_input_price_per_million": null,
+    "generation_output_price_per_million": null,
+    "multi_intent_retrieval_mode": "dense",
+    "multi_intent_context_budget_tokens": 1200,
+    "multi_intent_max_workers": 4,
+    "multi_intent_rrf_k": 60,
+    "multi_intent_reranking_enabled": false,
+    "streaming_debounce_source_s": 0.35,
+    "streaming_min_query_chars": 8,
+    "streaming_min_topic_terms": 1,
+    "streaming_min_new_content_terms": 1,
+    "streaming_retrieve_on_correction": true,
+    "streaming_retrieve_on_constraint_change": true,
+    "streaming_duplicate_query_suppression": true,
+    "streaming_final_bypasses_debounce": true,
+    "streaming_max_concurrency": 2,
+    "streaming_max_pending_requests": 4,
+    "streaming_request_timeout_s": 5.0,
+    "streaming_max_retries": 0,
+    "streaming_retry_backoff_s": 0.05,
+    "streaming_max_total_requests": 16,
+    "streaming_final_wait_timeout_s": 5.0,
+    "streaming_cancel_on_supersession": true,
+    "generation_api_key_configured": true,
+    "asset_status": {
+      "corpus_path": "data/synthetic/documents.jsonl",
+      "corpus_exists": true,
+      "transcript_path": "data/synthetic/transcript.jsonl",
+      "transcript_exists": true,
+      "evaluation_path": "data/synthetic/evaluation.jsonl",
+      "evaluation_exists": true,
+      "evaluation_development_path": "data/evaluation/development.jsonl",
+      "evaluation_development_exists": true,
+      "evaluation_held_out_path": "data/evaluation/held_out.jsonl",
+      "evaluation_held_out_exists": true,
+      "phase3_evaluation_development_path": "data/evaluation/phase3_development.jsonl",
+      "phase3_evaluation_development_exists": true,
+      "phase3_evaluation_held_out_path": "data/evaluation/phase3_held_out.jsonl",
+      "phase3_evaluation_held_out_exists": true,
+      "streaming_evaluation_development_path": "data/evaluation/streaming_development.jsonl",
+      "streaming_evaluation_development_exists": true,
+      "streaming_evaluation_held_out_path": "data/evaluation/streaming_held_out.jsonl",
+      "streaming_evaluation_held_out_exists": true,
+      "artifacts_dir": "artifacts",
+      "index_path": "artifacts/corpus-index.json",
+      "corpus_status": "synthetic_fixture",
+      "retrieval_backend": "lexical",
+      "multi_intent_retrieval_mode": "dense",
+      "multi_intent_context_budget_tokens": 1200,
+      "multi_intent_max_workers": 4,
+      "multi_intent_rrf_k": 60,
+      "multi_intent_reranking_enabled": false,
+      "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+      "embedding_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+      "embedding_license": "apache-2.0",
+      "generation_backend": "openai_compatible",
+      "generation_provider": "ollama",
+      "generation_model": "qwen2.5:3b",
+      "generation_api_key_env": "FLOWCONTEXT_GENERATION_API_KEY",
+      "generation_api_key_configured": true,
+      "generation_timeout_s": 60.0,
+      "generation_max_retries": 2,
+      "generation_max_repair_attempts": 1,
+      "generation_input_price_per_million": null,
+      "generation_output_price_per_million": null,
+      "streaming_debounce_source_s": 0.35,
+      "streaming_min_query_chars": 8,
+      "streaming_min_topic_terms": 1,
+      "streaming_min_new_content_terms": 1,
+      "streaming_retrieve_on_correction": true,
+      "streaming_retrieve_on_constraint_change": true,
+      "streaming_duplicate_query_suppression": true,
+      "streaming_final_bypasses_debounce": true,
+      "streaming_max_concurrency": 2,
+      "streaming_max_pending_requests": 4,
+      "streaming_request_timeout_s": 5.0,
+      "streaming_max_retries": 0,
+      "streaming_retry_backoff_s": 0.05,
+      "streaming_max_total_requests": 16,
+      "streaming_final_wait_timeout_s": 5.0,
+      "streaming_cancel_on_supersession": true
+    },
+    "secret_values_written": false
+  },
+  "corpus": {
+    "corpus_id": "corpus-693ca494c5c17014",
+    "index_id": "index-7e38e300848a2092",
+    "source_kind": "synthetic_fixture",
+    "backend": "lexical",
+    "top_k": 5
+  },
+  "embedding_probe": {
+    "status": "PASS",
+    "model": "sentence-transformers/all-MiniLM-L6-v2",
+    "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "local_files_only": true
+  },
+  "generation_probe": {
+    "status": "PASS",
+    "provider": "ollama",
+    "model": "qwen2.5:3b"
+  },
+  "execution_trace": {
+    "schema_version": "flowcontext.phase4.v1",
+    "session_id": "phase4-real-e2e",
+    "corpus_id": "corpus-693ca494c5c17014",
+    "index_id": "index-7e38e300848a2092",
+    "corpus_source_kind": "synthetic_fixture",
+    "retrieval_backend": "lexical",
+    "generation_execution_mode": "real_provider",
+    "generation_provider": "ollama",
+    "generation_model": "qwen2.5:3b",
+    "run_status": "completed",
+    "steps": [
+      {
+        "turn_index": 0,
+        "utterance_id": "real-u0",
+        "text": "Which Venue B in Pune can host 40 attendees?",
+        "classification": "initial",
+        "patch": null,
+        "plan": null,
+        "publication": {
+          "published": true,
+          "status": "current",
+          "request_id": "generation-c8ff125f898b",
+          "reason": null
+        },
+        "state_revision": 2,
+        "answer_status": "current",
+        "current_answer_version": 1,
+        "current_claim_ids": [
+          "claim-123"
+        ]
+      },
+      {
+        "turn_index": 1,
+        "utterance_id": "real-u1",
+        "text": "Actually, make it 30 attendees.",
+        "classification": "replace_constraint",
+        "patch": {
+          "schema_version": "flowcontext.phase4.v1",
+          "patch_id": "patch-81df5485d654",
+          "session_id": "phase4-real-e2e",
+          "utterance_id": "real-u1",
+          "turn_index": 1,
+          "source_text": "Actually, make it 30 attendees.",
+          "base_revision": 2,
+          "proposed_revision": 3,
+          "transcript_revision": 1,
+          "retrieval_revision": 2,
+          "classification": "replace_constraint",
+          "execution_mode": "rule_based",
+          "provider_identity": "flowcontext.rule_based",
+          "provider_model": "offline-follow-up-v1",
+          "target_intent_ids": [
+            "intent-d0f74e537b"
+          ],
+          "intent_replacements": {
+            "intent-d0f74e537b": "intent-0a5c8091c4"
+          },
+          "added_constraints": [],
+          "replacement_constraints": {
+            "constraint-record-1d8664eac4a6": {
+              "schema_version": "flowcontext.phase4.v1",
+              "record_id": "constraint-record-3b6a7624c064",
+              "constraint": {
+                "constraint_id": "constraint-57c616766472",
+                "kind": "quantity",
+                "value": "30 attendees",
+                "source_span": {
+                  "start": 18,
+                  "end": 30,
+                  "text": "30 attendees"
+                },
+                "operator": "equals",
+                "normalized_value": "30 attendees"
+              },
+              "constraint_id": "constraint-57c616766472",
+              "origin": "user_follow_up",
+              "origin_turn": 1,
+              "origin_utterance_id": "real-u1",
+              "origin_revision": 1,
+              "scope": "intent",
+              "intent_id": "intent-d0f74e537b",
+              "status": "active",
+              "corpus_fact": false,
+              "resolution_source": null
+            }
+          },
+          "removed_constraint_ids": [],
+          "new_intents": [
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "intent": {
+                "intent_id": "intent-0a5c8091c4",
+                "ordinal": 1,
+                "query": "Which Venue B in Pune can host 30 attendees?",
+                "source_text": "Which Venue B in Pune can host 40 attendees?",
+                "source_span": {
+                  "start": 0,
+                  "end": 44,
+                  "text": "Which Venue B in Pune can host 40 attendees?"
+                },
+                "constraints": [
+                  {
+                    "constraint_id": "constraint-2316a229a9",
+                    "kind": "entity",
+                    "value": "Venue B",
+                    "source_span": {
+                      "start": 6,
+                      "end": 13,
+                      "text": "Venue B"
+                    },
+                    "operator": null,
+                    "normalized_value": "venue b"
+                  },
+                  {
+                    "constraint_id": "constraint-f1698e653e",
+                    "kind": "location",
+                    "value": "in Pune",
+                    "source_span": {
+                      "start": 14,
+                      "end": 21,
+                      "text": "in Pune"
+                    },
+                    "operator": null,
+                    "normalized_value": "in pune"
+                  },
+                  {
+                    "constraint_id": "constraint-57c616766472",
+                    "kind": "quantity",
+                    "value": "30 attendees",
+                    "source_span": {
+                      "start": 18,
+                      "end": 30,
+                      "text": "30 attendees"
+                    },
+                    "operator": "equals",
+                    "normalized_value": "30 attendees"
+                  }
+                ],
+                "relationship": "independent"
+              },
+              "origin_turn": 1,
+              "origin_utterance_id": "real-u1",
+              "origin_revision": 1,
+              "topic_key": "venue b pune host 40 attendees",
+              "status": "active"
+            }
+          ],
+          "reference_resolutions": [
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "reference_text": "it",
+              "entity_id": "entity-d10b7e63be",
+              "entity_text": "Venue B",
+              "source_intent_id": "intent-d0f74e537b",
+              "rationale": "Exactly one active entity candidate is available in this session."
+            }
+          ],
+          "topic_key": null,
+          "format_instruction": null,
+          "clarification": null,
+          "decision_trace": [
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "stage": "reference_resolution",
+              "rule": "single_entity_context",
+              "detail": "Context resolved the reference without choosing between multiple entities.",
+              "matched_text": "it",
+              "target_ids": [
+                "entity-d10b7e63be"
+              ]
+            },
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "stage": "target_selection",
+              "rule": "follow_up_target_selection",
+              "detail": "Selected the existing intent(s) that the proposed change addresses.",
+              "matched_text": null,
+              "target_ids": [
+                "intent-d0f74e537b"
+              ]
+            },
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "stage": "classification",
+              "rule": "replace_constraint",
+              "detail": "The new value replaces the matched constraint; the old record remains historical.",
+              "matched_text": "Actually, make it 30 attendees.",
+              "target_ids": [
+                "constraint-record-1d8664eac4a6"
+              ]
+            }
+          ]
+        },
+        "plan": {
+          "schema_version": "flowcontext.phase4.v1",
+          "plan_id": "plan-c91973378757",
+          "session_id": "phase4-real-e2e",
+          "patch_id": "patch-81df5485d654",
+          "base_revision": 2,
+          "candidate_revision": 3,
+          "transcript_revision": 1,
+          "retrieval_revision": 2,
+          "directly_affected_intent_ids": [
+            "intent-d0f74e537b"
+          ],
+          "invalidated_intent_ids": [
+            "intent-d0f74e537b"
+          ],
+          "new_intent_ids": [
+            "intent-0a5c8091c4"
+          ],
+          "affected_entity_ids": [],
+          "invalidated_claim_ids": [
+            "claim-123@v1"
+          ],
+          "preserved_claim_ids": [],
+          "invalidation_reasons": {
+            "claim-123@v1": "claim belongs to a directly changed intent without sufficient evidence"
+          },
+          "invalidated_evidence_ids": [
+            "evidence-2c104fe75edb"
+          ],
+          "reused_evidence_ids": [],
+          "retrieval_intent_ids": [
+            "intent-0a5c8091c4"
+          ],
+          "retrieval_reasons": {
+            "intent-0a5c8091c4": "changed constraint is not structurally covered by current evidence"
+          },
+          "dependency_uncertain": false,
+          "dependency_uncertainty_reasons": [],
+          "discarded_result_ids": [],
+          "retrieval_tasks": [
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "task_id": "task-ba1689059a7b",
+              "session_id": "phase4-real-e2e",
+              "patch_id": "patch-81df5485d654",
+              "candidate_state_revision": 3,
+              "candidate_transcript_revision": 1,
+              "candidate_retrieval_revision": 2,
+              "intent_id": "intent-0a5c8091c4",
+              "query": "Which Venue B in Pune can host 30 attendees?",
+              "reason": "changed constraint is not structurally covered by current evidence",
+              "status": "completed",
+              "scheduler_request_id": "phase4-retrieval-cd53af8d2fce",
+              "attempts": 1,
+              "evidence_ids": [
+                "evidence-targeted-5c3a890b5b2f"
+              ],
+              "discarded_result_ids": [],
+              "error": null
+            }
+          ],
+          "status": "completed",
+          "created_at_utc": "2026-09-17T17:28:44.847631+00:00",
+          "retrieval_usage": {
+            "input_tokens": 9,
+            "output_tokens": 0,
+            "total_tokens": 9,
+            "estimated": true
+          },
+          "retrieval_call_count": 1,
+          "retrieval_attempt_count": 1
+        },
+        "publication": {
+          "published": true,
+          "status": "partial",
+          "request_id": "generation-e8e1d97ac046",
+          "reason": null
+        },
+        "state_revision": 4,
+        "answer_status": "partial",
+        "current_answer_version": 2,
+        "current_claim_ids": [
+          "claim-531f444398b5"
+        ]
+      },
+      {
+        "turn_index": 2,
+        "utterance_id": "real-u2",
+        "text": "Make it two bullets.",
+        "classification": "reformat_answer",
+        "patch": {
+          "schema_version": "flowcontext.phase4.v1",
+          "patch_id": "patch-f2033fb0ae21",
+          "session_id": "phase4-real-e2e",
+          "utterance_id": "real-u2",
+          "turn_index": 2,
+          "source_text": "Make it two bullets.",
+          "base_revision": 4,
+          "proposed_revision": 5,
+          "transcript_revision": 1,
+          "retrieval_revision": 2,
+          "classification": "reformat_answer",
+          "execution_mode": "rule_based",
+          "provider_identity": "flowcontext.rule_based",
+          "provider_model": "offline-follow-up-v1",
+          "target_intent_ids": [],
+          "intent_replacements": {},
+          "added_constraints": [],
+          "replacement_constraints": {},
+          "removed_constraint_ids": [],
+          "new_intents": [],
+          "reference_resolutions": [],
+          "topic_key": null,
+          "format_instruction": "bullets:2",
+          "clarification": null,
+          "decision_trace": [
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "stage": "classification",
+              "rule": "format_request",
+              "detail": "The turn requests a presentation change and names no semantic corpus change.",
+              "matched_text": "Make it two bullets.",
+              "target_ids": []
+            }
+          ]
+        },
+        "plan": null,
+        "publication": {
+          "published": true,
+          "status": "current",
+          "request_id": "presentation-d5f95ea64517",
+          "reason": null
+        },
+        "state_revision": 6,
+        "answer_status": "current",
+        "current_answer_version": 3,
+        "current_claim_ids": [
+          "claim-531f444398b5"
+        ]
+      }
+    ],
+    "state": {
+      "schema_version": "flowcontext.phase4.v1",
+      "session_id": "phase4-real-e2e",
+      "active_topic": "venue b pune host 40 attendees",
+      "active_task": "Which Venue B in Pune can host 40 attendees? Actually, make it 30 attendees.",
+      "current_utterance_id": "real-u1",
+      "transcript_revision": 1,
+      "state_revision": 6,
+      "retrieval_revision": 2,
+      "corpus_id": "corpus-693ca494c5c17014",
+      "index_id": "index-7e38e300848a2092",
+      "active_intents": [
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "intent": {
+            "intent_id": "intent-0a5c8091c4",
+            "ordinal": 1,
+            "query": "Which Venue B in Pune can host 30 attendees?",
+            "source_text": "Which Venue B in Pune can host 40 attendees?",
+            "source_span": {
+              "start": 0,
+              "end": 44,
+              "text": "Which Venue B in Pune can host 40 attendees?"
+            },
+            "constraints": [
+              {
+                "constraint_id": "constraint-2316a229a9",
+                "kind": "entity",
+                "value": "Venue B",
+                "source_span": {
+                  "start": 6,
+                  "end": 13,
+                  "text": "Venue B"
+                },
+                "operator": null,
+                "normalized_value": "venue b"
+              },
+              {
+                "constraint_id": "constraint-f1698e653e",
+                "kind": "location",
+                "value": "in Pune",
+                "source_span": {
+                  "start": 14,
+                  "end": 21,
+                  "text": "in Pune"
+                },
+                "operator": null,
+                "normalized_value": "in pune"
+              },
+              {
+                "constraint_id": "constraint-57c616766472",
+                "kind": "quantity",
+                "value": "30 attendees",
+                "source_span": {
+                  "start": 18,
+                  "end": 30,
+                  "text": "30 attendees"
+                },
+                "operator": "equals",
+                "normalized_value": "30 attendees"
+              }
+            ],
+            "relationship": "independent"
+          },
+          "origin_turn": 1,
+          "origin_utterance_id": "real-u1",
+          "origin_revision": 1,
+          "topic_key": "venue b pune host 40 attendees",
+          "status": "active"
+        }
+      ],
+      "intent_history": [
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "intent": {
+            "intent_id": "intent-d0f74e537b",
+            "ordinal": 1,
+            "query": "Which Venue B in Pune can host 40 attendees?",
+            "source_text": "Which Venue B in Pune can host 40 attendees?",
+            "source_span": {
+              "start": 0,
+              "end": 44,
+              "text": "Which Venue B in Pune can host 40 attendees?"
+            },
+            "constraints": [
+              {
+                "constraint_id": "constraint-2316a229a9",
+                "kind": "entity",
+                "value": "Venue B",
+                "source_span": {
+                  "start": 6,
+                  "end": 13,
+                  "text": "Venue B"
+                },
+                "operator": null,
+                "normalized_value": "venue b"
+              },
+              {
+                "constraint_id": "constraint-f1698e653e",
+                "kind": "location",
+                "value": "in Pune",
+                "source_span": {
+                  "start": 14,
+                  "end": 21,
+                  "text": "in Pune"
+                },
+                "operator": null,
+                "normalized_value": "in pune"
+              },
+              {
+                "constraint_id": "constraint-3907f4810b",
+                "kind": "quantity",
+                "value": "40 attendees",
+                "source_span": {
+                  "start": 31,
+                  "end": 43,
+                  "text": "40 attendees"
+                },
+                "operator": "equals",
+                "normalized_value": "40 attendees"
+              }
+            ],
+            "relationship": "independent"
+          },
+          "origin_turn": 0,
+          "origin_utterance_id": "real-u0",
+          "origin_revision": 0,
+          "topic_key": "venue b pune host 40 attendees",
+          "status": "superseded"
+        }
+      ],
+      "constraint_records": [
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "record_id": "constraint-record-0782c62de89c",
+          "constraint": {
+            "constraint_id": "constraint-2316a229a9",
+            "kind": "entity",
+            "value": "Venue B",
+            "source_span": {
+              "start": 6,
+              "end": 13,
+              "text": "Venue B"
+            },
+            "operator": null,
+            "normalized_value": "venue b"
+          },
+          "constraint_id": "constraint-2316a229a9",
+          "origin": "user_initial",
+          "origin_turn": 0,
+          "origin_utterance_id": "real-u0",
+          "origin_revision": 0,
+          "scope": "intent",
+          "intent_id": "intent-d0f74e537b",
+          "status": "superseded",
+          "corpus_fact": false,
+          "resolution_source": null
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "record_id": "constraint-record-f79cb7b34776",
+          "constraint": {
+            "constraint_id": "constraint-f1698e653e",
+            "kind": "location",
+            "value": "in Pune",
+            "source_span": {
+              "start": 14,
+              "end": 21,
+              "text": "in Pune"
+            },
+            "operator": null,
+            "normalized_value": "in pune"
+          },
+          "constraint_id": "constraint-f1698e653e",
+          "origin": "user_initial",
+          "origin_turn": 0,
+          "origin_utterance_id": "real-u0",
+          "origin_revision": 0,
+          "scope": "intent",
+          "intent_id": "intent-d0f74e537b",
+          "status": "superseded",
+          "corpus_fact": false,
+          "resolution_source": null
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "record_id": "constraint-record-1d8664eac4a6",
+          "constraint": {
+            "constraint_id": "constraint-3907f4810b",
+            "kind": "quantity",
+            "value": "40 attendees",
+            "source_span": {
+              "start": 31,
+              "end": 43,
+              "text": "40 attendees"
+            },
+            "operator": "equals",
+            "normalized_value": "40 attendees"
+          },
+          "constraint_id": "constraint-3907f4810b",
+          "origin": "user_initial",
+          "origin_turn": 0,
+          "origin_utterance_id": "real-u0",
+          "origin_revision": 0,
+          "scope": "intent",
+          "intent_id": "intent-d0f74e537b",
+          "status": "superseded",
+          "corpus_fact": false,
+          "resolution_source": null
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "record_id": "constraint-record-0782c62de89c@intent-0a5c8091c4",
+          "constraint": {
+            "constraint_id": "constraint-2316a229a9",
+            "kind": "entity",
+            "value": "Venue B",
+            "source_span": {
+              "start": 6,
+              "end": 13,
+              "text": "Venue B"
+            },
+            "operator": null,
+            "normalized_value": "venue b"
+          },
+          "constraint_id": "constraint-2316a229a9",
+          "origin": "user_initial",
+          "origin_turn": 0,
+          "origin_utterance_id": "real-u0",
+          "origin_revision": 0,
+          "scope": "intent",
+          "intent_id": "intent-0a5c8091c4",
+          "status": "active",
+          "corpus_fact": false,
+          "resolution_source": null
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "record_id": "constraint-record-f79cb7b34776@intent-0a5c8091c4",
+          "constraint": {
+            "constraint_id": "constraint-f1698e653e",
+            "kind": "location",
+            "value": "in Pune",
+            "source_span": {
+              "start": 14,
+              "end": 21,
+              "text": "in Pune"
+            },
+            "operator": null,
+            "normalized_value": "in pune"
+          },
+          "constraint_id": "constraint-f1698e653e",
+          "origin": "user_initial",
+          "origin_turn": 0,
+          "origin_utterance_id": "real-u0",
+          "origin_revision": 0,
+          "scope": "intent",
+          "intent_id": "intent-0a5c8091c4",
+          "status": "active",
+          "corpus_fact": false,
+          "resolution_source": null
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "record_id": "constraint-record-3b6a7624c064",
+          "constraint": {
+            "constraint_id": "constraint-57c616766472",
+            "kind": "quantity",
+            "value": "30 attendees",
+            "source_span": {
+              "start": 18,
+              "end": 30,
+              "text": "30 attendees"
+            },
+            "operator": "equals",
+            "normalized_value": "30 attendees"
+          },
+          "constraint_id": "constraint-57c616766472",
+          "origin": "user_follow_up",
+          "origin_turn": 1,
+          "origin_utterance_id": "real-u1",
+          "origin_revision": 1,
+          "scope": "intent",
+          "intent_id": "intent-0a5c8091c4",
+          "status": "active",
+          "corpus_fact": false,
+          "resolution_source": null
+        }
+      ],
+      "current_constraint_record_ids": [
+        "constraint-record-0782c62de89c@intent-0a5c8091c4",
+        "constraint-record-f79cb7b34776@intent-0a5c8091c4",
+        "constraint-record-3b6a7624c064"
+      ],
+      "evidence_records": [
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "evidence_id": "evidence-2c104fe75edb",
+          "passage": {
+            "schema_version": "flowcontext.phase1.v1",
+            "chunk_id": "synthetic.venue-options#chunk-0001",
+            "source_location": "synthetic://flowcontext/venue-options",
+            "text": "Venue B in Pune accommodates up to 40 attendees and includes a projector. Venue B can also accommodate a 30-attendee meeting. Availability must be confirmed separately.",
+            "rank": 1,
+            "score": 0.75,
+            "retrieval_method": "lexical_overlap",
+            "intent_id": "intent-d0f74e537b",
+            "intent_ids": [
+              "intent-d0f74e537b"
+            ],
+            "intent_ranks": {},
+            "intent_scores": {},
+            "rrf_score": null,
+            "metadata": {
+              "fixture_only": true,
+              "source_origin": "available_synthetic_fixture"
+            }
+          },
+          "session_id": "phase4-real-e2e",
+          "utterance_id": "real-u0",
+          "transcript_revision": 0,
+          "retrieval_revision": 1,
+          "corpus_id": "corpus-693ca494c5c17014",
+          "index_id": "index-7e38e300848a2092",
+          "intent_ids": [
+            "intent-d0f74e537b"
+          ],
+          "dependency_ids": [],
+          "status": "superseded",
+          "reused_from_evidence_id": null,
+          "reuse_reason": null
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "evidence_id": "evidence-targeted-5c3a890b5b2f",
+          "passage": {
+            "schema_version": "flowcontext.phase1.v1",
+            "chunk_id": "synthetic.venue-options#chunk-0001",
+            "source_location": "synthetic://flowcontext/venue-options",
+            "text": "Venue B in Pune accommodates up to 40 attendees and includes a projector. Venue B can also accommodate a 30-attendee meeting. Availability must be confirmed separately.",
+            "rank": 1,
+            "score": 0.75,
+            "retrieval_method": "lexical_overlap",
+            "intent_id": "intent-0a5c8091c4",
+            "intent_ids": [
+              "intent-0a5c8091c4"
+            ],
+            "intent_ranks": {},
+            "intent_scores": {},
+            "rrf_score": null,
+            "metadata": {
+              "scheduler_request_id": "phase4-retrieval-cd53af8d2fce"
+            }
+          },
+          "session_id": "phase4-real-e2e",
+          "utterance_id": "real-u1",
+          "transcript_revision": 1,
+          "retrieval_revision": 2,
+          "corpus_id": "corpus-693ca494c5c17014",
+          "index_id": "index-7e38e300848a2092",
+          "intent_ids": [
+            "intent-0a5c8091c4"
+          ],
+          "dependency_ids": [
+            "constraint-record-0782c62de89c@intent-0a5c8091c4",
+            "constraint-record-f79cb7b34776@intent-0a5c8091c4",
+            "constraint-record-3b6a7624c064"
+          ],
+          "status": "current",
+          "reused_from_evidence_id": null,
+          "reuse_reason": null
+        }
+      ],
+      "claim_records": [
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "record_id": "claim-123@v1",
+          "claim": {
+            "schema_version": "flowcontext.phase1.v1",
+            "claim_id": "claim-123",
+            "claim_text": "Venue B in Pune accommodates up to 40 attendees and includes a projector.",
+            "supporting_chunk_ids": [
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "intent_id": "intent-d0f74e537b",
+            "intent_ids": [
+              "intent-d0f74e537b"
+            ],
+            "supporting_excerpts": [],
+            "supporting_spans": [],
+            "semantic_support": "supported"
+          },
+          "claim_id": "claim-123",
+          "answer_version": 1,
+          "intent_ids": [
+            "intent-d0f74e537b"
+          ],
+          "supporting_evidence_ids": [
+            "evidence-2c104fe75edb"
+          ],
+          "dependencies": [
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "dependency_id": "dependency-f7e70aadd002",
+              "dependency_type": "evidence",
+              "target_id": "evidence-2c104fe75edb",
+              "relation": "supports",
+              "target_value": null
+            },
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "dependency_id": "dependency-56b348e23417",
+              "dependency_type": "entity",
+              "target_id": "constraint-record-0782c62de89c",
+              "relation": "depends_on",
+              "target_value": "Venue B"
+            },
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "dependency_id": "dependency-c6d34d408d0d",
+              "dependency_type": "constraint",
+              "target_id": "constraint-record-f79cb7b34776",
+              "relation": "depends_on",
+              "target_value": "in Pune"
+            },
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "dependency_id": "dependency-32e9be3b38d1",
+              "dependency_type": "constraint",
+              "target_id": "constraint-record-1d8664eac4a6",
+              "relation": "depends_on",
+              "target_value": "40 attendees"
+            }
+          ],
+          "claim_revision": 2,
+          "semantic_support_status": "supported",
+          "status": "superseded"
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "record_id": "claim-531f444398b5@v2",
+          "claim": {
+            "schema_version": "flowcontext.phase1.v1",
+            "claim_id": "claim-531f444398b5",
+            "claim_text": "Venue B in Pune can host 30 attendees and includes a projector.",
+            "supporting_chunk_ids": [
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "intent_id": "intent-0a5c8091c4",
+            "intent_ids": [
+              "intent-0a5c8091c4"
+            ],
+            "supporting_excerpts": [],
+            "supporting_spans": [],
+            "semantic_support": "supported"
+          },
+          "claim_id": "claim-531f444398b5",
+          "answer_version": 2,
+          "intent_ids": [
+            "intent-0a5c8091c4"
+          ],
+          "supporting_evidence_ids": [
+            "evidence-targeted-5c3a890b5b2f"
+          ],
+          "dependencies": [
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "dependency_id": "dependency-9daae8e47366",
+              "dependency_type": "evidence",
+              "target_id": "evidence-targeted-5c3a890b5b2f",
+              "relation": "supports",
+              "target_value": null
+            },
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "dependency_id": "dependency-06a4e04f3209",
+              "dependency_type": "entity",
+              "target_id": "constraint-record-0782c62de89c@intent-0a5c8091c4",
+              "relation": "depends_on",
+              "target_value": "Venue B"
+            },
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "dependency_id": "dependency-dd5c9b9749b4",
+              "dependency_type": "constraint",
+              "target_id": "constraint-record-f79cb7b34776@intent-0a5c8091c4",
+              "relation": "depends_on",
+              "target_value": "in Pune"
+            },
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "dependency_id": "dependency-5c3221e5ce0f",
+              "dependency_type": "constraint",
+              "target_id": "constraint-record-3b6a7624c064",
+              "relation": "depends_on",
+              "target_value": "30 attendees"
+            }
+          ],
+          "claim_revision": 4,
+          "semantic_support_status": "supported",
+          "status": "non_current"
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "record_id": "claim-531f444398b5@v3",
+          "claim": {
+            "schema_version": "flowcontext.phase1.v1",
+            "claim_id": "claim-531f444398b5",
+            "claim_text": "Venue B in Pune can host 30 attendees and includes a projector.",
+            "supporting_chunk_ids": [
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "intent_id": "intent-0a5c8091c4",
+            "intent_ids": [
+              "intent-0a5c8091c4"
+            ],
+            "supporting_excerpts": [],
+            "supporting_spans": [],
+            "semantic_support": "supported"
+          },
+          "claim_id": "claim-531f444398b5",
+          "answer_version": 3,
+          "intent_ids": [
+            "intent-0a5c8091c4"
+          ],
+          "supporting_evidence_ids": [
+            "evidence-targeted-5c3a890b5b2f"
+          ],
+          "dependencies": [
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "dependency_id": "dependency-9daae8e47366",
+              "dependency_type": "evidence",
+              "target_id": "evidence-targeted-5c3a890b5b2f",
+              "relation": "supports",
+              "target_value": null
+            },
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "dependency_id": "dependency-06a4e04f3209",
+              "dependency_type": "entity",
+              "target_id": "constraint-record-0782c62de89c@intent-0a5c8091c4",
+              "relation": "depends_on",
+              "target_value": "Venue B"
+            },
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "dependency_id": "dependency-dd5c9b9749b4",
+              "dependency_type": "constraint",
+              "target_id": "constraint-record-f79cb7b34776@intent-0a5c8091c4",
+              "relation": "depends_on",
+              "target_value": "in Pune"
+            },
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "dependency_id": "dependency-5c3221e5ce0f",
+              "dependency_type": "constraint",
+              "target_id": "constraint-record-3b6a7624c064",
+              "relation": "depends_on",
+              "target_value": "30 attendees"
+            }
+          ],
+          "claim_revision": 6,
+          "semantic_support_status": "supported",
+          "status": "current"
+        }
+      ],
+      "answer_versions": [
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "answer_version": 1,
+          "answer": {
+            "schema_version": "flowcontext.phase1.v1",
+            "answer_text": "For \"Which Venue B in Pune can host 40 attendees?\": Venue B in Pune accommodates up to 40 attendees and includes a projector. [synthetic.venue-options#chunk-0001]",
+            "factual_claims": [
+              {
+                "schema_version": "flowcontext.phase1.v1",
+                "claim_id": "claim-123",
+                "claim_text": "Venue B in Pune accommodates up to 40 attendees and includes a projector.",
+                "supporting_chunk_ids": [
+                  "synthetic.venue-options#chunk-0001"
+                ],
+                "intent_id": "intent-d0f74e537b",
+                "intent_ids": [
+                  "intent-d0f74e537b"
+                ],
+                "supporting_excerpts": [],
+                "supporting_spans": [],
+                "semantic_support": "supported"
+              }
+            ],
+            "uncertainty": "The passage is certain about the venue's capacity but does not provide information on other potential venues or confirm availability separately. Citation IDs were validated against the supplied passages; semantic claim support was not independently evaluated. Automated verification (flowcontext.verifier.rule-v1) was performed; automated verification does not guarantee ground truth.",
+            "answer_version": 1,
+            "intent_statuses": [
+              {
+                "schema_version": "flowcontext.phase3.v1",
+                "intent_id": "intent-d0f74e537b",
+                "status": "answered",
+                "reason": "Previously validated claim preserved while another intent was reassessed.",
+                "addressed_by_claim_ids": [
+                  "claim-123"
+                ]
+              }
+            ],
+            "verification_audit": {
+              "verifier_model": "flowcontext.verifier.rule-v1",
+              "verification_latency_ms": 0.07943099626572803,
+              "verification_limitations": "Deterministic rule-based verifier. Evaluates entity alignment, contradiction signals, and token overlap. Automated verification does not guarantee ground truth.",
+              "verdicts": [
+                {
+                  "schema_version": "flowcontext.phase3.v1",
+                  "claim_id": "claim-123",
+                  "verdict": "supported",
+                  "reason": "Passage text provides lexical and proposition support.",
+                  "cited_chunk_ids": [
+                    "synthetic.venue-options#chunk-0001"
+                  ],
+                  "cross_entity_violation": false,
+                  "contradiction_detected": false
+                }
+              ],
+              "evidence_filter_decisions": [
+                {
+                  "chunk_id": "synthetic.venue-options#chunk-0001",
+                  "selected": true,
+                  "qualified_intent_ids": [
+                    "intent-d0f74e537b"
+                  ],
+                  "alignment": {
+                    "intent-d0f74e537b": {
+                      "aligned": true,
+                      "query_terms": [
+                        "40",
+                        "attende",
+                        "b",
+                        "host",
+                        "pune",
+                        "venue"
+                      ],
+                      "passage_terms": [
+                        "30",
+                        "40",
+                        "accommodat",
+                        "accommodate",
+                        "also",
+                        "attende",
+                        "attendee",
+                        "availability",
+                        "b",
+                        "confirm",
+                        "meet",
+                        "must",
+                        "projector",
+                        "pune",
+                        "separately",
+                        "up",
+                        "venue"
+                      ],
+                      "matched_terms": [
+                        "40",
+                        "attende",
+                        "b",
+                        "pune",
+                        "venue"
+                      ],
+                      "coverage": 0.8333333333333334,
+                      "missing_constraints": [],
+                      "reason": "passage covers multiple answer-bearing query concepts",
+                      "retrieval_score_used": false,
+                      "citation_validity_used": false,
+                      "semantic_support": "not_evaluated",
+                      "cross_entity_compatible": true
+                    }
+                  },
+                  "semantic_support": "not_evaluated"
+                }
+              ],
+              "provenance_verified": true,
+              "provenance_caveat": "Exact excerpt matching proves provenance, not semantic support."
+            }
+          },
+          "claim_record_ids": [
+            "claim-123@v1"
+          ],
+          "state_revision": 2,
+          "created_at_utc": "2026-09-17T17:28:44.844701+00:00",
+          "immutable": true,
+          "parent_version": null,
+          "triggering_turn": 0,
+          "triggering_utterance_id": "real-u0",
+          "triggering_patch_id": null,
+          "change_kind": "initial",
+          "constraint_change_ids": [],
+          "evidence_added_ids": [
+            "evidence-2c104fe75edb"
+          ],
+          "evidence_removed_ids": [],
+          "reused_evidence_ids": [],
+          "claim_changes": [
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "change_type": "added",
+              "claim_id": "claim-123",
+              "previous_claim_id": null,
+              "current_claim_id": "claim-123",
+              "previous_record_id": null,
+              "current_record_id": "claim-123@v1",
+              "reason": "newly supported or reassessed information need"
+            }
+          ],
+          "retrieval_usage": {
+            "input_tokens": 9,
+            "output_tokens": 0,
+            "total_tokens": 9,
+            "estimated": true
+          },
+          "generation_usage": {
+            "input_tokens": 1050,
+            "output_tokens": 149,
+            "total_tokens": 1199,
+            "estimated": true
+          },
+          "presentation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "retrieval_call_count": 1,
+          "retrieval_attempt_count": 1,
+          "generation_attempts": 2,
+          "generation_repair_attempts": 0,
+          "retrieval_model_identity": "flowcontext.phase4.replay.retriever",
+          "generation_execution_mode": "real_provider",
+          "generation_provider": "ollama",
+          "generation_model": "qwen2.5:3b",
+          "presentation_execution_mode": "rule_based",
+          "presentation_provider": "flowcontext.rule_based",
+          "status": "completed",
+          "failure_reason": null,
+          "unresolved_intent_ids": [],
+          "unresolved_questions": []
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "answer_version": 2,
+          "answer": {
+            "schema_version": "flowcontext.phase1.v1",
+            "answer_text": "For \"Which Venue B in Pune can host 30 attendees?\": The configured corpus contains insufficient evidence to answer.",
+            "factual_claims": [
+              {
+                "schema_version": "flowcontext.phase1.v1",
+                "claim_id": "claim-531f444398b5",
+                "claim_text": "Venue B in Pune can host 30 attendees and includes a projector.",
+                "supporting_chunk_ids": [
+                  "synthetic.venue-options#chunk-0001"
+                ],
+                "intent_id": "intent-0a5c8091c4",
+                "intent_ids": [
+                  "intent-0a5c8091c4"
+                ],
+                "supporting_excerpts": [],
+                "supporting_spans": [],
+                "semantic_support": "supported"
+              }
+            ],
+            "uncertainty": "The passage is certain about the capacity of Venue B but does not provide information about other features such as projector availability. Citation IDs were validated against the supplied passages; semantic claim support was not independently evaluated. Automated verification (flowcontext.verifier.rule-v1) was performed; automated verification does not guarantee ground truth. Unresolved information needs: Which Venue B in Pune can host 30 attendees?.",
+            "answer_version": 2,
+            "intent_statuses": [
+              {
+                "schema_version": "flowcontext.phase3.v1",
+                "intent_id": "intent-0a5c8091c4",
+                "status": "insufficient_evidence",
+                "reason": "No verified evidence or supported claims for this sub-question.",
+                "addressed_by_claim_ids": [
+                  "claim-531f444398b5"
+                ]
+              }
+            ],
+            "verification_audit": {
+              "verifier_model": "flowcontext.verifier.rule-v1",
+              "verification_latency_ms": 0.1177079975605011,
+              "verification_limitations": "Deterministic rule-based verifier. Evaluates entity alignment, contradiction signals, and token overlap. Automated verification does not guarantee ground truth.",
+              "verdicts": [
+                {
+                  "schema_version": "flowcontext.phase3.v1",
+                  "claim_id": "claim-123",
+                  "verdict": "supported",
+                  "reason": "Passage text provides lexical and proposition support.",
+                  "cited_chunk_ids": [
+                    "synthetic.venue-options#chunk-0001"
+                  ],
+                  "cross_entity_violation": false,
+                  "contradiction_detected": false
+                }
+              ],
+              "evidence_filter_decisions": [
+                {
+                  "chunk_id": "synthetic.venue-options#chunk-0001",
+                  "selected": true,
+                  "qualified_intent_ids": [
+                    "intent-0a5c8091c4"
+                  ],
+                  "alignment": {
+                    "intent-0a5c8091c4": {
+                      "aligned": true,
+                      "query_terms": [
+                        "30",
+                        "attende",
+                        "b",
+                        "host",
+                        "pune",
+                        "venue"
+                      ],
+                      "passage_terms": [
+                        "30",
+                        "40",
+                        "accommodat",
+                        "accommodate",
+                        "also",
+                        "attende",
+                        "attendee",
+                        "availability",
+                        "b",
+                        "confirm",
+                        "meet",
+                        "must",
+                        "projector",
+                        "pune",
+                        "separately",
+                        "up",
+                        "venue"
+                      ],
+                      "matched_terms": [
+                        "30",
+                        "attende",
+                        "b",
+                        "pune",
+                        "venue"
+                      ],
+                      "coverage": 0.8333333333333334,
+                      "missing_constraints": [],
+                      "reason": "passage covers multiple answer-bearing query concepts",
+                      "retrieval_score_used": false,
+                      "citation_validity_used": false,
+                      "semantic_support": "not_evaluated",
+                      "cross_entity_compatible": true
+                    }
+                  },
+                  "semantic_support": "not_evaluated"
+                }
+              ],
+              "provenance_verified": true,
+              "provenance_caveat": "Exact excerpt matching proves provenance, not semantic support."
+            }
+          },
+          "claim_record_ids": [
+            "claim-531f444398b5@v2"
+          ],
+          "state_revision": 4,
+          "created_at_utc": "2026-09-17T17:29:34.277048+00:00",
+          "immutable": true,
+          "parent_version": 1,
+          "triggering_turn": 1,
+          "triggering_utterance_id": "real-u1",
+          "triggering_patch_id": "patch-81df5485d654",
+          "change_kind": "factual_update",
+          "constraint_change_ids": [],
+          "evidence_added_ids": [
+            "evidence-targeted-5c3a890b5b2f"
+          ],
+          "evidence_removed_ids": [
+            "evidence-2c104fe75edb"
+          ],
+          "reused_evidence_ids": [],
+          "claim_changes": [
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "change_type": "modified",
+              "claim_id": "claim-531f444398b5",
+              "previous_claim_id": "claim-123",
+              "current_claim_id": "claim-531f444398b5",
+              "previous_record_id": "claim-123@v1",
+              "current_record_id": "claim-531f444398b5@v2",
+              "reason": "claim content, intent, or corpus support changed"
+            }
+          ],
+          "retrieval_usage": {
+            "input_tokens": 9,
+            "output_tokens": 0,
+            "total_tokens": 9,
+            "estimated": true
+          },
+          "generation_usage": {
+            "input_tokens": 1066,
+            "output_tokens": 145,
+            "total_tokens": 1211,
+            "estimated": true
+          },
+          "presentation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "retrieval_call_count": 1,
+          "retrieval_attempt_count": 1,
+          "generation_attempts": 1,
+          "generation_repair_attempts": 0,
+          "retrieval_model_identity": "flowcontext.phase4.selective-retriever",
+          "generation_execution_mode": "real_provider",
+          "generation_provider": "ollama",
+          "generation_model": "qwen2.5:3b",
+          "presentation_execution_mode": "rule_based",
+          "presentation_provider": "flowcontext.rule_based",
+          "status": "partial",
+          "failure_reason": null,
+          "unresolved_intent_ids": [
+            "intent-0a5c8091c4"
+          ],
+          "unresolved_questions": [
+            "Which Venue B in Pune can host 30 attendees?"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "answer_version": 3,
+          "answer": {
+            "schema_version": "flowcontext.phase1.v1",
+            "answer_text": "- Venue B in Pune can host 30 attendees and includes a projector. [synthetic.venue-options#chunk-0001]\n\nUncertainty: The passage is certain about the capacity of Venue B but does not provide information about other features such as projector availability. Citation IDs were validated against the supplied passages; semantic claim support was not independently evaluated. Automated verification (flowcontext.verifier.rule-v1) was performed; automated verification does not guarantee ground truth. Unresolved information needs: Which Venue B in Pune can host 30 attendees?.",
+            "factual_claims": [
+              {
+                "schema_version": "flowcontext.phase1.v1",
+                "claim_id": "claim-531f444398b5",
+                "claim_text": "Venue B in Pune can host 30 attendees and includes a projector.",
+                "supporting_chunk_ids": [
+                  "synthetic.venue-options#chunk-0001"
+                ],
+                "intent_id": "intent-0a5c8091c4",
+                "intent_ids": [
+                  "intent-0a5c8091c4"
+                ],
+                "supporting_excerpts": [],
+                "supporting_spans": [],
+                "semantic_support": "supported"
+              }
+            ],
+            "uncertainty": "The passage is certain about the capacity of Venue B but does not provide information about other features such as projector availability. Citation IDs were validated against the supplied passages; semantic claim support was not independently evaluated. Automated verification (flowcontext.verifier.rule-v1) was performed; automated verification does not guarantee ground truth. Unresolved information needs: Which Venue B in Pune can host 30 attendees?. Unresolved information needs: Which Venue B in Pune can host 30 attendees?.",
+            "answer_version": 3,
+            "intent_statuses": [
+              {
+                "schema_version": "flowcontext.phase3.v1",
+                "intent_id": "intent-0a5c8091c4",
+                "status": "insufficient_evidence",
+                "reason": "No verified evidence or supported claims for this sub-question.",
+                "addressed_by_claim_ids": [
+                  "claim-531f444398b5"
+                ]
+              }
+            ],
+            "verification_audit": {
+              "verifier_model": "flowcontext.verifier.rule-v1",
+              "verification_latency_ms": 0.1177079975605011,
+              "verification_limitations": "Deterministic rule-based verifier. Evaluates entity alignment, contradiction signals, and token overlap. Automated verification does not guarantee ground truth.",
+              "verdicts": [
+                {
+                  "schema_version": "flowcontext.phase3.v1",
+                  "claim_id": "claim-123",
+                  "verdict": "supported",
+                  "reason": "Passage text provides lexical and proposition support.",
+                  "cited_chunk_ids": [
+                    "synthetic.venue-options#chunk-0001"
+                  ],
+                  "cross_entity_violation": false,
+                  "contradiction_detected": false
+                }
+              ],
+              "evidence_filter_decisions": [
+                {
+                  "chunk_id": "synthetic.venue-options#chunk-0001",
+                  "selected": true,
+                  "qualified_intent_ids": [
+                    "intent-0a5c8091c4"
+                  ],
+                  "alignment": {
+                    "intent-0a5c8091c4": {
+                      "aligned": true,
+                      "query_terms": [
+                        "30",
+                        "attende",
+                        "b",
+                        "host",
+                        "pune",
+                        "venue"
+                      ],
+                      "passage_terms": [
+                        "30",
+                        "40",
+                        "accommodat",
+                        "accommodate",
+                        "also",
+                        "attende",
+                        "attendee",
+                        "availability",
+                        "b",
+                        "confirm",
+                        "meet",
+                        "must",
+                        "projector",
+                        "pune",
+                        "separately",
+                        "up",
+                        "venue"
+                      ],
+                      "matched_terms": [
+                        "30",
+                        "attende",
+                        "b",
+                        "pune",
+                        "venue"
+                      ],
+                      "coverage": 0.8333333333333334,
+                      "missing_constraints": [],
+                      "reason": "passage covers multiple answer-bearing query concepts",
+                      "retrieval_score_used": false,
+                      "citation_validity_used": false,
+                      "semantic_support": "not_evaluated",
+                      "cross_entity_compatible": true
+                    }
+                  },
+                  "semantic_support": "not_evaluated"
+                }
+              ],
+              "provenance_verified": true,
+              "provenance_caveat": "Exact excerpt matching proves provenance, not semantic support."
+            }
+          },
+          "claim_record_ids": [
+            "claim-531f444398b5@v3"
+          ],
+          "state_revision": 6,
+          "created_at_utc": "2026-09-17T17:29:34.301183+00:00",
+          "immutable": true,
+          "parent_version": 2,
+          "triggering_turn": 2,
+          "triggering_utterance_id": "real-u2",
+          "triggering_patch_id": "patch-f2033fb0ae21",
+          "change_kind": "presentation",
+          "constraint_change_ids": [],
+          "evidence_added_ids": [],
+          "evidence_removed_ids": [],
+          "reused_evidence_ids": [],
+          "claim_changes": [
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "change_type": "preserved",
+              "claim_id": "claim-531f444398b5",
+              "previous_claim_id": "claim-531f444398b5",
+              "current_claim_id": "claim-531f444398b5",
+              "previous_record_id": "claim-531f444398b5@v2",
+              "current_record_id": "claim-531f444398b5@v3",
+              "reason": "claim content and corpus support remained compatible"
+            }
+          ],
+          "retrieval_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "generation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "presentation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "retrieval_call_count": 0,
+          "retrieval_attempt_count": 0,
+          "generation_attempts": 0,
+          "generation_repair_attempts": 0,
+          "retrieval_model_identity": "flowcontext.phase4.selective-retriever",
+          "generation_execution_mode": "rule_based",
+          "generation_provider": "flowcontext.presentation",
+          "generation_model": "none",
+          "presentation_execution_mode": "rule_based",
+          "presentation_provider": "flowcontext.presentation",
+          "status": "completed",
+          "failure_reason": null,
+          "unresolved_intent_ids": [
+            "intent-0a5c8091c4"
+          ],
+          "unresolved_questions": [
+            "Which Venue B in Pune can host 30 attendees?"
+          ]
+        }
+      ],
+      "current_answer_version": 3,
+      "current_evidence_ids": [
+        "evidence-targeted-5c3a890b5b2f"
+      ],
+      "current_claim_record_ids": [
+        "claim-531f444398b5@v3"
+      ],
+      "pending_clarification": null,
+      "pending_update": null,
+      "pending_requests": [
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "request_id": "generation-c8ff125f898b",
+          "kind": "answer_publication",
+          "base_revision": 1,
+          "status": "completed"
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "request_id": "patch-81df5485d654",
+          "kind": "follow_up_patch",
+          "base_revision": 2,
+          "status": "completed"
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "request_id": "generation-e8e1d97ac046",
+          "kind": "answer_publication",
+          "base_revision": 3,
+          "status": "completed"
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "request_id": "patch-f2033fb0ae21",
+          "kind": "follow_up_patch",
+          "base_revision": 4,
+          "status": "completed"
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "request_id": "presentation-d5f95ea64517",
+          "kind": "presentation",
+          "base_revision": 5,
+          "status": "completed"
+        }
+      ],
+      "superseded_requests": [],
+      "generation_status": "published",
+      "answer_status": "current",
+      "trace_ids": [
+        "evidence-2c104fe75edb",
+        "answer-v1",
+        "patch-81df5485d654",
+        "plan-c91973378757",
+        "evidence-targeted-5c3a890b5b2f",
+        "answer-v2",
+        "patch-f2033fb0ae21",
+        "answer-v3"
+      ],
+      "revision_history": [
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "revision_id": "revision-a3f4934c054f",
+          "session_id": "phase4-real-e2e",
+          "utterance_id": "real-u0",
+          "state_revision": 1,
+          "transcript_revision": 0,
+          "retrieval_revision": 1,
+          "supersedes": [
+            0
+          ],
+          "patch_id": null,
+          "changed_intent_ids": [],
+          "preserved_intent_ids": [],
+          "discarded_result_ids": [],
+          "reason": "evidence recorded; no semantic support verdict inferred",
+          "created_at_utc": "2026-09-17T17:27:26.849134+00:00",
+          "directly_affected_intent_ids": [],
+          "invalidated_claim_ids": [],
+          "preserved_claim_ids": [],
+          "reused_evidence_ids": [],
+          "retrieval_reasons": {},
+          "dependency_uncertain": false,
+          "dependency_uncertainty_reasons": [],
+          "answer_version": null,
+          "parent_answer_version": null,
+          "publication_status": null,
+          "claim_changes": [],
+          "evidence_added_ids": [],
+          "evidence_removed_ids": [],
+          "generation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "retrieval_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "presentation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "retrieval_call_count": 0,
+          "generation_attempts": 0
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "revision_id": "revision-a5440ea371f5",
+          "session_id": "phase4-real-e2e",
+          "utterance_id": "real-u0",
+          "state_revision": 2,
+          "transcript_revision": 0,
+          "retrieval_revision": 1,
+          "supersedes": [
+            1
+          ],
+          "patch_id": null,
+          "changed_intent_ids": [],
+          "preserved_intent_ids": [
+            "intent-d0f74e537b"
+          ],
+          "discarded_result_ids": [],
+          "reason": "factual answer version published from preserved and reassessed claims",
+          "created_at_utc": "2026-09-17T17:28:44.844823+00:00",
+          "directly_affected_intent_ids": [],
+          "invalidated_claim_ids": [],
+          "preserved_claim_ids": [],
+          "reused_evidence_ids": [],
+          "retrieval_reasons": {},
+          "dependency_uncertain": false,
+          "dependency_uncertainty_reasons": [],
+          "answer_version": 1,
+          "parent_answer_version": null,
+          "publication_status": "completed",
+          "claim_changes": [
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "change_type": "added",
+              "claim_id": "claim-123",
+              "previous_claim_id": null,
+              "current_claim_id": "claim-123",
+              "previous_record_id": null,
+              "current_record_id": "claim-123@v1",
+              "reason": "newly supported or reassessed information need"
+            }
+          ],
+          "evidence_added_ids": [
+            "evidence-2c104fe75edb"
+          ],
+          "evidence_removed_ids": [],
+          "generation_usage": {
+            "input_tokens": 1050,
+            "output_tokens": 149,
+            "total_tokens": 1199,
+            "estimated": true
+          },
+          "retrieval_usage": {
+            "input_tokens": 9,
+            "output_tokens": 0,
+            "total_tokens": 9,
+            "estimated": true
+          },
+          "presentation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "retrieval_call_count": 1,
+          "generation_attempts": 2
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "revision_id": "revision-30fa826c9853",
+          "session_id": "phase4-real-e2e",
+          "utterance_id": "real-u1",
+          "state_revision": 3,
+          "transcript_revision": 1,
+          "retrieval_revision": 2,
+          "supersedes": [
+            2
+          ],
+          "patch_id": "patch-81df5485d654",
+          "changed_intent_ids": [
+            "intent-d0f74e537b"
+          ],
+          "preserved_intent_ids": [],
+          "discarded_result_ids": [],
+          "reason": "applied replace_constraint; dependency-aware invalidation preserved 0 claims and queued 1 targeted retrieval task(s)",
+          "created_at_utc": "2026-09-17T17:28:44.847768+00:00",
+          "directly_affected_intent_ids": [
+            "intent-d0f74e537b"
+          ],
+          "invalidated_claim_ids": [
+            "claim-123@v1"
+          ],
+          "preserved_claim_ids": [],
+          "reused_evidence_ids": [],
+          "retrieval_reasons": {
+            "intent-0a5c8091c4": "changed constraint is not structurally covered by current evidence"
+          },
+          "dependency_uncertain": false,
+          "dependency_uncertainty_reasons": [],
+          "answer_version": null,
+          "parent_answer_version": null,
+          "publication_status": null,
+          "claim_changes": [],
+          "evidence_added_ids": [],
+          "evidence_removed_ids": [],
+          "generation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "retrieval_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "presentation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "retrieval_call_count": 0,
+          "generation_attempts": 0
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "revision_id": "revision-77ca55ba35a3",
+          "session_id": "phase4-real-e2e",
+          "utterance_id": "real-u1",
+          "state_revision": 4,
+          "transcript_revision": 1,
+          "retrieval_revision": 2,
+          "supersedes": [
+            3
+          ],
+          "patch_id": "patch-81df5485d654",
+          "changed_intent_ids": [
+            "intent-0a5c8091c4"
+          ],
+          "preserved_intent_ids": [],
+          "discarded_result_ids": [],
+          "reason": "factual answer version published from preserved and reassessed claims",
+          "created_at_utc": "2026-09-17T17:29:34.277267+00:00",
+          "directly_affected_intent_ids": [
+            "intent-d0f74e537b"
+          ],
+          "invalidated_claim_ids": [
+            "claim-123@v1"
+          ],
+          "preserved_claim_ids": [],
+          "reused_evidence_ids": [],
+          "retrieval_reasons": {
+            "intent-0a5c8091c4": "changed constraint is not structurally covered by current evidence"
+          },
+          "dependency_uncertain": false,
+          "dependency_uncertainty_reasons": [],
+          "answer_version": 2,
+          "parent_answer_version": 1,
+          "publication_status": "partial",
+          "claim_changes": [
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "change_type": "modified",
+              "claim_id": "claim-531f444398b5",
+              "previous_claim_id": "claim-123",
+              "current_claim_id": "claim-531f444398b5",
+              "previous_record_id": "claim-123@v1",
+              "current_record_id": "claim-531f444398b5@v2",
+              "reason": "claim content, intent, or corpus support changed"
+            }
+          ],
+          "evidence_added_ids": [
+            "evidence-targeted-5c3a890b5b2f"
+          ],
+          "evidence_removed_ids": [
+            "evidence-2c104fe75edb"
+          ],
+          "generation_usage": {
+            "input_tokens": 1066,
+            "output_tokens": 145,
+            "total_tokens": 1211,
+            "estimated": true
+          },
+          "retrieval_usage": {
+            "input_tokens": 9,
+            "output_tokens": 0,
+            "total_tokens": 9,
+            "estimated": true
+          },
+          "presentation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "retrieval_call_count": 1,
+          "generation_attempts": 1
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "revision_id": "revision-18cf15d0d695",
+          "session_id": "phase4-real-e2e",
+          "utterance_id": "real-u2",
+          "state_revision": 5,
+          "transcript_revision": 1,
+          "retrieval_revision": 2,
+          "supersedes": [
+            4
+          ],
+          "patch_id": "patch-f2033fb0ae21",
+          "changed_intent_ids": [],
+          "preserved_intent_ids": [
+            "intent-0a5c8091c4"
+          ],
+          "discarded_result_ids": [],
+          "reason": "formatting request; existing answer publication preserved",
+          "created_at_utc": "2026-09-17T17:29:34.285307+00:00",
+          "directly_affected_intent_ids": [],
+          "invalidated_claim_ids": [],
+          "preserved_claim_ids": [],
+          "reused_evidence_ids": [],
+          "retrieval_reasons": {},
+          "dependency_uncertain": false,
+          "dependency_uncertainty_reasons": [],
+          "answer_version": null,
+          "parent_answer_version": null,
+          "publication_status": null,
+          "claim_changes": [],
+          "evidence_added_ids": [],
+          "evidence_removed_ids": [],
+          "generation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "retrieval_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "presentation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "retrieval_call_count": 0,
+          "generation_attempts": 0
+        },
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "revision_id": "revision-1aa9c839fc26",
+          "session_id": "phase4-real-e2e",
+          "utterance_id": "real-u2",
+          "state_revision": 6,
+          "transcript_revision": 1,
+          "retrieval_revision": 2,
+          "supersedes": [
+            5
+          ],
+          "patch_id": "patch-f2033fb0ae21",
+          "changed_intent_ids": [
+            "intent-0a5c8091c4"
+          ],
+          "preserved_intent_ids": [],
+          "discarded_result_ids": [],
+          "reason": "presentation-only answer version published from current valid claims",
+          "created_at_utc": "2026-09-17T17:29:34.301339+00:00",
+          "directly_affected_intent_ids": [],
+          "invalidated_claim_ids": [],
+          "preserved_claim_ids": [],
+          "reused_evidence_ids": [],
+          "retrieval_reasons": {},
+          "dependency_uncertain": false,
+          "dependency_uncertainty_reasons": [],
+          "answer_version": 3,
+          "parent_answer_version": 2,
+          "publication_status": "completed",
+          "claim_changes": [
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "change_type": "preserved",
+              "claim_id": "claim-531f444398b5",
+              "previous_claim_id": "claim-531f444398b5",
+              "current_claim_id": "claim-531f444398b5",
+              "previous_record_id": "claim-531f444398b5@v2",
+              "current_record_id": "claim-531f444398b5@v3",
+              "reason": "claim content and corpus support remained compatible"
+            }
+          ],
+          "evidence_added_ids": [],
+          "evidence_removed_ids": [],
+          "generation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "retrieval_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "presentation_usage": {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "estimated": true
+          },
+          "retrieval_call_count": 0,
+          "generation_attempts": 0
+        }
+      ],
+      "selective_update_plans": [
+        {
+          "schema_version": "flowcontext.phase4.v1",
+          "plan_id": "plan-c91973378757",
+          "session_id": "phase4-real-e2e",
+          "patch_id": "patch-81df5485d654",
+          "base_revision": 2,
+          "candidate_revision": 3,
+          "transcript_revision": 1,
+          "retrieval_revision": 2,
+          "directly_affected_intent_ids": [
+            "intent-d0f74e537b"
+          ],
+          "invalidated_intent_ids": [
+            "intent-d0f74e537b"
+          ],
+          "new_intent_ids": [
+            "intent-0a5c8091c4"
+          ],
+          "affected_entity_ids": [],
+          "invalidated_claim_ids": [
+            "claim-123@v1"
+          ],
+          "preserved_claim_ids": [],
+          "invalidation_reasons": {
+            "claim-123@v1": "claim belongs to a directly changed intent without sufficient evidence"
+          },
+          "invalidated_evidence_ids": [
+            "evidence-2c104fe75edb"
+          ],
+          "reused_evidence_ids": [],
+          "retrieval_intent_ids": [
+            "intent-0a5c8091c4"
+          ],
+          "retrieval_reasons": {
+            "intent-0a5c8091c4": "changed constraint is not structurally covered by current evidence"
+          },
+          "dependency_uncertain": false,
+          "dependency_uncertainty_reasons": [],
+          "discarded_result_ids": [],
+          "retrieval_tasks": [
+            {
+              "schema_version": "flowcontext.phase4.v1",
+              "task_id": "task-ba1689059a7b",
+              "session_id": "phase4-real-e2e",
+              "patch_id": "patch-81df5485d654",
+              "candidate_state_revision": 3,
+              "candidate_transcript_revision": 1,
+              "candidate_retrieval_revision": 2,
+              "intent_id": "intent-0a5c8091c4",
+              "query": "Which Venue B in Pune can host 30 attendees?",
+              "reason": "changed constraint is not structurally covered by current evidence",
+              "status": "completed",
+              "scheduler_request_id": "phase4-retrieval-cd53af8d2fce",
+              "attempts": 1,
+              "evidence_ids": [
+                "evidence-targeted-5c3a890b5b2f"
+              ],
+              "discarded_result_ids": [],
+              "error": null
+            }
+          ],
+          "status": "completed",
+          "created_at_utc": "2026-09-17T17:28:44.847631+00:00",
+          "retrieval_usage": {
+            "input_tokens": 9,
+            "output_tokens": 0,
+            "total_tokens": 9,
+            "estimated": true
+          },
+          "retrieval_call_count": 1,
+          "retrieval_attempt_count": 1
+        }
+      ]
+    },
+    "retrieval_call_count": 2,
+    "retrieval_attempt_count": 2,
+    "generation_call_count": 2,
+    "generation_attempt_count": 3,
+    "notes": [
+      "candidate synthetic.venue-b-draft#chunk-0000 was not intent-aligned and was not admitted",
+      "candidate synthetic.venue-b-policy#chunk-0000 was not intent-aligned and was not admitted",
+      "candidate synthetic.venue-mumbai#chunk-0000 was not intent-aligned and was not admitted",
+      "candidate synthetic.venue-options#chunk-0000 was not intent-aligned and was not admitted"
+    ]
+  }
+}

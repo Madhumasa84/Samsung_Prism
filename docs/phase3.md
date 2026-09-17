@@ -135,16 +135,32 @@ until a measured latency/quality benefit justifies enabling it.
 
 ## Evaluation
 
-The comparison command preserves the checked-in Phase 2 reports and writes a
-new JSON/Markdown pair:
+The dedicated audit command preserves historical comparison reports and writes
+a new JSON/Markdown pair from labels kept outside application code:
 
 ```bash
+UV_CACHE_DIR=/tmp/flowcontext-uv-cache uv run --locked flowcontext build-index \
+  --input data/synthetic/phase3_documents.jsonl \
+  --output artifacts/phase3-lexical-index.json \
+  --backend lexical --source-kind synthetic_fixture
+
 UV_CACHE_DIR=/tmp/flowcontext-uv-cache uv run --locked flowcontext evaluate-phase3 \
-  --corpus artifacts/fixture-lexical-index.json \
+  --corpus artifacts/phase3-lexical-index.json \
   --backend lexical --top-k 5 --split all \
   --execution-mode realtime \
-  --output reports/phase3_retrieval_comparison_realtime.json
+  --phase3-development-cases data/evaluation/phase3_development.jsonl \
+  --phase3-held-out-cases data/evaluation/phase3_held_out.jsonl \
+  --implementation-changes data/evaluation/phase3_implementation_changes.json \
+  --output reports/phase3_evaluation_realtime.json
 ```
+
+The suite has 13 development and 7 held-out cases, with related
+`variant_family` values kept in one split. It covers single questions that
+must not be decomposed; independent and dependent requests; shared and
+intent-local constraints; negation; comparisons; partial/unanswerable
+requests; conflicts; entity confusion; corrections; and provider/retrieval
+failures. The synthetic Phase 3 corpus contains 9 documents / 10 chunks and
+the audit uses `k=5`, so k does not include every chunk.
 
 An end-to-end decomposition payload with independent and dependent questions,
 typed constraints, spans, ambiguity records, and a dependency edge is shown in
@@ -156,63 +172,71 @@ provider path; credentials are never written to output.
 
 The report contains:
 
-- a per-case baseline/streaming table with final queries, retrieved IDs,
-  relevant IDs, request statuses and queries, reuse decisions, validation
-  details, errors, and scoring denominators;
-- separate development and held-out Phase 2 comparisons;
-- successful comparable retrieval quality with explicit case and relevant-ID
-  denominators;
-- end-to-end counts that retain failed, timed-out, closed, and abstained cases;
-- partial or missing-intent evidence is visible and excluded from successful
-  full-request retrieval quality;
-- diagnoses for query assembly, dropped/missing final constraints, stale
-  rejection, ranking/set differences, fault injection, and denominator
-  differences;
-- per-intent IDs and fused evidence for the Phase 3 development/held-out
-  cases, including backend rankings, fusion decisions, assembly decisions,
-  context usage, and missing-intent markers; and
-- explicit `not_verified` sections for real backends and official assets.
+- matched A original final-event baseline, B Phase 2 streaming single query,
+  and C Phase 3 streaming decomposition/fusion arms;
+- a one-to-one intent-matching rubric with missed intents and unnecessary
+  extra intents, reported separately for development and held-out;
+- successful retrieval Recall@1/@3/@5 with explicit denominators, per-intent
+  recall, complete-request evidence coverage, and end-to-end outcomes that
+  retain failures, timeouts, and abstentions;
+- citation-ID validity as deterministic provenance only; semantic claim
+  support remains `NOT VERIFIED` unless claims are genuinely reviewed;
+- supported-answer coverage with an answerable-intent denominator so
+  abstaining on every request cannot score as success, plus uncertainty on
+  partial/unanswerable cases;
+- early retrieval, useful early reuse, stale-result acceptance, final-event to
+  answer latency, retrieval/model calls, tokens, errors, cost availability,
+  and trace completeness;
+- the implementation-change log showing which cases informed changes; and
+- a lexical single-query versus decomposed engineering ablation plus an
+  explicit `NOT VERIFIED` dense-only versus hybrid section. Mock comparisons
+  are not presented as model-quality findings.
 
 The held-out files were inspected only after implementation decisions were
 frozen and were not used to tune decomposition, fusion, or streaming policy.
-New untouched cases should be reserved for the next evaluation. Local labels
-remain provisional and semantic claim support remains `not_evaluated`.
+All intent, relevance, and answer-expectation labels are currently
+`provisional_generated`; the standalone review-status asset records zero
+model-reviewed and human-reviewed labels. New untouched cases should be
+reserved for the next evaluation. Local labels remain provisional and semantic
+claim support remains `NOT VERIFIED`.
 
 ## Current local findings
 
-The fresh matched Phase 2 rerun found:
+The fresh Phase 3 audit is reported in
+[`reports/phase3_evaluation_realtime.md`](../reports/phase3_evaluation_realtime.md)
+and its machine-readable companion. The local lexical/mock run found:
 
-- 23/23 eligible cases started retrieval early;
-- 10/23 eligible cases achieved useful early reuse;
-- the historical aggregate remains 96.0% baseline versus 91.7% streaming
-  Recall@5 in `reports/phase2_streaming_evaluation.json`;
-- after restricting retrieval quality to 22 successful comparable cases with
-  explicit relevant-ID denominators, both modes measured 100% Recall@5; and
-- end-to-end outcomes remain separate and visible: development includes the
-  baseline no-context abstention and injected retrieval failure, while
-  streaming additionally exposes the injected timeout and session closure;
-  held-out has no operational fault cases.
+- Multi-intent exact identification was 100% (4/4) on development and 75%
+  (3/4) on held-out, meeting the guide's 70% target separately in both splits
+  under the explicit rubric. One held-out single-question paraphrase caused an
+  unnecessary extra intent, which is retained as a failure rather than tuned
+  away.
+- C's complete-request evidence coverage was 0.8333 macro on development and
+  0.8333 on held-out; supported-answer substring coverage was measured with
+  an answerable-intent denominator, but is not semantic support.
+- The local C uncertainty checks failed on the partial-answer and unanswerable
+  probes, and the provisional supported-answer substring coverage was 2/15
+  answerable intents in development and 2/10 in held-out. These are retained
+  quality failures, not converted into success by citation presence.
+- Citation-ID validity was deterministic provenance and does not establish
+  the guide's 85% citation-support target, which remains `NOT VERIFIED`.
+- The correction probe recorded zero stale-result acceptance in the streaming
+  arms. Retrieval/generation/decomposition failures and timeout outcomes are
+  retained as operational failures, not quality successes.
 
-The 13 eligible cases without useful early reuse classify as 9 expected
-correction/final-constraint changes, 1 delayed rapid-correction retrieval, and
-3 declared failure/timeout/session-close probes. No avoidable non-reuse failure
-was observed. The rapid case is not counted as a useful reuse because its
-current result was not ready before final-event delivery and late work was
-correctly rejected.
-
-On the small Phase 3 set, the configured explicitly labelled mock structured
-decomposer identified the one compound case in each split (1/1 in development
-and 1/1 in held-out). Successful answerable retrieval quality was 100%
-Recall@5 in both modes over four cases per split; unsupported cases abstained
-with no factual claims. These are small fixture measurements, not evidence
-that the real dense/generation gap is resolved.
+These values are local synthetic/provisional observations. Inspect the JSON
+for full per-case A/B/C records, misses/extras, ranked evidence, claims,
+latencies, resources, and trace events.
 
 ## Blockers
 
 The attempted real dense smoke command was blocked because the optional
 `sentence-transformers` dependency is not installed; install the dense extra
 and download the pinned model before building a dense index. Provider-backed
-generation was not run. The official
-corpus, replay format, labels, thresholds, semantic grounding evaluator, and
-organiser API remain unavailable. The lexical fixture, mock generator, and
-provisional labels therefore cannot support a competition-performance claim.
+generation was not run. The official corpus, replay format, labels,
+thresholds, semantic grounding evaluator, and organiser API remain unavailable.
+The lexical fixture, mock generator, and provisional labels therefore cannot
+support a competition-performance claim. Phase 4 implementation and local
+evaluation are recorded separately in [`phase4-handoff.md`](phase4-handoff.md)
+and [`phase5-handoff.md`](phase5-handoff.md); those reports do not rewrite
+these historical Phase 3 scores.

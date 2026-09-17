@@ -20,6 +20,8 @@ class Settings(BaseModel):
     evaluation_path: Path = Path("data/synthetic/evaluation.jsonl")
     evaluation_development_path: Path = Path("data/evaluation/development.jsonl")
     evaluation_held_out_path: Path = Path("data/evaluation/held_out.jsonl")
+    phase3_evaluation_development_path: Path = Path("data/evaluation/phase3_development.jsonl")
+    phase3_evaluation_held_out_path: Path = Path("data/evaluation/phase3_held_out.jsonl")
     streaming_evaluation_development_path: Path = Path("data/evaluation/streaming_development.jsonl")
     streaming_evaluation_held_out_path: Path = Path("data/evaluation/streaming_held_out.jsonl")
     artifacts_dir: Path = Path("artifacts")
@@ -91,6 +93,8 @@ _ENV_TO_FIELD = {
     "FLOWCONTEXT_EVALUATION_PATH": "evaluation_path",
     "FLOWCONTEXT_EVALUATION_DEVELOPMENT_PATH": "evaluation_development_path",
     "FLOWCONTEXT_EVALUATION_HELD_OUT_PATH": "evaluation_held_out_path",
+    "FLOWCONTEXT_PHASE3_EVALUATION_DEVELOPMENT_PATH": "phase3_evaluation_development_path",
+    "FLOWCONTEXT_PHASE3_EVALUATION_HELD_OUT_PATH": "phase3_evaluation_held_out_path",
     "FLOWCONTEXT_STREAMING_EVALUATION_DEVELOPMENT_PATH": "streaming_evaluation_development_path",
     "FLOWCONTEXT_STREAMING_EVALUATION_HELD_OUT_PATH": "streaming_evaluation_held_out_path",
     "FLOWCONTEXT_ARTIFACTS_DIR": "artifacts_dir",
@@ -192,6 +196,10 @@ def config_asset_status(settings: Settings) -> dict[str, object]:
         "evaluation_development_exists": settings.evaluation_development_path.is_file(),
         "evaluation_held_out_path": str(settings.evaluation_held_out_path),
         "evaluation_held_out_exists": settings.evaluation_held_out_path.is_file(),
+        "phase3_evaluation_development_path": str(settings.phase3_evaluation_development_path),
+        "phase3_evaluation_development_exists": settings.phase3_evaluation_development_path.is_file(),
+        "phase3_evaluation_held_out_path": str(settings.phase3_evaluation_held_out_path),
+        "phase3_evaluation_held_out_exists": settings.phase3_evaluation_held_out_path.is_file(),
         "streaming_evaluation_development_path": str(settings.streaming_evaluation_development_path),
         "streaming_evaluation_development_exists": settings.streaming_evaluation_development_path.is_file(),
         "streaming_evaluation_held_out_path": str(settings.streaming_evaluation_held_out_path),

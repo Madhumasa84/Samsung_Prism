@@ -16,46 +16,31 @@ Requirements covered:
 
 from __future__ import annotations
 
-import asyncio
-import hashlib
 import unittest
-from typing import Sequence
 
 from flowcontext.contracts import (
-    Answer,
     Chunk,
-    CorpusIndex,
     DecompositionConstraint,
     DecompositionIntent,
     DecompositionResult,
     EvidencePassage,
     FactualClaim,
     GenerationConfig,
-    GenerationRequest,
-    IntentStatusRecord,
     RetrievalHit,
     TextSpan,
     TranscriptEvent,
-    Usage,
 )
 from flowcontext.generation import (
-    GenerationOutcome,
     MockGenerationProvider,
-    UnknownCitationError,
     generate_grounded_answer,
 )
 from flowcontext.ingestion import CorpusIngestor, DocumentInput
 from flowcontext.streaming import replay_streaming_transcript
 from flowcontext.synthesis import (
-    ConflictingEvidenceError,
-    CrossEntityViolationError,
-    InvalidExcerptError,
-    MockSemanticVerifier,
     RuleBasedSemanticVerifier,
     StaleGenerationError,
     check_answer_consistency,
     check_cross_entity_match,
-    render_unified_answer,
     resolve_conflicting_evidence,
     synthesize_unified_answer,
     validate_citations_and_excerpts,
@@ -235,6 +220,28 @@ class Phase3SynthesisTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(outcome.verification_usage)
         self.assertEqual(outcome.repair_attempts, 0)
 
+    async def test_shared_policy_word_does_not_support_a_different_short_need(self) -> None:
+        """A retrieval hit sharing only an answer-form word stays a candidate, not support."""
+        query = "What is the parking policy?"
+        intent = _make_intent(
+            "intent-parking",
+            1,
+            query,
+            source_span=_span_for(query, query),
+        )
+        decomposition = _make_decomposition(query, [intent])
+        outcome = await generate_grounded_answer(
+            query,
+            [_make_hit_for_chunk(self.chunk_policy, intent_ids=[intent.intent_id])],
+            self.corpus,
+            MockGenerationProvider(config=self.mock_config, mode="valid"),
+            decomposition=decomposition,
+        )
+
+        self.assertEqual(outcome.status, "skipped")
+        self.assertFalse(outcome.answer.factual_claims)
+        self.assertIn("No retrieved corpus evidence", outcome.answer.uncertainty)
+
     async def test_one_unsupported_subquestion(self) -> None:
         """Requirement 6: Answer supported portions; explicitly report unsupported portions."""
         q1 = "Which Pune venues can host 30 attendees?"
@@ -297,6 +304,40 @@ class Phase3SynthesisTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(verdict.verdict, "unsupported")
         self.assertIn("lacks proposition support", verdict.reason)
         self.assertIn("does not guarantee ground truth", report.limitations)
+
+    async def test_weak_intent_citation_is_not_answer_evidence(self) -> None:
+        intent = _make_intent(
+            "intent-insurance",
+            1,
+            "Which insurance code is specified for the workshop?",
+        )
+        decomposition = _make_decomposition(
+            intent.query,
+            [intent],
+        )
+        outcome = await generate_grounded_answer(
+            decomposition.original_transcript,
+            [_make_hit_for_chunk(self.chunk_venue, intent_ids=[intent.intent_id])],
+            self.corpus,
+            MockGenerationProvider(config=self.mock_config, mode="valid"),
+            decomposition=decomposition,
+        )
+        self.assertNotEqual(outcome.status, "success")
+        self.assertFalse(outcome.answer.factual_claims)
+        self.assertIn("insufficient", outcome.answer.answer_text.casefold())
+
+    async def test_complementary_package_passages_are_not_a_conflict(self) -> None:
+        options = _make_passage(
+            "catering-options",
+            "The standard package includes vegetarian and non-vegetarian lunch, tea, and coffee.",
+        )
+        restriction = _make_passage(
+            "catering-restrictions",
+            "The standard package remains vegetarian and non-vegetarian lunch with tea and coffee; outside catering is not allowed.",
+        )
+        resolution = resolve_conflicting_evidence([options, restriction])
+        self.assertTrue(resolution.resolved)
+        self.assertEqual(resolution.rule_applied, "none")
 
     async def test_contradictory_passages_date_precedence(self) -> None:
         """Requirement 7: Conflicting evidence resolved by date precedence."""

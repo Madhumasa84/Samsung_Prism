@@ -19,6 +19,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 SCHEMA_VERSION = "flowcontext.phase1.v1"
 PHASE2_SCHEMA_VERSION = "flowcontext.phase2.v1"
 PHASE3_SCHEMA_VERSION = "flowcontext.phase3.v1"
+PHASE3_EVALUATION_SCHEMA_VERSION = "flowcontext.phase3-evaluation.v1"
+PHASE4_SCHEMA_VERSION = "flowcontext.phase4.v1"
 RetrievalMode = Literal["dense", "lexical", "mock", "hybrid"]
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
@@ -1862,3 +1864,1122 @@ class DecompositionRequest(ContractModel):
 
     _transcript_is_non_blank = field_validator("original_transcript")(_non_blank)
     _repair_feedback_is_non_blank = field_validator("repair_feedback")(_optional_non_blank)
+
+
+class Phase3ExpectedConstraint(ContractModel):
+    """One external evaluation label for a shared or intent-local constraint."""
+
+    kind: str = Field(min_length=1)
+    value: str = Field(min_length=1)
+    scope: Literal["shared", "intent"] = "intent"
+
+    _values_are_non_blank = field_validator("kind", "value")(_non_blank)
+
+
+class Phase3ExpectedIntent(ContractModel):
+    """External gold label for one information need in a Phase 3 case.
+
+    These labels are deliberately separate from the application decomposition
+    contract.  The evaluator compares a produced plan with this record; the
+    runtime never imports case IDs, expected answers, or expected chunk IDs.
+    """
+
+    intent_key: str = Field(min_length=1)
+    expected_relationship: Literal["single", "independent", "dependent", "comparison"]
+    source_hint: str = Field(min_length=1)
+    answerable: bool
+    relevant_chunk_ids: list[str] = Field(default_factory=list)
+    relevance_labels: dict[str, Literal["relevant", "not_relevant"]] = Field(default_factory=dict)
+    expected_answer_substrings: list[str] = Field(default_factory=list)
+    expected_constraints: list[Phase3ExpectedConstraint] = Field(default_factory=list)
+
+    _values_are_non_blank = field_validator("intent_key", "source_hint")(_non_blank)
+
+    @field_validator("relevant_chunk_ids")
+    @classmethod
+    def relevant_ids_are_unique_and_non_blank(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("relevant_chunk_ids must not contain blank values")
+        if len(values) != len(set(values)):
+            raise ValueError("relevant_chunk_ids must be unique")
+        return values
+
+    @field_validator("expected_answer_substrings")
+    @classmethod
+    def answer_labels_are_non_blank(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("expected_answer_substrings must not contain blank values")
+        return values
+
+    @model_validator(mode="after")
+    def relevance_labels_match_relevant_ids(self) -> Phase3ExpectedIntent:
+        relevant = {
+            chunk_id
+            for chunk_id, label in self.relevance_labels.items()
+            if label == "relevant"
+        }
+        if relevant != set(self.relevant_chunk_ids):
+            raise ValueError(
+                "relevance_labels with label relevant must match relevant_chunk_ids"
+            )
+        if not self.answerable and (self.relevant_chunk_ids or self.expected_answer_substrings):
+            raise ValueError("unanswerable intents must not have answer evidence labels")
+        return self
+
+
+class Phase3LabelReviewStatus(ContractModel):
+    """Review provenance for each family of external Phase 3 labels."""
+
+    intent_labels: Literal[
+        "provisional_generated", "model_reviewed", "human_review_pending", "human_reviewed"
+    ] = "provisional_generated"
+    relevance_labels: Literal[
+        "provisional_generated", "model_reviewed", "human_review_pending", "human_reviewed"
+    ] = "provisional_generated"
+    answer_expectations: Literal[
+        "provisional_generated", "model_reviewed", "human_review_pending", "human_reviewed"
+    ] = "provisional_generated"
+    reviewer: str | None = None
+    review_notes: list[str] = Field(default_factory=list)
+
+    _reviewer_is_non_blank = field_validator("reviewer")(_optional_non_blank)
+
+    @field_validator("review_notes")
+    @classmethod
+    def review_notes_are_non_blank(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("review_notes must not contain blank values")
+        return values
+
+
+class Phase3EvaluationCase(ContractModel):
+    """Dedicated Phase 3 evaluation case loaded from external JSONL labels."""
+
+    schema_version: Literal[PHASE3_EVALUATION_SCHEMA_VERSION] = PHASE3_EVALUATION_SCHEMA_VERSION
+    case_id: str = Field(min_length=1)
+    session_id: str = Field(min_length=1)
+    split: Literal["development", "held_out"]
+    scenario_group: str = Field(min_length=1)
+    variant_family: str = Field(min_length=1)
+    evaluation_role: Literal[
+        "historical_baseline",
+        "diagnostic_regression",
+        "untouched_generalization",
+    ] = "historical_baseline"
+    asset_status: Literal["official", "synthetic_fixture", "unknown"]
+    transcript: list[TranscriptEvent] = Field(min_length=1)
+    answerability: Literal["answerable", "unanswerable", "partially_answerable"]
+    expected_intents: list[Phase3ExpectedIntent] = Field(min_length=1, max_length=8)
+    shared_constraints: list[Phase3ExpectedConstraint] = Field(default_factory=list)
+    expected_answer_substrings: list[str] = Field(default_factory=list)
+    require_early_retrieval: bool = False
+    controller_overrides: dict[str, Any] = Field(default_factory=dict)
+    retrieval_behavior: Literal["normal", "delay", "failure", "timeout", "session_close"] = "normal"
+    retrieval_delay_s: float = Field(default=0.0, ge=0, le=2.0, allow_inf_nan=False)
+    retrieval_timeout_s: float = Field(default=0.05, ge=0.01, le=2.0, allow_inf_nan=False)
+    provider_failure_stage: Literal["none", "decomposition", "generation"] = "none"
+    label_review_status: Phase3LabelReviewStatus = Field(default_factory=Phase3LabelReviewStatus)
+    implementation_change_ids: list[str] = Field(default_factory=list)
+    case_notes: list[str] = Field(default_factory=list)
+
+    _ids_are_non_blank = field_validator("case_id", "session_id", "scenario_group", "variant_family")(
+        _non_blank
+    )
+
+    @field_validator("expected_answer_substrings", "implementation_change_ids", "case_notes")
+    @classmethod
+    def case_lists_are_non_blank(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("Phase 3 case lists must not contain blank values")
+        return values
+
+    @model_validator(mode="after")
+    def case_structure_is_valid(self) -> Phase3EvaluationCase:
+        sessions = {event.session_id for event in self.transcript}
+        utterances = {event.utterance_id for event in self.transcript}
+        if sessions != {self.session_id}:
+            raise ValueError("Phase 3 transcript session IDs must match case session_id")
+        if len(utterances) != 1:
+            raise ValueError("a Phase 3 case must contain one utterance")
+        final_events = [event for event in self.transcript if event.is_final]
+        if len(final_events) != 1:
+            raise ValueError("a Phase 3 case must contain exactly one final event")
+        intent_keys = [intent.intent_key for intent in self.expected_intents]
+        if len(intent_keys) != len(set(intent_keys)):
+            raise ValueError("Phase 3 expected intent keys must be unique")
+        if any(
+            constraint.scope != "intent"
+            for intent in self.expected_intents
+            for constraint in intent.expected_constraints
+        ):
+            raise ValueError("expected intent constraints must have scope='intent'")
+        if any(constraint.scope != "shared" for constraint in self.shared_constraints):
+            raise ValueError("shared_constraints must have scope='shared'")
+        if self.answerability == "answerable" and not all(
+            intent.answerable for intent in self.expected_intents
+        ):
+            raise ValueError("answerable cases must not contain unanswerable expected intents")
+        if self.answerability == "unanswerable" and any(
+            intent.answerable for intent in self.expected_intents
+        ):
+            raise ValueError("unanswerable cases must not contain answerable expected intents")
+        if self.answerability == "partially_answerable":
+            if not any(intent.answerable for intent in self.expected_intents):
+                raise ValueError("partially answerable cases require an answerable intent")
+            if not any(not intent.answerable for intent in self.expected_intents):
+                raise ValueError("partially answerable cases require an unsupported intent")
+        if self.require_early_retrieval and not any(not event.is_final for event in self.transcript):
+            raise ValueError("cases requiring early retrieval need a non-final event")
+        if self.retrieval_behavior == "delay" and self.retrieval_delay_s <= 0:
+            raise ValueError("delay cases require a positive retrieval_delay_s")
+        if self.retrieval_behavior == "timeout" and self.retrieval_delay_s <= self.retrieval_timeout_s:
+            raise ValueError("timeout cases require delay greater than retrieval_timeout_s")
+        return self
+
+
+class Phase4ConstraintRecord(ContractModel):
+    """A session-scoped requested constraint, deliberately not corpus evidence."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    record_id: str = Field(min_length=1)
+    constraint: DecompositionConstraint
+    constraint_id: str = Field(min_length=1)
+    origin: Literal["user_initial", "user_follow_up", "inherited_context"]
+    origin_turn: int = Field(ge=0)
+    origin_utterance_id: str = Field(min_length=1)
+    origin_revision: int = Field(ge=0)
+    scope: Literal["shared", "intent"] = "intent"
+    intent_id: str | None = None
+    status: Literal["active", "superseded", "removed"] = "active"
+    # This literal is intentional: a request constraint is never silently
+    # promoted to a fact merely because retrieval later returns a match.
+    corpus_fact: Literal[False] = False
+    resolution_source: str | None = None
+
+    _ids_are_non_blank = field_validator(
+        "record_id", "constraint_id", "origin_utterance_id"
+    )(_non_blank)
+    _resolution_source_is_non_blank = field_validator("resolution_source")(
+        _optional_non_blank
+    )
+
+    @model_validator(mode="after")
+    def constraint_record_is_consistent(self) -> Phase4ConstraintRecord:
+        if self.constraint_id != self.constraint.constraint_id:
+            raise ValueError("constraint_id must match the wrapped decomposition constraint")
+        if self.scope == "intent" and self.intent_id is None:
+            raise ValueError("intent-scoped constraints require an intent_id")
+        if self.scope == "shared" and self.intent_id is not None:
+            raise ValueError("shared constraints must not have an intent_id")
+        return self
+
+
+class Phase4IntentRecord(ContractModel):
+    """An active or historical intent with the turn that introduced it."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    intent: DecompositionIntent
+    origin_turn: int = Field(ge=0)
+    origin_utterance_id: str = Field(min_length=1)
+    origin_revision: int = Field(ge=0)
+    topic_key: str = Field(min_length=1)
+    status: Literal["active", "superseded"] = "active"
+
+    _ids_are_non_blank = field_validator("origin_utterance_id", "topic_key")(_non_blank)
+
+    @property
+    def intent_id(self) -> str:
+        return self.intent.intent_id
+
+
+class Phase4EvidenceRecord(ContractModel):
+    """Retrieval provenance bound to one session/corpus/index identity."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    evidence_id: str = Field(min_length=1)
+    passage: EvidencePassage
+    session_id: str = Field(min_length=1)
+    utterance_id: str = Field(min_length=1)
+    transcript_revision: int = Field(ge=0)
+    retrieval_revision: int = Field(ge=0)
+    corpus_id: str = Field(min_length=1)
+    index_id: str = Field(min_length=1)
+    intent_ids: list[str] = Field(default_factory=list)
+    dependency_ids: list[str] = Field(default_factory=list)
+    status: Literal["current", "superseded", "stale"] = "current"
+    reused_from_evidence_id: str | None = None
+    reuse_reason: str | None = None
+
+    _ids_are_non_blank = field_validator(
+        "evidence_id", "session_id", "utterance_id", "corpus_id", "index_id"
+    )(_non_blank)
+    _reused_from_is_non_blank = field_validator("reused_from_evidence_id")(
+        _optional_non_blank
+    )
+    _reuse_reason_is_non_blank = field_validator("reuse_reason")(_optional_non_blank)
+
+    @field_validator("intent_ids", "dependency_ids")
+    @classmethod
+    def evidence_id_lists_are_valid(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("evidence ID lists must not contain blank values")
+        if len(values) != len(set(values)):
+            raise ValueError("evidence ID lists must be unique")
+        return values
+
+    @model_validator(mode="after")
+    def passage_identity_is_consistent(self) -> Phase4EvidenceRecord:
+        passage_intents = set(self.passage.intent_ids)
+        if passage_intents and not passage_intents <= set(self.intent_ids):
+            raise ValueError("passage intent provenance must be included in the evidence record")
+        if self.passage.intent_id is not None and self.passage.intent_id not in self.intent_ids:
+            raise ValueError("passage intent_id must be included in the evidence record")
+        return self
+
+
+class Phase4ClaimDependency(ContractModel):
+    """One explicit claim dependency; IDs are not treated as support verdicts."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    dependency_id: str = Field(min_length=1)
+    dependency_type: Literal["evidence", "constraint", "entity", "claim"]
+    target_id: str = Field(min_length=1)
+    relation: Literal["supports", "depends_on", "refines", "compares_with"] = "depends_on"
+    target_value: str | None = None
+
+    _ids_are_non_blank = field_validator("dependency_id", "target_id")(_non_blank)
+    _target_value_is_non_blank = field_validator("target_value")(_optional_non_blank)
+
+
+class Phase4ClaimRecord(ContractModel):
+    """A versioned claim with evidence and non-evidence dependencies."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    record_id: str = Field(min_length=1)
+    claim: FactualClaim
+    claim_id: str = Field(min_length=1)
+    answer_version: int = Field(ge=1)
+    intent_ids: list[str] = Field(default_factory=list)
+    supporting_evidence_ids: list[str] = Field(default_factory=list)
+    dependencies: list[Phase4ClaimDependency] = Field(default_factory=list)
+    claim_revision: int = Field(ge=0)
+    semantic_support_status: Literal["unreviewed", "supported", "unsupported", "uncertain"] = "unreviewed"
+    status: Literal["current", "non_current", "superseded"] = "current"
+
+    _ids_are_non_blank = field_validator("record_id", "claim_id")(_non_blank)
+
+    @field_validator("intent_ids", "supporting_evidence_ids")
+    @classmethod
+    def claim_id_lists_are_valid(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("claim ID lists must not contain blank values")
+        if len(values) != len(set(values)):
+            raise ValueError("claim ID lists must be unique")
+        return values
+
+    @model_validator(mode="after")
+    def claim_record_is_consistent(self) -> Phase4ClaimRecord:
+        if self.claim_id != self.claim.claim_id:
+            raise ValueError("claim_id must match the wrapped factual claim")
+        if not self.intent_ids and self.claim.intent_ids:
+            self.intent_ids = list(self.claim.intent_ids)
+        if not self.intent_ids:
+            raise ValueError("claim records must identify at least one intent")
+        if not self.supporting_evidence_ids:
+            raise ValueError("claim records must identify supporting evidence records")
+        claim_intents = set(self.claim.intent_ids)
+        if self.intent_ids and claim_intents and not claim_intents <= set(self.intent_ids):
+            raise ValueError("claim intent provenance must be included in the claim record")
+        return self
+
+
+class Phase4ClaimChange(ContractModel):
+    """Append-only comparison of one claim across answer publications."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    change_type: Literal["added", "removed", "modified", "preserved"]
+    claim_id: str = Field(min_length=1)
+    previous_claim_id: str | None = None
+    current_claim_id: str | None = None
+    previous_record_id: str | None = None
+    current_record_id: str | None = None
+    reason: str = Field(min_length=1)
+
+    _ids_are_non_blank = field_validator(
+        "claim_id",
+        "previous_claim_id",
+        "current_claim_id",
+        "previous_record_id",
+        "current_record_id",
+    )(_optional_non_blank)
+    _reason_is_non_blank = field_validator("reason")(_non_blank)
+
+    @model_validator(mode="after")
+    def claim_change_has_a_side(self) -> Phase4ClaimChange:
+        if self.change_type == "added" and self.current_record_id is None:
+            raise ValueError("added claim changes require a current record")
+        if self.change_type == "removed" and self.previous_record_id is None:
+            raise ValueError("removed claim changes require a previous record")
+        if self.change_type in {"modified", "preserved"} and (
+            self.previous_record_id is None or self.current_record_id is None
+        ):
+            raise ValueError("modified and preserved claim changes require both records")
+        return self
+
+
+class Phase4AnswerVersion(ContractModel):
+    """An immutable, inspectable publication envelope around a grounded Answer."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    answer_version: int = Field(ge=1)
+    answer: Answer
+    claim_record_ids: list[str] = Field(default_factory=list)
+    state_revision: int = Field(ge=0)
+    created_at_utc: str = Field(min_length=1)
+    immutable: Literal[True] = True
+    parent_version: int | None = Field(default=None, ge=1)
+    triggering_turn: int = Field(default=0, ge=0)
+    triggering_utterance_id: str = "unknown"
+    triggering_patch_id: str | None = None
+    change_kind: Literal["initial", "factual_update", "presentation"] = "initial"
+    constraint_change_ids: list[str] = Field(default_factory=list)
+    evidence_added_ids: list[str] = Field(default_factory=list)
+    evidence_removed_ids: list[str] = Field(default_factory=list)
+    reused_evidence_ids: list[str] = Field(default_factory=list)
+    claim_changes: list[Phase4ClaimChange] = Field(default_factory=list)
+    retrieval_usage: Usage = Field(default_factory=Usage)
+    generation_usage: Usage = Field(default_factory=Usage)
+    presentation_usage: Usage = Field(default_factory=Usage)
+    retrieval_call_count: int = Field(default=0, ge=0)
+    retrieval_attempt_count: int = Field(default=0, ge=0)
+    generation_attempts: int = Field(default=0, ge=0)
+    generation_repair_attempts: int = Field(default=0, ge=0)
+    retrieval_model_identity: str = "unknown"
+    generation_execution_mode: Literal["rule_based", "mock_provider", "real_provider"] = "rule_based"
+    generation_provider: str = "unknown"
+    generation_model: str = "unknown"
+    presentation_execution_mode: Literal["rule_based", "mock_provider", "real_provider"] = "rule_based"
+    presentation_provider: str = "flowcontext.rule_based"
+    status: Literal["completed", "partial", "failed", "superseded"] = "completed"
+    failure_reason: str | None = None
+    unresolved_intent_ids: list[str] = Field(default_factory=list)
+    unresolved_questions: list[str] = Field(default_factory=list)
+
+    _created_at_is_non_blank = field_validator(
+        "created_at_utc", "triggering_utterance_id", "retrieval_model_identity",
+        "generation_provider", "generation_model", "presentation_provider",
+    )(_non_blank)
+    _optional_values_are_non_blank = field_validator("triggering_patch_id", "failure_reason")(
+        _optional_non_blank
+    )
+
+    @field_validator(
+        "constraint_change_ids",
+        "evidence_added_ids",
+        "evidence_removed_ids",
+        "reused_evidence_ids",
+        "unresolved_intent_ids",
+        "unresolved_questions",
+    )
+    @classmethod
+    def answer_version_lists_are_valid(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("answer version lists must not contain blank values")
+        if len(values) != len(set(values)):
+            raise ValueError("answer version lists must be unique")
+        return values
+
+    @model_validator(mode="after")
+    def answer_version_is_consistent(self) -> Phase4AnswerVersion:
+        if self.answer.answer_version != self.answer_version:
+            raise ValueError("answer.answer_version must match the publication version")
+        return self
+
+
+class Phase4RevisionRecord(ContractModel):
+    """Append-only audit record for a state transition or publication."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    revision_id: str = Field(min_length=1)
+    session_id: str = Field(min_length=1)
+    utterance_id: str = Field(min_length=1)
+    state_revision: int = Field(ge=0)
+    transcript_revision: int = Field(ge=0)
+    retrieval_revision: int = Field(ge=0)
+    supersedes: list[int] = Field(default_factory=list)
+    patch_id: str | None = None
+    changed_intent_ids: list[str] = Field(default_factory=list)
+    preserved_intent_ids: list[str] = Field(default_factory=list)
+    discarded_result_ids: list[str] = Field(default_factory=list)
+    reason: str = Field(min_length=1)
+    created_at_utc: str = Field(min_length=1)
+    directly_affected_intent_ids: list[str] = Field(default_factory=list)
+    invalidated_claim_ids: list[str] = Field(default_factory=list)
+    preserved_claim_ids: list[str] = Field(default_factory=list)
+    reused_evidence_ids: list[str] = Field(default_factory=list)
+    retrieval_reasons: dict[str, str] = Field(default_factory=dict)
+    dependency_uncertain: bool = False
+    dependency_uncertainty_reasons: list[str] = Field(default_factory=list)
+    answer_version: int | None = Field(default=None, ge=1)
+    parent_answer_version: int | None = Field(default=None, ge=1)
+    publication_status: Literal["completed", "partial", "failed", "superseded"] | None = None
+    claim_changes: list[Phase4ClaimChange] = Field(default_factory=list)
+    evidence_added_ids: list[str] = Field(default_factory=list)
+    evidence_removed_ids: list[str] = Field(default_factory=list)
+    generation_usage: Usage = Field(default_factory=Usage)
+    retrieval_usage: Usage = Field(default_factory=Usage)
+    presentation_usage: Usage = Field(default_factory=Usage)
+    retrieval_call_count: int = Field(default=0, ge=0)
+    generation_attempts: int = Field(default=0, ge=0)
+
+    _ids_are_non_blank = field_validator(
+        "revision_id", "session_id", "utterance_id", "reason", "created_at_utc"
+    )(_non_blank)
+    _patch_id_is_non_blank = field_validator("patch_id")(_optional_non_blank)
+
+    @field_validator(
+        "changed_intent_ids",
+        "preserved_intent_ids",
+        "discarded_result_ids",
+        "directly_affected_intent_ids",
+        "invalidated_claim_ids",
+        "preserved_claim_ids",
+        "reused_evidence_ids",
+        "dependency_uncertainty_reasons",
+        "evidence_added_ids",
+        "evidence_removed_ids",
+    )
+    @classmethod
+    def revision_id_lists_are_valid(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("revision ID lists must not contain blank values")
+        if len(values) != len(set(values)):
+            raise ValueError("revision ID lists must be unique")
+        return values
+
+    @field_validator("retrieval_reasons")
+    @classmethod
+    def revision_retrieval_reasons_are_valid(cls, values: dict[str, str]) -> dict[str, str]:
+        if any(not key.strip() or not value.strip() for key, value in values.items()):
+            raise ValueError("retrieval reasons must contain non-blank keys and values")
+        return values
+
+
+class Phase4ReferenceResolution(ContractModel):
+    """An unambiguous contextual reference resolution, never an inferred fact."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    reference_text: str = Field(min_length=1)
+    entity_id: str = Field(min_length=1)
+    entity_text: str = Field(min_length=1)
+    source_intent_id: str = Field(min_length=1)
+    rationale: str = Field(min_length=1)
+
+    _values_are_non_blank = field_validator(
+        "reference_text", "entity_id", "entity_text", "source_intent_id", "rationale"
+    )(_non_blank)
+
+
+class Phase4Clarification(ContractModel):
+    """A targeted user question that leaves active semantic state unchanged."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    clarification_id: str = Field(min_length=1)
+    question: str = Field(min_length=1)
+    reason_code: Literal["ambiguous_reference", "ambiguous_change", "missing_entity"]
+    candidate_entity_ids: list[str] = Field(default_factory=list)
+    related_intent_ids: list[str] = Field(default_factory=list)
+    created_revision: int = Field(ge=0)
+    status: Literal["pending", "resolved", "withdrawn"] = "pending"
+
+    _ids_are_non_blank = field_validator("clarification_id", "question")(_non_blank)
+
+    @field_validator("candidate_entity_ids", "related_intent_ids")
+    @classmethod
+    def clarification_ids_are_valid(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("clarification IDs must not contain blank values")
+        if len(values) != len(set(values)):
+            raise ValueError("clarification IDs must be unique")
+        return values
+
+
+class Phase4PendingUpdate(ContractModel):
+    """An accepted semantic/formatting request waiting for a later answer step."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    update_id: str = Field(min_length=1)
+    patch_id: str = Field(min_length=1)
+    base_revision: int = Field(ge=0)
+    triggering_turn: int = Field(default=0, ge=0)
+    triggering_utterance_id: str = "unknown"
+    requested_kind: Literal[
+        "add_constraint",
+        "replace_constraint",
+        "remove_constraint",
+        "add_question",
+        "reformat_answer",
+        "change_topic",
+    ]
+    reason: str = Field(min_length=1)
+    target_intent_ids: list[str] = Field(default_factory=list)
+    requires_retrieval: bool
+    format_instruction: str | None = None
+    constraint_change_ids: list[str] = Field(default_factory=list)
+    created_at_utc: str = Field(min_length=1)
+    status: Literal["pending", "applied", "blocked"] = "pending"
+    candidate_revision: int | None = Field(default=None, ge=1)
+    selective_plan_id: str | None = None
+    directly_affected_intent_ids: list[str] = Field(default_factory=list)
+    invalidated_intent_ids: list[str] = Field(default_factory=list)
+    invalidated_claim_ids: list[str] = Field(default_factory=list)
+    preserved_claim_ids: list[str] = Field(default_factory=list)
+    invalidation_reasons: dict[str, str] = Field(default_factory=dict)
+    invalidated_evidence_ids: list[str] = Field(default_factory=list)
+    reused_evidence_ids: list[str] = Field(default_factory=list)
+    retrieval_intent_ids: list[str] = Field(default_factory=list)
+    retrieval_reasons: dict[str, str] = Field(default_factory=dict)
+    task_ids: list[str] = Field(default_factory=list)
+    discarded_result_ids: list[str] = Field(default_factory=list)
+    dependency_uncertain: bool = False
+    dependency_uncertainty_reasons: list[str] = Field(default_factory=list)
+
+    _ids_are_non_blank = field_validator(
+        "update_id", "patch_id", "reason", "created_at_utc", "triggering_utterance_id"
+    )(_non_blank)
+    _format_instruction_is_non_blank = field_validator("format_instruction")(
+        _optional_non_blank
+    )
+    _selective_plan_is_non_blank = field_validator("selective_plan_id")(_optional_non_blank)
+
+    @field_validator(
+        "target_intent_ids",
+        "directly_affected_intent_ids",
+        "invalidated_intent_ids",
+        "invalidated_claim_ids",
+        "preserved_claim_ids",
+        "invalidated_evidence_ids",
+        "reused_evidence_ids",
+        "retrieval_intent_ids",
+        "task_ids",
+        "discarded_result_ids",
+        "constraint_change_ids",
+        "dependency_uncertainty_reasons",
+    )
+    @classmethod
+    def pending_update_id_lists_are_valid(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("pending update ID lists must not contain blank values")
+        if len(values) != len(set(values)):
+            raise ValueError("pending update ID lists must be unique")
+        return values
+
+    @field_validator("retrieval_reasons")
+    @classmethod
+    def pending_update_retrieval_reasons_are_valid(cls, values: dict[str, str]) -> dict[str, str]:
+        if any(not key.strip() or not value.strip() for key, value in values.items()):
+            raise ValueError("retrieval reasons must contain non-blank keys and values")
+        return values
+
+    @field_validator("invalidation_reasons")
+    @classmethod
+    def pending_update_invalidation_reasons_are_valid(cls, values: dict[str, str]) -> dict[str, str]:
+        if any(not key.strip() or not value.strip() for key, value in values.items()):
+            raise ValueError("invalidation reasons must contain non-blank keys and values")
+        return values
+
+
+class Phase4PendingRequest(ContractModel):
+    """Bounded request bookkeeping; it contains no cross-session user profile."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    request_id: str = Field(min_length=1)
+    kind: Literal["follow_up_patch", "answer_publication", "presentation", "clarification"]
+    base_revision: int = Field(ge=0)
+    status: Literal["pending", "completed", "superseded"] = "pending"
+
+    _request_id_is_non_blank = field_validator("request_id")(_non_blank)
+
+
+class Phase4DecisionStep(ContractModel):
+    """Small explainable trace step retained on every proposed patch."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    stage: Literal[
+        "classification",
+        "reference_resolution",
+        "target_selection",
+        "materialization",
+        "dependency_propagation",
+    ]
+    rule: str = Field(min_length=1)
+    detail: str = Field(min_length=1)
+    matched_text: str | None = None
+    target_ids: list[str] = Field(default_factory=list)
+
+    _values_are_non_blank = field_validator("rule", "detail")(_non_blank)
+    _matched_text_is_non_blank = field_validator("matched_text")(_optional_non_blank)
+
+
+class Phase4SelectiveRetrievalTask(ContractModel):
+    """One targeted retrieval work item bound to a candidate session revision."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    task_id: str = Field(min_length=1)
+    session_id: str = Field(min_length=1)
+    patch_id: str = Field(min_length=1)
+    candidate_state_revision: int = Field(ge=1)
+    candidate_transcript_revision: int = Field(ge=0)
+    candidate_retrieval_revision: int = Field(ge=1)
+    intent_id: str = Field(min_length=1)
+    query: str = Field(min_length=1)
+    reason: str = Field(min_length=1)
+    status: Literal[
+        "queued", "running", "completed", "failed", "superseded", "discarded"
+    ] = "queued"
+    scheduler_request_id: str | None = None
+    attempts: int = Field(default=0, ge=0)
+    evidence_ids: list[str] = Field(default_factory=list)
+    discarded_result_ids: list[str] = Field(default_factory=list)
+    error: str | None = None
+
+    _ids_are_non_blank = field_validator(
+        "task_id", "session_id", "patch_id", "intent_id", "query", "reason"
+    )(_non_blank)
+    _optional_ids_are_non_blank = field_validator("scheduler_request_id", "error")(
+        _optional_non_blank
+    )
+
+    @field_validator("evidence_ids", "discarded_result_ids")
+    @classmethod
+    def retrieval_task_id_lists_are_valid(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("retrieval task ID lists must not contain blank values")
+        if len(values) != len(set(values)):
+            raise ValueError("retrieval task ID lists must be unique")
+        return values
+
+
+class Phase4SelectiveUpdatePlan(ContractModel):
+    """Audit record for dependency analysis and targeted retrieval decisions."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    plan_id: str = Field(min_length=1)
+    session_id: str = Field(min_length=1)
+    patch_id: str = Field(min_length=1)
+    base_revision: int = Field(ge=0)
+    candidate_revision: int = Field(ge=1)
+    transcript_revision: int = Field(ge=0)
+    retrieval_revision: int = Field(ge=1)
+    directly_affected_intent_ids: list[str] = Field(default_factory=list)
+    invalidated_intent_ids: list[str] = Field(default_factory=list)
+    new_intent_ids: list[str] = Field(default_factory=list)
+    affected_entity_ids: list[str] = Field(default_factory=list)
+    invalidated_claim_ids: list[str] = Field(default_factory=list)
+    preserved_claim_ids: list[str] = Field(default_factory=list)
+    invalidation_reasons: dict[str, str] = Field(default_factory=dict)
+    invalidated_evidence_ids: list[str] = Field(default_factory=list)
+    reused_evidence_ids: list[str] = Field(default_factory=list)
+    retrieval_intent_ids: list[str] = Field(default_factory=list)
+    retrieval_reasons: dict[str, str] = Field(default_factory=dict)
+    dependency_uncertain: bool = False
+    dependency_uncertainty_reasons: list[str] = Field(default_factory=list)
+    discarded_result_ids: list[str] = Field(default_factory=list)
+    retrieval_tasks: list[Phase4SelectiveRetrievalTask] = Field(default_factory=list)
+    status: Literal["pending", "running", "completed", "blocked", "superseded"] = "pending"
+    created_at_utc: str = Field(min_length=1)
+    retrieval_usage: Usage = Field(default_factory=Usage)
+    retrieval_call_count: int = Field(default=0, ge=0)
+    retrieval_attempt_count: int = Field(default=0, ge=0)
+
+    _ids_are_non_blank = field_validator(
+        "plan_id", "session_id", "patch_id", "created_at_utc"
+    )(_non_blank)
+
+    @field_validator(
+        "directly_affected_intent_ids",
+        "invalidated_intent_ids",
+        "new_intent_ids",
+        "affected_entity_ids",
+        "invalidated_claim_ids",
+        "preserved_claim_ids",
+        "invalidated_evidence_ids",
+        "reused_evidence_ids",
+        "retrieval_intent_ids",
+        "dependency_uncertainty_reasons",
+        "discarded_result_ids",
+    )
+    @classmethod
+    def selective_plan_id_lists_are_valid(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("selective plan ID lists must not contain blank values")
+        if len(values) != len(set(values)):
+            raise ValueError("selective plan ID lists must be unique")
+        return values
+
+    @field_validator("retrieval_reasons")
+    @classmethod
+    def selective_plan_retrieval_reasons_are_valid(cls, values: dict[str, str]) -> dict[str, str]:
+        if any(not key.strip() or not value.strip() for key, value in values.items()):
+            raise ValueError("retrieval reasons must contain non-blank keys and values")
+        return values
+
+    @field_validator("invalidation_reasons")
+    @classmethod
+    def selective_plan_invalidation_reasons_are_valid(cls, values: dict[str, str]) -> dict[str, str]:
+        if any(not key.strip() or not value.strip() for key, value in values.items()):
+            raise ValueError("invalidation reasons must contain non-blank keys and values")
+        return values
+
+    @model_validator(mode="after")
+    def selective_tasks_match_plan(self) -> Phase4SelectiveUpdatePlan:
+        task_ids = [task.task_id for task in self.retrieval_tasks]
+        if len(task_ids) != len(set(task_ids)):
+            raise ValueError("selective retrieval task IDs must be unique within a plan")
+        for task in self.retrieval_tasks:
+            if (
+                task.session_id != self.session_id
+                or task.patch_id != self.patch_id
+                or task.candidate_state_revision != self.candidate_revision
+                or task.candidate_transcript_revision != self.transcript_revision
+                or task.candidate_retrieval_revision != self.retrieval_revision
+            ):
+                raise ValueError("selective retrieval task does not match its candidate plan")
+        if set(self.retrieval_intent_ids) != {task.intent_id for task in self.retrieval_tasks}:
+            raise ValueError("retrieval_intent_ids must match the targeted task intents")
+        if set(self.retrieval_reasons) != set(self.retrieval_intent_ids):
+            raise ValueError("every targeted retrieval intent must have a reason")
+        return self
+
+
+class Phase4FollowUpRequest(ContractModel):
+    """Input for interpretation; the caller supplies the exact base revision."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    session_id: str = Field(min_length=1)
+    utterance_id: str = Field(min_length=1)
+    turn_index: int = Field(ge=0)
+    text: str = Field(min_length=1)
+    base_revision: int = Field(ge=0)
+    transcript_revision: int | None = Field(default=None, ge=0)
+
+    _ids_are_non_blank = field_validator("session_id", "utterance_id", "text")(_non_blank)
+
+
+class Phase4ProposedPatch(ContractModel):
+    """Validated, non-mutating proposal against one exact session revision."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    patch_id: str = Field(min_length=1)
+    session_id: str = Field(min_length=1)
+    utterance_id: str = Field(min_length=1)
+    turn_index: int = Field(ge=0)
+    source_text: str = Field(min_length=1)
+    base_revision: int = Field(ge=0)
+    proposed_revision: int = Field(ge=1)
+    transcript_revision: int = Field(ge=0)
+    retrieval_revision: int = Field(ge=0)
+    classification: Literal[
+        "add_constraint",
+        "replace_constraint",
+        "remove_constraint",
+        "add_question",
+        "reformat_answer",
+        "change_topic",
+        "clarification_required",
+    ]
+    execution_mode: Literal["rule_based", "mock_provider", "real_provider"]
+    provider_identity: str = Field(min_length=1)
+    provider_model: str = Field(min_length=1)
+    target_intent_ids: list[str] = Field(default_factory=list)
+    intent_replacements: dict[str, str] = Field(default_factory=dict)
+    added_constraints: list[Phase4ConstraintRecord] = Field(default_factory=list)
+    replacement_constraints: dict[str, Phase4ConstraintRecord] = Field(default_factory=dict)
+    removed_constraint_ids: list[str] = Field(default_factory=list)
+    new_intents: list[Phase4IntentRecord] = Field(default_factory=list)
+    reference_resolutions: list[Phase4ReferenceResolution] = Field(default_factory=list)
+    topic_key: str | None = None
+    format_instruction: str | None = None
+    clarification: Phase4Clarification | None = None
+    decision_trace: list[Phase4DecisionStep] = Field(default_factory=list)
+
+    _ids_are_non_blank = field_validator(
+        "patch_id", "session_id", "utterance_id", "source_text", "provider_identity", "provider_model"
+    )(_non_blank)
+    _topic_key_is_non_blank = field_validator("topic_key")(_optional_non_blank)
+    _format_instruction_is_non_blank = field_validator("format_instruction")(
+        _optional_non_blank
+    )
+
+    @field_validator("target_intent_ids", "removed_constraint_ids")
+    @classmethod
+    def patch_id_lists_are_valid(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("patch ID lists must not contain blank values")
+        if len(values) != len(set(values)):
+            raise ValueError("patch ID lists must be unique")
+        return values
+
+    @model_validator(mode="after")
+    def patch_revision_and_classification_are_consistent(self) -> Phase4ProposedPatch:
+        if self.proposed_revision != self.base_revision + 1:
+            raise ValueError("proposed_revision must be exactly one after base_revision")
+        if self.classification == "clarification_required":
+            if self.clarification is None:
+                raise ValueError("clarification_required patches require clarification")
+            if self.added_constraints or self.replacement_constraints or self.removed_constraint_ids or self.new_intents:
+                raise ValueError("clarification patches must not contain semantic mutations")
+        elif self.clarification is not None:
+            raise ValueError("non-clarification patches must not contain a clarification")
+        if self.classification == "reformat_answer" and not self.format_instruction:
+            raise ValueError("reformat patches require format_instruction")
+        if self.classification == "change_topic" and not self.topic_key:
+            raise ValueError("change_topic patches require topic_key")
+        if any(not key.strip() or not value.strip() for key, value in self.intent_replacements.items()):
+            raise ValueError("intent_replacements must contain non-blank IDs")
+        if len(self.intent_replacements) != len(set(self.intent_replacements.values())):
+            raise ValueError("intent_replacements must not map multiple old IDs to one new ID")
+        return self
+
+
+class Phase4SessionState(ContractModel):
+    """Bounded, session-only state for follow-up interpretation and updates."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    session_id: str = Field(min_length=1)
+    active_topic: str = Field(min_length=1)
+    active_task: str = Field(min_length=1)
+    current_utterance_id: str = Field(min_length=1)
+    transcript_revision: int = Field(ge=0)
+    state_revision: int = Field(ge=0)
+    retrieval_revision: int = Field(ge=0)
+    corpus_id: str = Field(min_length=1)
+    index_id: str = Field(min_length=1)
+    active_intents: list[Phase4IntentRecord] = Field(default_factory=list)
+    intent_history: list[Phase4IntentRecord] = Field(default_factory=list)
+    constraint_records: list[Phase4ConstraintRecord] = Field(default_factory=list)
+    current_constraint_record_ids: list[str] = Field(default_factory=list)
+    evidence_records: list[Phase4EvidenceRecord] = Field(default_factory=list)
+    claim_records: list[Phase4ClaimRecord] = Field(default_factory=list)
+    answer_versions: list[Phase4AnswerVersion] = Field(default_factory=list)
+    current_answer_version: int | None = Field(default=None, ge=1)
+    current_evidence_ids: list[str] = Field(default_factory=list)
+    current_claim_record_ids: list[str] = Field(default_factory=list)
+    pending_clarification: Phase4Clarification | None = None
+    pending_update: Phase4PendingUpdate | None = None
+    pending_requests: list[Phase4PendingRequest] = Field(default_factory=list)
+    superseded_requests: list[Phase4PendingRequest] = Field(default_factory=list)
+    generation_status: Literal["idle", "pending", "published", "blocked"] = "idle"
+    answer_status: Literal[
+        "unavailable", "current", "stale", "presentation_pending", "partial", "failed"
+    ] = "unavailable"
+    trace_ids: list[str] = Field(default_factory=list)
+    revision_history: list[Phase4RevisionRecord] = Field(default_factory=list)
+    selective_update_plans: list[Phase4SelectiveUpdatePlan] = Field(default_factory=list)
+
+    _ids_are_non_blank = field_validator(
+        "session_id", "active_topic", "active_task", "current_utterance_id", "corpus_id", "index_id"
+    )(_non_blank)
+
+    @field_validator("current_constraint_record_ids", "current_evidence_ids", "current_claim_record_ids", "trace_ids")
+    @classmethod
+    def state_id_lists_are_valid(cls, values: list[str]) -> list[str]:
+        if any(not value.strip() for value in values):
+            raise ValueError("state ID lists must not contain blank values")
+        if len(values) != len(set(values)):
+            raise ValueError("state ID lists must be unique")
+        return values
+
+    @model_validator(mode="after")
+    def state_references_are_valid(self) -> Phase4SessionState:
+        intent_ids = {record.intent_id for record in self.active_intents}
+        if len(intent_ids) != len(self.active_intents):
+            raise ValueError("active intent IDs must be unique")
+        constraint_record_ids = [record.record_id for record in self.constraint_records]
+        if len(constraint_record_ids) != len(set(constraint_record_ids)):
+            raise ValueError("constraint record IDs must be unique")
+        current_constraints = {
+            record.record_id: record
+            for record in self.constraint_records
+            if record.record_id in set(self.current_constraint_record_ids)
+        }
+        if set(current_constraints) != set(self.current_constraint_record_ids):
+            raise ValueError("current constraint IDs must reference constraint records")
+        if any(record.status != "active" for record in current_constraints.values()):
+            raise ValueError("current constraint IDs must reference active constraints")
+        if any(
+            record.scope == "intent" and record.intent_id not in intent_ids
+            for record in current_constraints.values()
+        ):
+            raise ValueError("current intent constraints must reference active intents")
+        evidence_ids = [record.evidence_id for record in self.evidence_records]
+        if len(evidence_ids) != len(set(evidence_ids)):
+            raise ValueError("evidence IDs must be unique")
+        evidence_by_id = {record.evidence_id: record for record in self.evidence_records}
+        if not set(self.current_evidence_ids) <= set(evidence_by_id):
+            raise ValueError("current evidence IDs must reference evidence records")
+        if any(evidence_by_id[item].status != "current" for item in self.current_evidence_ids):
+            raise ValueError("current evidence IDs must reference current evidence")
+        if any(
+            evidence_by_id[item].session_id != self.session_id
+            or evidence_by_id[item].utterance_id != self.current_utterance_id
+            or evidence_by_id[item].transcript_revision != self.transcript_revision
+            or evidence_by_id[item].retrieval_revision != self.retrieval_revision
+            or evidence_by_id[item].corpus_id != self.corpus_id
+            or evidence_by_id[item].index_id != self.index_id
+            for item in self.current_evidence_ids
+        ):
+            raise ValueError(
+                "current evidence must match session, utterance, revision, corpus, and index identity"
+            )
+        if any(
+            set(evidence_by_id[item].intent_ids) - intent_ids
+            for item in self.current_evidence_ids
+        ):
+            raise ValueError("current evidence must reference active intents")
+        claim_record_ids = [record.record_id for record in self.claim_records]
+        if len(claim_record_ids) != len(set(claim_record_ids)):
+            raise ValueError("claim record IDs must be unique")
+        claims_by_id = {record.record_id: record for record in self.claim_records}
+        if not set(self.current_claim_record_ids) <= set(claims_by_id):
+            raise ValueError("current claim IDs must reference claim records")
+        if any(claims_by_id[item].status != "current" for item in self.current_claim_record_ids):
+            raise ValueError("current claim IDs must reference current claims")
+        evidence_ids = set(self.current_evidence_ids)
+        if any(
+            set(claims_by_id[item].supporting_evidence_ids) - evidence_ids
+            for item in self.current_claim_record_ids
+        ):
+            raise ValueError("current claims must reference current evidence records")
+        if any(
+            set(claims_by_id[item].intent_ids) - intent_ids
+            for item in self.current_claim_record_ids
+        ):
+            raise ValueError("current claims must reference active intents")
+        version_ids = [version.answer_version for version in self.answer_versions]
+        if len(version_ids) != len(set(version_ids)):
+            raise ValueError("answer versions must be unique")
+        plan_ids = [plan.plan_id for plan in self.selective_update_plans]
+        if len(plan_ids) != len(set(plan_ids)):
+            raise ValueError("selective update plan IDs must be unique")
+        for plan in self.selective_update_plans:
+            if plan.session_id != self.session_id:
+                raise ValueError("selective update plan belongs to another session")
+        if self.pending_update is not None and self.pending_update.selective_plan_id is not None:
+            if self.pending_update.selective_plan_id not in set(plan_ids):
+                raise ValueError("pending update must reference a recorded selective update plan")
+            pending_plan = next(
+                plan
+                for plan in self.selective_update_plans
+                if plan.plan_id == self.pending_update.selective_plan_id
+            )
+            if (
+                self.pending_update.candidate_revision is not None
+                and self.pending_update.candidate_revision != pending_plan.candidate_revision
+            ):
+                raise ValueError("pending update candidate revision must match its selective plan")
+        versions = set(version_ids)
+        if self.current_answer_version is not None and self.current_answer_version not in versions:
+            raise ValueError("current_answer_version must reference an answer version")
+        if self.answer_status in {"current", "partial", "failed", "presentation_pending"} and self.current_answer_version is None:
+            raise ValueError("a published answer status requires a current answer version")
+        if self.answer_status == "unavailable" and self.current_answer_version is not None:
+            raise ValueError("unavailable answer status must not retain an answer pointer")
+        if self.answer_status == "stale" and self.current_answer_version is None and self.current_claim_record_ids:
+            raise ValueError("stale answer claims require a historical answer pointer")
+        if self.current_claim_record_ids:
+            if self.current_answer_version is None:
+                raise ValueError("current claims require a current answer version")
+            if any(
+                claims_by_id[item].answer_version != self.current_answer_version
+                for item in self.current_claim_record_ids
+            ):
+                raise ValueError("current claims must belong to the current answer version")
+        if self.pending_clarification is not None and self.pending_clarification.status != "pending":
+            raise ValueError("pending_clarification must have status=pending")
+        return self
+
+    @property
+    def current_constraints(self) -> list[Phase4ConstraintRecord]:
+        """Active constraints in stable insertion order."""
+
+        wanted = set(self.current_constraint_record_ids)
+        return [record for record in self.constraint_records if record.record_id in wanted]
+
+    @property
+    def current_evidence(self) -> list[Phase4EvidenceRecord]:
+        wanted = set(self.current_evidence_ids)
+        return [record for record in self.evidence_records if record.evidence_id in wanted]
+
+    @property
+    def current_claims(self) -> list[Phase4ClaimRecord]:
+        wanted = set(self.current_claim_record_ids)
+        return [record for record in self.claim_records if record.record_id in wanted]
+
+    @property
+    def current_answer(self) -> Phase4AnswerVersion | None:
+        """Return the pointed-to publication, including when marked historical/stale."""
+
+        if self.current_answer_version is None:
+            return None
+        return next(
+            (
+                version
+                for version in self.answer_versions
+                if version.answer_version == self.current_answer_version
+            ),
+            None,
+        )
+
+    @property
+    def usable_answer(self) -> Phase4AnswerVersion | None:
+        """Return content that may be presented for the current request."""
+
+        if self.answer_status not in {"current", "partial", "presentation_pending"}:
+            return None
+        return self.current_answer
+
+
+class Phase4ReplayTurn(ContractModel):
+    """One JSONL turn consumed by the Phase 4 executable replay harness."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    session_id: str = Field(min_length=1)
+    turn_index: int = Field(ge=0)
+    utterance_id: str = Field(min_length=1)
+    text: str = Field(min_length=1)
+
+    _ids_are_non_blank = field_validator("session_id", "utterance_id", "text")(_non_blank)
+
+
+class Phase4ReplayResult(ContractModel):
+    """Inspectable output of the Phase 4 replay pipeline."""
+
+    schema_version: Literal[PHASE4_SCHEMA_VERSION] = PHASE4_SCHEMA_VERSION
+    session_id: str = Field(min_length=1)
+    corpus_id: str = Field(min_length=1)
+    index_id: str = Field(min_length=1)
+    corpus_source_kind: Literal["official", "synthetic_fixture", "unknown"]
+    retrieval_backend: str = Field(min_length=1)
+    generation_execution_mode: Literal["rule_based", "mock_provider", "real_provider"]
+    generation_provider: str = Field(min_length=1)
+    generation_model: str = Field(min_length=1)
+    run_status: Literal["completed", "partial", "failed"]
+    steps: list[dict[str, Any]] = Field(default_factory=list)
+    state: Phase4SessionState
+    retrieval_call_count: int = Field(default=0, ge=0)
+    retrieval_attempt_count: int = Field(default=0, ge=0)
+    generation_call_count: int = Field(default=0, ge=0)
+    generation_attempt_count: int = Field(default=0, ge=0)
+    notes: list[str] = Field(default_factory=list)
+
+    _ids_are_non_blank = field_validator(
+        "session_id", "corpus_id", "index_id", "retrieval_backend",
+        "generation_provider", "generation_model",
+    )(_non_blank)
+
+
+# Public short names for callers that do not need the phase prefix.
+SessionState = Phase4SessionState
+ProposedPatch = Phase4ProposedPatch

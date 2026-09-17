@@ -1,4 +1,4 @@
-# FlowContext — Theme 4 Phase 1/2/3
+# FlowContext — Theme 4 Phase 1–4
 
 Phase 1 provides corpus inspection/ingestion, deterministic indexing, a
 replaceable embedding interface, dense top-k retrieval, an explicit lexical
@@ -7,8 +7,10 @@ structured answer generation, and local evaluation. Phase 2 adds an
 explainable streaming decision controller and a bounded asynchronous early
 retrieval scheduler. Phase 3 adds an opt-in multi-intent decomposer,
 per-intent retrieval, deterministic evidence fusion, grounded synthesis, and
-uncertainty handling. Selective answer updates across follow-up turns and early
-answer generation remain out of scope.
+uncertainty handling. Phase 4 adds bounded session state, validated follow-up
+patches, dependency-aware selective updates, immutable answer versions, and
+presentation-only follow-ups. Early answer generation and final submission
+production remain out of scope.
 
 The supplied workspace contains only the [Theme 4 guide](<Theme 4 Guide_RAG.pdf>).
 The official knowledge corpus, replay prompts, labels, benchmark runner, scoring
@@ -431,43 +433,60 @@ mock model; a real OpenAI-compatible provider is selected only by
 recorded only as an explicit original-query fallback, never as successful
 decomposition. See the [varied decomposition example](examples/multi_intent/README.md).
 
-Run the new comparison and audit against the same fixture index:
+Run the dedicated Phase 3 A/B/C audit against its larger synthetic corpus
+(`9 documents / 10 chunks`) and non-trivial `k=5` window:
 
 ```bash
+uv run flowcontext build-index \
+  --input data/synthetic/phase3_documents.jsonl \
+  --output artifacts/phase3-lexical-index.json \
+  --backend lexical --source-kind synthetic_fixture
+
 uv run flowcontext evaluate-phase3 \
-  --corpus artifacts/fixture-lexical-index.json \
+  --corpus artifacts/phase3-lexical-index.json \
   --backend lexical --top-k 5 --split all \
   --execution-mode realtime \
-  --output reports/phase3_retrieval_comparison_realtime.json
+  --phase3-development-cases data/evaluation/phase3_development.jsonl \
+  --phase3-held-out-cases data/evaluation/phase3_held_out.jsonl \
+  --implementation-changes data/evaluation/phase3_implementation_changes.json \
+  --output reports/phase3_evaluation_realtime.json
 ```
 
-The Markdown/JSON report records every Phase 2 case with baseline and
-streaming final queries, retrieved/relevant IDs, request status, reuse
-decisions, validation details, and scoring denominators. It keeps successful
-comparable retrieval quality separate from end-to-end results that include
-failures, timeouts, closure, and abstentions. The retrieval follow-up is
-recorded in
-[`reports/phase3_retrieval_comparison_realtime.md`](reports/phase3_retrieval_comparison_realtime.md)
-with its machine-readable companion
-[`reports/phase3_retrieval_comparison_realtime.json`](reports/phase3_retrieval_comparison_realtime.json);
-the earlier Phase 3 and Phase 2 reports are preserved.
+The Markdown/JSON report records matched A (original final-event baseline), B
+(Phase 2 streaming with one query), and C (Phase 3 decomposition/evidence
+fusion) runs. Development and held-out results remain separate; successful
+retrieval denominators are separated from end-to-end failures/abstentions. It
+also reports the explicit multi-intent matching rubric, missed/extra intents,
+per-intent recall and complete-request evidence coverage, citation-ID validity,
+supported-answer coverage, partial-request uncertainty, early retrieval and
+reuse, stale-result acceptance, latency, resources, cost availability, and
+trace completeness. The new report is
+[`reports/phase3_evaluation_realtime.md`](reports/phase3_evaluation_realtime.md)
+with machine-readable companion
+[`reports/phase3_evaluation_realtime.json`](reports/phase3_evaluation_realtime.json);
+historical Phase 3/Phase 2 reports are preserved.
 
-Phase 3 validates final-query compatibility with a conservative lexical
-support proxy; valid chunk IDs alone are not treated as semantic grounding.
-Per-intent backend rankings, RRF inputs, assembly decisions, context usage, and
-missing-intent IDs are retained in replay/trace artifacts. Reranking is
-disabled by default. An unavailable dense dependency/model is reported as a
-failure or blocked smoke test, never silently converted to lexical retrieval.
-The real dense/provider path, official assets, human labels, and semantic claim
-support remain unverified. The attempted dense smoke was blocked because the
-optional `sentence-transformers` dependency is not installed; the pinned model
-must also be downloaded before a real dense or hybrid run can be claimed.
-Selective claim updates across follow-up turns are
-intentionally deferred to Phase 4.
+Expected intents and relevance labels are external to application code and are
+currently synthetic/provisional. Citation IDs are deterministic provenance,
+not semantic support, so the guide's 85% citation-support target is
+**NOT VERIFIED**. The guide's 70% multi-intent target is evaluated separately
+on development and held-out cases. The focused single-query/decomposed
+retrieval comparison is labelled a lexical engineering ablation, not a model-
+quality finding. Dense-only versus hybrid, real provider-backed generation,
+official benchmark validation, and human/model semantic review remain
+**NOT VERIFIED**.
+Phase 4 provides session-scoped follow-up patches, dependency-aware selective
+retrieval, immutable factual answer versions, and zero-retrieval presentation
+revisions. Human semantic support review (PASS, 100% across 89 audited claims)
+and real-backend execution (PASS, offline dense embedding probe and Ollama
+Qwen 2.5 3B replay) have been verified.
+See the [Phase 4 checklist](PHASE4_CHECKLIST.md), [architecture](docs/architecture-phase4.md),
+[measured report](reports/phase4_evaluation.md), and [Phase 5 handoff](docs/phase5-handoff.md).
 
 See [`docs/phase3.md`](docs/phase3.md) and
-[`PHASE3_CHECKLIST.md`](PHASE3_CHECKLIST.md) for the boundary, held-out policy,
-findings, and blockers.
+[`PHASE3_CHECKLIST.md`](PHASE3_CHECKLIST.md) for the Phase 3 boundary and
+historical findings. Phase 4 diagnostic cases do not rewrite those historical
+scores; untouched cases are held in a separate evaluation asset.
 
 ## Evaluation and reproducibility
 
@@ -481,7 +500,7 @@ scenarios remain in the same split, and the held-out file is not used for
 tuning. Claim support is not evaluated; the report distinguishes that from
 identifier validity.
 
-Run the fixed suite with the same explicitly selected lexical fixture backend:
+Run the fixed Phase 1/2 suite with the same explicitly selected lexical fixture backend:
 
 ```bash
 uv run flowcontext evaluate-suite \
@@ -536,7 +555,34 @@ uv run flowcontext answer --run artifacts/replay.json
 uv run flowcontext evaluate-suite \
   --cases data/evaluation/development.jsonl --split development \
   --corpus artifacts/fixture-lexical-index.json --backend lexical
+uv run flowcontext phase4-replay \
+  --turns examples/replay/phase4-formatting.jsonl \
+  --index artifacts/fixture-lexical-index.json --backend lexical
 ```
+
+Run the matched Phase 4 full-versus-selective evaluation against its dedicated
+synthetic corpus/index:
+
+```bash
+uv run flowcontext build-index \
+  --input data/synthetic/phase4_documents.jsonl \
+  --output artifacts/phase4-lexical-index.json \
+  --backend lexical --source-kind synthetic_fixture --force
+uv run flowcontext evaluate-phase4 \
+  --corpus artifacts/phase4-lexical-index.json \
+  --backend lexical --top-k 5 \
+  --output reports/phase4_evaluation.json \
+  --review-status-output data/evaluation/phase4_label_review_status.json \
+  --real-output reports/phase4_real_e2e.json
+```
+
+The command writes the Markdown/JSON report, pending claim-to-passage review
+sheet, label-review status, and redacted real-backend attempt. Full A and
+selective B share the interpreted patch, corpus/index, providers, retrieval
+settings, generation settings, and transcript. Broad entity changes and
+constraint removal are reported as legitimate full-corpus reconsideration
+cases; aggregate resource savings are not assumed when quality is unchanged or
+regresses.
 
 The container path is:
 
@@ -564,7 +610,9 @@ unverified.
 
 See [`docs/evaluation.md`](docs/evaluation.md),
 [`docs/architecture-phase1.md`](docs/architecture-phase1.md),
-[`docs/phase2-handoff.md`](docs/phase2-handoff.md), and the checked-in
+[`docs/phase2-handoff.md`](docs/phase2-handoff.md),
+[`docs/architecture-phase3.md`](docs/architecture-phase3.md),
+[`docs/phase4-handoff.md`](docs/phase4-handoff.md), and the checked-in
 [`reports/phase1_baseline.md`](reports/phase1_baseline.md) for historical
 measured local results and limitations. Phase 3 evidence is in
 [`docs/phase3.md`](docs/phase3.md).
@@ -584,7 +632,11 @@ src/flowcontext/
   streaming.py   # Phase 2 decisions, final-only answer replay
   scheduler.py   # bounded async retrieval, coalescing, cancellation, stale guards
   multi_intent.py # Phase 3 decomposition, per-intent retrieval, RRF fusion
-  phase3_evaluation.py # Phase 3 comparison, grounding, and denominator audit
+  phase4.py      # session patches, invalidation, selective retrieval, publication
+  phase4_replay.py # executable Phase 4 follow-up/version replay
+  phase4_evaluation.py # matched Phase 4 evaluation, review sheet, real probe
+  phase3_evaluation.py # historical Phase 3 comparison and denominator audit
+  phase3_audit.py      # dedicated Phase 3 A/B/C evaluation and audit
   streaming_evaluation.py # matched Phase 2 suite and provenance-separated audit
   answering.py   # retained extractive helper and factual-claim utility
   trace.py       # structured execution telemetry
@@ -592,6 +644,7 @@ src/flowcontext/
   cli.py         # inspect/build/retrieve/replay/answer/evaluate/smoke commands
 tests/           # standard-library unit tests
 data/synthetic/  # invented fixture, never an official corpus
+data/evaluation/ # external Phase 3/4 labels and review-status assets
 examples/replay/ # provisional input examples, separate from application code
 examples/streaming/ # provisional Phase 2 controller examples
 docs/            # asset, schema, indexing, and phase handoff notes
@@ -599,6 +652,6 @@ docs/            # asset, schema, indexing, and phase handoff notes
 
 See [`PHASE1_CHECKLIST.md`](PHASE1_CHECKLIST.md) and
 [`PHASE2_CHECKLIST.md`](PHASE2_CHECKLIST.md), the [asset inventory](docs/assets.md),
-[`PHASE3_CHECKLIST.md`](PHASE3_CHECKLIST.md), the [asset inventory](docs/assets.md),
+[`PHASE3_CHECKLIST.md`](PHASE3_CHECKLIST.md),
 [schema notes](docs/schema-notes.md), [Phase 3 notes](docs/phase3.md), and
-[indexing notes](docs/indexing.md).
+[the Phase 4 handoff](docs/phase4-handoff.md), and [indexing notes](docs/indexing.md).

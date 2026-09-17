@@ -13,6 +13,7 @@ import asyncio
 import concurrent.futures
 import time
 from dataclasses import dataclass
+from collections import deque
 from typing import Any
 
 from .config import Settings
@@ -25,7 +26,12 @@ from .contracts import (
     Usage,
 )
 from .retrieval import Retriever, tokenize
-from .multi_intent import reuse_validation
+from .multi_intent import (
+    MultiIntentRetriever,
+    filter_single_query_evidence,
+    reuse_validation,
+    single_query_reuse_validation,
+)
 from .streaming import StreamingControllerError, StreamingDecisionController, _canonical_query
 from .trace import TraceCollector
 
@@ -104,6 +110,12 @@ class AsyncRetrievalScheduler:
         self._semaphore = asyncio.Semaphore(self.config.max_concurrency)
         self._active: dict[str, _RequestState] = {}
         self._pending_latest: _RequestState | None = None
+        # Phase 2 keeps one latest pending query because a material correction
+        # supersedes the previous stream.  Phase 4 can have several
+        # independent unresolved intents in one candidate revision, so its
+        # caller may opt into this bounded FIFO alongside the legacy latest
+        # slot.
+        self._parallel_pending: deque[_RequestState] = deque()
         self._results: list[StreamingRetrievalResult] = []
         self._allocated_requests = 0
         self._closed = False
@@ -260,6 +272,7 @@ class AsyncRetrievalScheduler:
         decision: StreamingDecision,
         *,
         query_override: str | None = None,
+        allow_parallel_queries: bool = False,
     ) -> StreamingRetrievalRequest:
         """Schedule a decision without blocking the event loop.
 
@@ -271,26 +284,38 @@ class AsyncRetrievalScheduler:
 
         if decision.decision != "RETRIEVE" and query_override is None:
             raise RetrievalSchedulerError("only RETRIEVE decisions can be scheduled without a query override")
+        if (
+            allow_parallel_queries
+            and len(self._active) >= self.config.max_pending_requests
+            and len(self._parallel_pending) >= self.config.max_pending_requests
+        ):
+            raise RetrievalSchedulerError(
+                "independent retrieval pending limit reached; targeted work was not scheduled"
+            )
         state = self._new_state(decision, query_override=query_override)
         query_key = _canonical_query(state.request.query)
 
-        for active_state in list(self._active.values()):
-            if active_state.result is None and _canonical_query(active_state.request.query) != query_key:
-                self._mark_superseded(active_state, reason="material_query_change")
-        if self._pending_latest is not None:
-            if _canonical_query(self._pending_latest.request.query) != query_key:
-                self._cancel_pending(self._pending_latest, reason="coalesced_by_newer_query")
-                self._pending_latest = None
-            else:
-                # The final path should normally reuse a matching state. This
-                # guard avoids allocating duplicate work if a caller forces a
-                # same-query schedule concurrently.
-                self._cancel_pending(self._pending_latest, reason="duplicate_pending_query")
-                self._pending_latest = None
+        if not allow_parallel_queries:
+            for active_state in list(self._active.values()):
+                if active_state.result is None and _canonical_query(active_state.request.query) != query_key:
+                    self._mark_superseded(active_state, reason="material_query_change")
+            if self._pending_latest is not None:
+                if _canonical_query(self._pending_latest.request.query) != query_key:
+                    self._cancel_pending(self._pending_latest, reason="coalesced_by_newer_query")
+                    self._pending_latest = None
+                else:
+                    # The final path should normally reuse a matching state. This
+                    # guard avoids allocating duplicate work if a caller forces a
+                    # same-query schedule concurrently.
+                    self._cancel_pending(self._pending_latest, reason="duplicate_pending_query")
+                    self._pending_latest = None
 
         if len(self._active) < self.config.max_pending_requests:
             self._activate(state)
             self._trace_scheduled(state, "active")
+        elif allow_parallel_queries:
+            self._parallel_pending.append(state)
+            self._trace_scheduled(state, "parallel_pending")
         else:
             if self._pending_latest is not None:
                 self._cancel_pending(self._pending_latest, reason="coalesced_by_newer_query")
@@ -303,6 +328,66 @@ class AsyncRetrievalScheduler:
                 attributes={"coalesced_pending": True},
             )
         return state.request
+
+    def supersede_all(self, *, reason: str = "candidate_revision_superseded") -> None:
+        """Mark every outstanding request obsolete without trusting cancellation.
+
+        This is intentionally separate from ``close``.  A Phase 4 correction
+        keeps the session alive while the old executor work may continue; the
+        revision-aware controller and the coordinator's expected-revision
+        check reject any late result that does finish.
+        """
+
+        for state in list(self._active.values()):
+            self._mark_superseded(state, reason=reason)
+        pending = self._pending_latest
+        self._pending_latest = None
+        if pending is not None:
+            self._cancel_pending(pending, reason=reason)
+        parallel = list(self._parallel_pending)
+        self._parallel_pending.clear()
+        for state in parallel:
+            self._cancel_pending(state, reason=reason)
+
+    def result_for_request(self, request_id: str) -> StreamingRetrievalResult | None:
+        """Return a completed result by request ID, if the scheduler retained it."""
+
+        for result in reversed(self._results):
+            if result.request_id == request_id:
+                return result
+        return None
+
+    async def wait_for_request(
+        self,
+        request_id: str,
+        *,
+        timeout_s: float | None = None,
+    ) -> StreamingRetrievalResult | None:
+        """Await one scheduled request without running final-query recovery."""
+
+        result = self.result_for_request(request_id)
+        if result is not None:
+            return result
+        state = self._active.get(request_id)
+        if state is None and self._pending_latest is not None:
+            if self._pending_latest.request.request_id == request_id:
+                state = self._pending_latest
+        if state is None:
+            state = next(
+                (
+                    item
+                    for item in self._parallel_pending
+                    if item.request.request_id == request_id
+                ),
+                None,
+            )
+        if state is None:
+            return None
+        deadline_s = time.monotonic() + (
+            self.config.final_wait_timeout_s if timeout_s is None else max(0.0, timeout_s)
+        )
+        result = await self._await_state(state, deadline_s=deadline_s)
+        return result
 
     def _activate(self, state: _RequestState) -> None:
         self._active[state.request.request_id] = state
@@ -438,7 +523,15 @@ class AsyncRetrievalScheduler:
                 parent_revision=state.request.transcript_revision,
                 retrieval_revision=state.request.retrieval_revision,
             )
-        return self.retriever.search(state.request.query)
+        candidates = self.retriever.search(state.request.query)
+        # Phase 2 remains a single parent-query path, but it must not pass a
+        # weak lexical distractor to answer generation merely because the
+        # chunk has a valid ID or a non-zero retrieval score.
+        evidence, _decisions = filter_single_query_evidence(
+            state.request.query,
+            candidates,
+        )
+        return evidence
 
     def _decomposition_for_state(self, state: _RequestState) -> dict[str, Any] | None:
         get_decomposition = getattr(self.retriever, "decomposition_for", None)
@@ -698,16 +791,24 @@ class AsyncRetrievalScheduler:
         self._promote_pending()
 
     def _promote_pending(self) -> None:
-        if self._closed or self._pending_latest is None:
+        if self._closed:
             return
-        if len(self._active) >= self.config.max_pending_requests:
-            return
-        state = self._pending_latest
-        self._pending_latest = None
-        if state.result is not None or state.superseded:
-            return self._promote_pending()
-        self._activate(state)
-        self._trace_scheduled(state, "promoted_from_pending")
+        while len(self._active) < self.config.max_pending_requests:
+            if self._parallel_pending:
+                state = self._parallel_pending.popleft()
+                if state.result is not None or state.superseded:
+                    continue
+                self._activate(state)
+                self._trace_scheduled(state, "promoted_from_parallel_pending")
+                continue
+            if self._pending_latest is None:
+                return
+            state = self._pending_latest
+            self._pending_latest = None
+            if state.result is not None or state.superseded:
+                continue
+            self._activate(state)
+            self._trace_scheduled(state, "promoted_from_pending")
 
     def _completed_result_for_query(self, query: str) -> StreamingRetrievalResult | None:
         query_key = _canonical_query(query)
@@ -725,12 +826,14 @@ class AsyncRetrievalScheduler:
 
     def _evidence_validation(self, query: str, hits: list) -> dict[str, Any]:
         validator = getattr(self.retriever, "validate_evidence_for_query", None)
-        if callable(validator):
+        if isinstance(self.retriever, MultiIntentRetriever) and callable(validator):
             return validator(
                 query,
                 hits,
                 parent_revision=self.controller.transcript_revision,
             )
+        if not isinstance(self.retriever, MultiIntentRetriever):
+            return single_query_reuse_validation(query, hits)
         return reuse_validation(query, hits)
 
     def _evidence_is_appropriate(self, query: str, hits: list) -> bool:
@@ -1128,6 +1231,17 @@ class AsyncRetrievalScheduler:
         if self._pending_latest is not None:
             pending = self._pending_latest
             self._pending_latest = None
+            pending.closed = True
+            self._request_cancellation(pending, reason="session_closed")
+            if pending.result is None:
+                self._record_terminal(
+                    pending,
+                    status="cancelled",
+                    error=TraceError(error_type="RetrievalCancelled", message="session closed before worker start"),
+                )
+        parallel = list(self._parallel_pending)
+        self._parallel_pending.clear()
+        for pending in parallel:
             pending.closed = True
             self._request_cancellation(pending, reason="session_closed")
             if pending.result is None:

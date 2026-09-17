@@ -40,20 +40,50 @@ opt-in path while preserving the Phase 1 baseline and Phase 2 streaming mode.
 
 ## Evaluation
 
-- [x] Per-case baseline/streaming comparison with status, IDs, queries, reuse,
-  and scoring denominators.
+- [x] Dedicated external-label suite includes non-decomposable singles,
+  independent and dependent questions, shared/intent constraints, negation,
+  comparisons, partial requests, conflicts, entity confusion, corrections, and
+  provider/retrieval failures.
+- [x] Matched A/B/C comparison: original final-event baseline, Phase 2
+  streaming single query, and Phase 3 streaming decomposition/evidence fusion.
 - [x] Development and held-out results are separate.
+- [x] Related scenario variants are held within one split and the report
+  records the split-integrity check.
+- [x] Expected intents, relevance labels, answer expectations, and review
+  provenance are external to application code; current labels are explicitly
+  `provisional_generated`.
 - [x] Successful comparable retrieval quality is separated from end-to-end
   outcomes including failures and abstentions.
+- [x] Corpus size and k are reported together; the dedicated audit uses 9
+  documents / 10 chunks and `k=5`.
+- [x] Explicit one-to-one multi-intent rubric reports missed intents and
+  unnecessary extras.
+- [x] Per-intent retrieval recall, complete-request evidence coverage,
+  supported-answer coverage, partial-request uncertainty, citation-ID
+  validity, early retrieval/reuse, stale acceptance, latency, resources,
+  errors, cost availability, and trace completeness are reported.
 - [x] Phase 2 non-useful reuse cases are classified without held-out tuning.
 - [x] Targeted decomposition, fusion, reuse, uncertainty, revision, and
   denominator regression tests.
-- [x] New comparison report preserves historical Phase 2 reports.
-- [ ] Real dense/provider-backed and semantic claim-support evaluation.
+- [x] Single-query versus decomposed retrieval ablation is measured and
+  labelled as a lexical engineering observation, not model quality.
+- [x] New dedicated report preserves historical Phase 2/earlier Phase 3
+  reports.
+- [ ] Dense-only versus hybrid ablation; `NOT VERIFIED` because no usable
+  dense model/index was available.
+- [ ] Semantic claim-support evaluation and the guide's 85% citation-support
+  target; `NOT VERIFIED` because citation IDs do not establish support.
+- [ ] Real provider-backed and official benchmark validation.
 
 ## Evidence
 
-See [`reports/phase3_comparison.md`](reports/phase3_comparison.md), the new
-retrieval audit [`reports/phase3_retrieval_comparison_realtime.md`](reports/phase3_retrieval_comparison_realtime.md), and
-[`docs/phase3.md`](docs/phase3.md). The checked-in result is synthetic,
-lexical, mock, and provisional; it is not an official benchmark result.
+See the dedicated audit
+[`reports/phase3_evaluation_realtime.md`](reports/phase3_evaluation_realtime.md)
+and machine-readable companion, the historical reports
+[`reports/phase3_comparison.md`](reports/phase3_comparison.md) and
+[`reports/phase3_retrieval_comparison_realtime.md`](reports/phase3_retrieval_comparison_realtime.md),
+[`docs/phase3.md`](docs/phase3.md), and the interface-only
+[`docs/phase4-handoff.md`](docs/phase4-handoff.md). The Phase 3 result is
+historical, synthetic, lexical, mock, and provisional; it is not an official
+benchmark result. Phase 4 evidence is tracked separately in
+[`PHASE4_CHECKLIST.md`](PHASE4_CHECKLIST.md).

@@ -215,7 +215,12 @@ class MultiIntentRetrievalResult(ContractModel):
     retrieval_mode: RetrievalMode = "lexical"
     retrieval_config: dict[str, Any] = Field(default_factory=dict)
     intent_results: list[IntentRetrievalResult] = Field(min_length=1)
+    # ``fused_hits`` is the ranked retrieval candidate set.  The separate
+    # ``answer_evidence_hits`` set has passed the conservative query-to-
+    # passage alignment gate and is the only set that answer generation may
+    # treat as current evidence.
     fused_hits: list[RetrievalHit] = Field(default_factory=list)
+    answer_evidence_hits: list[RetrievalHit] = Field(default_factory=list)
     rrf_k: int = Field(default=60, ge=1)
     context_budget_tokens: int = Field(default=1200, ge=1)
     context_tokens_used: int = Field(default=0, ge=0)
@@ -324,6 +329,13 @@ def _split_shared_head_clause(value: str) -> list[str]:
         return [value]
     if match.group("left").casefold() in _SHARED_HEAD_WORDS:
         return [value]
+    # A package/content question often coordinates components of one object:
+    # ``the standard lunch and drinks package`` asks about one package, not a
+    # lunch question plus a drinks question.  Shared policy topics remain
+    # separable because they are normally independent information needs (and
+    # explicit question-mark boundaries are handled before this helper).
+    if match.group("head").strip().casefold() in {"package", "packages"}:
+        return [value]
     prefix = match.group("prefix")
     left = _clean_query(f"{prefix}{match.group('left')} {match.group('head')}")
     right = _clean_query(
@@ -383,6 +395,348 @@ def _semantic_query_key(value: str) -> tuple[str, ...]:
             token = token[:-1]
         values.append(token)
     return tuple(values)
+
+
+# These are question/request words and predicate glue, not answer-bearing
+# concepts.  They are intentionally kept separate from the retriever's stop
+# words: retrieval may still use a token for ranking, while evidence
+# qualification must ask whether a passage addresses the requested topic.
+_EVIDENCE_ALIGNMENT_STOP_WORDS = frozenset(
+    {
+        "a",
+        "about",
+        "after",
+        "am",
+        "an",
+        "and",
+        "are",
+        "as",
+        "at",
+        "be",
+        "can",
+        "could",
+        "does",
+        "do",
+        "each",
+        "explain",
+        "find",
+        "for",
+        "from",
+        "give",
+        "has",
+        "have",
+        "how",
+        "i",
+        "in",
+        "include",
+        "includes",
+        "included",
+        "is",
+        "it",
+        "its",
+        "list",
+        "me",
+        "of",
+        "on",
+        "or",
+        "please",
+        "provides",
+        "provided",
+        "qualifies",
+        "qualify",
+        "selected",
+        "should",
+        "show",
+        "specified",
+        "specify",
+        "tell",
+        "the",
+        "their",
+        "these",
+        "this",
+        "those",
+        "to",
+        "what",
+        "when",
+        "where",
+        "which",
+        "with",
+        "would",
+        "you",
+    }
+)
+
+# These terms describe the requested answer shape or object class but are not
+# distinctive enough to authorize a short query on their own.  Short-query
+# qualification still requires all remaining concepts, so ``venue Pune`` can
+# use a passage that says ``Pune Grand Hall`` while ``parking policy`` cannot
+# use an unrelated passage that only happens to mention a policy.
+_GENERIC_EVIDENCE_ALIGNMENT_TERMS = frozenset(
+    {
+        "venue",
+        "venues",
+        "option",
+        "options",
+        "information",
+        "detail",
+        "details",
+        "policy",
+    }
+)
+
+
+def _evidence_alignment_token(value: str) -> str:
+    """Normalize a token for conservative query-to-passage alignment.
+
+    This is deliberately a small morphology normalizer, not a semantic
+    entailment model.  It makes plural and common inflectional variants
+    comparable while leaving domain terms and values intact.
+    """
+
+    token = value.casefold().strip("'")
+    if token.endswith("ies") and len(token) > 4:
+        return token[:-3] + "y"
+    if token.endswith("ing") and len(token) > 5:
+        return token[:-3]
+    if token.endswith("ed") and len(token) > 4:
+        return token[:-2]
+    if token.endswith("es") and len(token) > 4:
+        return token[:-2]
+    if token.endswith("s") and len(token) > 3 and not token.endswith("ss"):
+        return token[:-1]
+    return token
+
+
+def _evidence_alignment_terms(value: str) -> set[str]:
+    return {
+        normalized
+        for token in _TOKEN_PATTERN.findall(value.casefold())
+        if token not in _EVIDENCE_ALIGNMENT_STOP_WORDS
+        and (normalized := _evidence_alignment_token(token))
+        not in _EVIDENCE_ALIGNMENT_STOP_WORDS
+    }
+
+
+def intent_evidence_alignment(
+    intent: QueryIntent,
+    passage_text: str,
+    *,
+    require_high_information_terms: bool = True,
+) -> dict[str, Any]:
+    """Assess whether a passage is a plausible candidate for one intent.
+
+    The result is a safety gate for evidence assembly, not a support verdict.
+    It does not use retrieval scores, citation IDs, or excerpt validity.  A
+    later semantic verifier is still required to assess generated claims.
+    """
+
+    query_terms = _evidence_alignment_terms(intent.query)
+    passage_terms = _evidence_alignment_terms(passage_text)
+    matched_terms = query_terms & passage_terms
+    missing_constraints: list[str] = []
+    for constraint in intent.constraints:
+        if constraint.kind in {"relationship", "comparison"}:
+            continue
+        constraint_terms = _evidence_alignment_terms(constraint.value)
+        if constraint_terms and not constraint_terms <= passage_terms:
+            missing_constraints.append(constraint.value)
+
+    if not query_terms:
+        aligned = False
+        reason = "intent has no answer-bearing query terms"
+    elif intent.relationship == "comparison":
+        # A comparison normally needs more than one passage.  A passage that
+        # contributes at least two query concepts can therefore be retained;
+        # the full comparison remains the synthesis/verifier responsibility.
+        aligned = len(matched_terms) >= 2
+        reason = (
+            "comparison passage shares at least two query concepts"
+            if aligned
+            else "comparison passage shares fewer than two query concepts"
+        )
+    elif len(query_terms) <= 2:
+        # Short information-need queries are especially vulnerable to a lone
+        # generic overlap (for example ``policy`` matching an unrelated
+        # policy). Require every answer-bearing concept, while still allowing
+        # one-concept queries such as ``parking`` or ``availability``.
+        distinctive_terms = query_terms - _GENERIC_EVIDENCE_ALIGNMENT_TERMS
+        aligned = (
+            bool(matched_terms)
+            if not distinctive_terms
+            else distinctive_terms <= matched_terms
+        )
+        reason = (
+            "all short-query concepts are present"
+            if aligned
+            else "short query is missing one or more answer-bearing concepts"
+        )
+    else:
+        # Long parent queries may contain several coordinated needs. A single
+        # passage need not repeat every need, but it must match at least two
+        # answer-bearing concepts before it can enter the evidence set. This
+        # keeps a lone shared word (for example ``workshop``) from turning a
+        # distractor into an answer while preserving collective coverage for
+        # non-decomposed Phase 1 queries.
+        aligned = len(matched_terms) >= 2
+        # A long query can still contain a weak contextual overlap: a venue
+        # passage may share ``Venue B`` and ``workshop`` with a question about
+        # an insurance identifier.  Treat unusually long, unmatched query
+        # terms as a conservative lexical abstention signal.  This is a
+        # general evidence-assembly guard, not a list of expected answers or
+        # benchmark phrases; semantic entailment remains a later review step.
+        constraint_terms = {
+            term
+            for constraint in intent.constraints
+            for term in _evidence_alignment_terms(constraint.value)
+        }
+        missing_high_information = {
+            term
+            for term in query_terms - matched_terms - constraint_terms
+            if len(term) >= 7
+        }
+        if require_high_information_terms and missing_high_information:
+            aligned = False
+        reason = (
+            "passage covers multiple answer-bearing query concepts"
+            if aligned
+            else "passage does not cover enough answer-bearing query concepts"
+            + (
+                "; high-information query terms are absent"
+                if require_high_information_terms and missing_high_information
+                else ""
+            )
+        )
+
+    if missing_constraints:
+        aligned = False
+        reason = "passage is missing intent-local constraint values"
+    return {
+        "aligned": aligned,
+        "query_terms": sorted(query_terms),
+        "passage_terms": sorted(passage_terms),
+        "matched_terms": sorted(matched_terms),
+        "coverage": len(matched_terms) / len(query_terms) if query_terms else 0.0,
+        "missing_constraints": missing_constraints,
+        "reason": reason,
+        "retrieval_score_used": False,
+        "citation_validity_used": False,
+        "semantic_support": "not_evaluated",
+    }
+
+
+def filter_single_query_evidence(
+    query: str,
+    hits: Sequence[RetrievalHit],
+) -> tuple[list[RetrievalHit], list[dict[str, Any]]]:
+    """Remove retrieval candidates that do not align with a complete query."""
+
+    # A synthetic one-intent object lets the same conservative gate protect
+    # Phase 1/2 generation without decomposing the parent query.
+    intent = DecompositionIntent(
+        intent_id="single-query-evidence",
+        ordinal=1,
+        query=query,
+        source_text=query,
+        source_span=TextSpan(start=0, end=len(query), text=query),
+    )
+    retained: list[RetrievalHit] = []
+    decisions: list[dict[str, Any]] = []
+    alignments: list[dict[str, Any]] = []
+    for hit in hits:
+        # The legacy Phase 1/2 path intentionally assembles the parent query
+        # as a collective context.  It retains its existing recall bridge;
+        # decomposed Phase 3/4 branches use the stricter per-intent gate above.
+        alignment = intent_evidence_alignment(
+            intent,
+            hit.snippet_text,
+            require_high_information_terms=False,
+        )
+        alignments.append(alignment)
+        decisions.append(
+            {
+                "chunk_id": hit.chunk_id,
+                "selected": alignment["aligned"],
+                "reason": "single_query_alignment" if alignment["aligned"] else "insufficient_query_alignment",
+                "alignment": alignment,
+            }
+        )
+        if alignment["aligned"]:
+            retained.append(hit)
+
+    query_tokens = _TOKEN_PATTERN.findall(query)
+    coordinated_terms: set[str] = set()
+    for index, token in enumerate(query_tokens):
+        if token.casefold() != "and":
+            continue
+        for neighbor_index in (index - 1, index + 1):
+            if 0 <= neighbor_index < len(query_tokens):
+                neighbor = query_tokens[neighbor_index]
+                normalized = _evidence_alignment_token(neighbor)
+                if normalized not in _EVIDENCE_ALIGNMENT_STOP_WORDS:
+                    coordinated_terms.add(normalized)
+    for index, (hit, alignment) in enumerate(zip(hits, alignments)):
+        if alignment["aligned"] or len(alignment["matched_terms"]) != 1:
+            continue
+        if not coordinated_terms.intersection(alignment["matched_terms"]):
+            continue
+        retained.append(hit)
+        decisions[index].update(
+            {
+                "selected": True,
+                "reason": "coordinated_query_concept_with_qualified_evidence",
+                "alignment": {
+                    **alignment,
+                    "reason": (
+                        "candidate matches one coordinated answer concept; semantic "
+                        "support not evaluated"
+                    ),
+                },
+            }
+        )
+
+    # A non-decomposed parent query can contain several coordinated needs.
+    # Preserve same-entity/constraint candidates that share an explicit
+    # location, number, date, or named entity with an already qualified hit.
+    # This is a recall bridge for Phase 1/2's single-query path, not a support
+    # verdict; fully unsupported queries have no qualified anchor and remain
+    # empty. Phase 3 uses intent-local qualification above instead.
+    explicit_anchor_terms = {
+        _evidence_alignment_token(token)
+        for token in _TOKEN_PATTERN.findall(query)
+        if token.isdigit()
+        or (
+            token[:1].isupper()
+            and token.casefold() not in _EVIDENCE_ALIGNMENT_STOP_WORDS
+        )
+    }
+    qualified_passage_terms = [
+        _evidence_alignment_terms(hit.snippet_text)
+        for hit, alignment in zip(hits, alignments)
+        if alignment["aligned"]
+    ]
+    if explicit_anchor_terms and qualified_passage_terms:
+        for index, (hit, alignment) in enumerate(zip(hits, alignments)):
+            if alignment["aligned"] or not (
+                explicit_anchor_terms & _evidence_alignment_terms(hit.snippet_text)
+            ):
+                continue
+            if hit in retained:
+                continue
+            retained.append(hit)
+            decisions[index].update(
+                {
+                    "selected": True,
+                    "reason": "explicit_query_anchor_with_qualified_evidence",
+                    "alignment": {
+                        **alignment,
+                        "reason": (
+                            "candidate shares an explicit query anchor with another "
+                            "qualified passage; semantic support not evaluated"
+                        ),
+                    },
+                }
+            )
+    return retained, decisions
 
 
 def _semantically_overlaps(left: str, right: str) -> bool:
@@ -509,7 +863,10 @@ _CONSTRAINT_PATTERNS: tuple[tuple[str, str, int], ...] = (
     ),
     (
         "entity",
-        r"(?:['\"][^'\"]+['\"]|\b[A-Z][a-zA-Z0-9-]{2,}(?:\s+[A-Z][a-zA-Z0-9-]{2,})*)",
+        # Venue/entity labels commonly include a one-character designator
+        # (for example ``Venue B`` or ``Hall A``); retaining that token is
+        # necessary for correction and dependency identity.
+        r"(?:['\"][^'\"]+['\"]|\b[A-Z][a-zA-Z0-9-]{2,}(?:\s+[A-Z][a-zA-Z0-9-]{0,})*)",
         7,
     ),
 )
@@ -2034,14 +2391,106 @@ def _assemble_evidence(
     return selected, decisions, missing, used_tokens
 
 
+def _qualify_assembled_evidence(
+    plan: MultiIntentPlan,
+    candidate_hits: Sequence[RetrievalHit],
+) -> tuple[list[RetrievalHit], list[dict[str, Any]], list[str]]:
+    """Separate ranked retrieval candidates from answer-authorized evidence.
+
+    Retrieval remains observable in ``fused_hits``.  A candidate is copied
+    into ``answer_evidence_hits`` only for the intent whose query and
+    intent-local constraints it plausibly addresses.  This intentionally does
+    not call the result semantic support: lexical alignment is only a
+    conservative prerequisite before synthesis.
+    """
+
+    intents_by_id = {intent.intent_id: intent for intent in plan.intents}
+    qualified_hits: list[RetrievalHit] = []
+    decisions: list[dict[str, Any]] = []
+    covered_intents: set[str] = set()
+    for hit in candidate_hits:
+        qualified_ids: list[str] = []
+        alignment_by_intent: dict[str, Any] = {}
+        for intent_id in hit.intent_ids:
+            intent = intents_by_id.get(intent_id)
+            if intent is None:
+                continue
+            alignment = intent_evidence_alignment(intent, hit.snippet_text)
+            alignment_by_intent[intent_id] = alignment
+            if alignment["aligned"]:
+                qualified_ids.append(intent_id)
+                covered_intents.add(intent_id)
+
+        if qualified_ids:
+            ordered_ids = [
+                intent.intent_id
+                for intent in plan.intents
+                if intent.intent_id in qualified_ids
+            ]
+            qualified_hits.append(
+                hit.model_copy(
+                    update={
+                        "intent_id": ordered_ids[0],
+                        "intent_ids": ordered_ids,
+                        "intent_ranks": {
+                            intent_id: hit.intent_ranks[intent_id]
+                            for intent_id in ordered_ids
+                            if intent_id in hit.intent_ranks
+                        },
+                        "intent_scores": {
+                            intent_id: hit.intent_scores[intent_id]
+                            for intent_id in ordered_ids
+                            if intent_id in hit.intent_scores
+                        },
+                    }
+                )
+            )
+            decisions.append(
+                {
+                    "stage": "answer_evidence_qualification",
+                    "chunk_id": hit.chunk_id,
+                    "selected": True,
+                    "qualified_intent_ids": ordered_ids,
+                    "alignment": alignment_by_intent,
+                    "retrieval_score_used": False,
+                    "citation_validity_used": False,
+                    "semantic_support": "not_evaluated",
+                }
+            )
+        else:
+            decisions.append(
+                {
+                    "stage": "answer_evidence_qualification",
+                    "chunk_id": hit.chunk_id,
+                    "selected": False,
+                    "qualified_intent_ids": [],
+                    "alignment": alignment_by_intent,
+                    "reason": "no intent alignment; retained as retrieval candidate only",
+                    "retrieval_score_used": False,
+                    "citation_validity_used": False,
+                    "semantic_support": "not_evaluated",
+                }
+            )
+
+    # Re-rank only within the already bounded answer evidence set so the
+    # generation boundary receives deterministic ranks.
+    qualified_hits = [
+        hit.model_copy(update={"rank": rank})
+        for rank, hit in enumerate(qualified_hits, start=1)
+    ]
+    missing = [
+        intent.intent_id
+        for intent in plan.intents
+        if intent.intent_id not in covered_intents
+    ]
+    return qualified_hits, decisions, missing
+
+
 def _intent_has_support(intent: QueryIntent, hits: Sequence[RetrievalHit]) -> bool:
-    query_terms = tokenize(intent.query)
-    if not query_terms:
-        return False
     for hit in hits:
         if hit.intent_ids and intent.intent_id not in hit.intent_ids:
             continue
-        if query_terms & tokenize(hit.snippet_text):
+        if intent_evidence_alignment(intent, hit.snippet_text)["aligned"]:
             return True
     return False
 
@@ -2063,7 +2512,12 @@ def _dependency_context(
     context_tokens: list[str] = []
     chunk_ids: list[str] = []
     for result in prerequisite_results:
-        for hit in result.hits[:max_chunks]:
+        eligible_hits = [
+            hit
+            for hit in result.hits
+            if intent_evidence_alignment(result.intent, hit.snippet_text)["aligned"]
+        ]
+        for hit in eligible_hits[:max_chunks]:
             if hit.chunk_id not in chunk_ids:
                 chunk_ids.append(hit.chunk_id)
             for token in _TOKEN_PATTERN.findall(hit.snippet_text):
@@ -2219,7 +2673,12 @@ def retrieve_multi_intent(
     def run_intent(intent: QueryIntent, prerequisites: Sequence[IntentRetrievalResult]) -> IntentRetrievalResult:
         started = time.perf_counter()
         prerequisite_ids = dependency_graph[intent.intent_id]
-        if any(item.status != "completed" or not item.hits for item in prerequisites):
+        if any(
+            item.status != "completed"
+            or not item.hits
+            or not _intent_has_support(item.intent, item.hits)
+            for item in prerequisites
+        ):
             error = (
                 "dependency evidence unavailable for "
                 + ", ".join(prerequisite_ids)
@@ -2434,6 +2893,9 @@ def retrieve_multi_intent(
         rrf_k=rrf_k,
         context_budget_tokens=context_budget_tokens,
     )
+    answer_evidence_hits, qualification_decisions, qualified_missing_intent_ids = (
+        _qualify_assembled_evidence(plan, fused_hits)
+    )
     result = MultiIntentRetrievalResult(
         parent_revision=parent_revision,
         retrieval_revision=retrieval_revision,
@@ -2442,11 +2904,14 @@ def retrieve_multi_intent(
         retrieval_config=config,
         intent_results=intent_results,
         fused_hits=fused_hits,
+        answer_evidence_hits=answer_evidence_hits,
         rrf_k=rrf_k,
         context_budget_tokens=context_budget_tokens,
         context_tokens_used=context_tokens_used,
-        assembly_decisions=assembly_decisions,
-        missing_intent_ids=missing_intent_ids,
+        assembly_decisions=[*assembly_decisions, *qualification_decisions],
+        # A weak lexical candidate is still visible in the candidate set, but
+        # it does not count as represented evidence for answer generation.
+        missing_intent_ids=qualified_missing_intent_ids,
         dependency_order=dependency_order,
         retrieval_usage=_combine_usage([item.retrieval_usage for item in intent_results]),
         total_duration_ms=(time.perf_counter() - started_total) * 1000,
@@ -2680,7 +3145,9 @@ class MultiIntentRetriever:
             if result_key >= self._latest_result_key:
                 self.last_result = result
                 self._latest_result_key = result_key
-        return result.fused_hits
+        # Keep retrieval candidates in ``last_result.fused_hits`` for audit,
+        # but publish only qualified evidence to the controller/generator.
+        return result.answer_evidence_hits
 
     def search(self, query: str) -> list[RetrievalHit]:
         """Compatibility search with no transcript revision context."""
@@ -2725,7 +3192,7 @@ class MultiIntentRetriever:
             return []
         covered = {
             intent_id
-            for hit in self.last_result.fused_hits
+            for hit in self.last_result.answer_evidence_hits
             for intent_id in hit.intent_ids
         }
         return [
@@ -2853,8 +3320,8 @@ def reuse_validation(
         if not hit.chunk_id.strip() or not hit.source_location.strip() or not hit.snippet_text.strip()
     ]
     coverage: dict[str, int] = {}
+    alignment: dict[str, dict[str, Any]] = {}
     for intent in selected_plan.intents:
-        query_terms = tokenize(intent.query)
         candidates = [
             hit
             for hit in hits
@@ -2865,11 +3332,51 @@ def reuse_validation(
             )
         ]
         maximum = 0
+        best_alignment: dict[str, Any] = {
+            "aligned": False,
+            "reason": "no candidate hit",
+            "semantic_support": "not_evaluated",
+        }
         for hit in candidates:
-            maximum = max(maximum, len(query_terms & tokenize(hit.snippet_text)))
+            maximum = max(
+                maximum,
+                len(_evidence_alignment_terms(intent.query) & _evidence_alignment_terms(hit.snippet_text)),
+            )
+            candidate_alignment = intent_evidence_alignment(intent, hit.snippet_text)
+            if candidate_alignment.get("aligned") and not best_alignment.get("aligned"):
+                best_alignment = candidate_alignment
         coverage[intent.intent_id] = maximum
-    intent_coverage = all(value > 0 for value in coverage.values())
-    appropriate = bool(hits) and not duplicate_ids and not malformed and intent_coverage
+        alignment[intent.intent_id] = best_alignment
+    plan_intent_ids = {intent.intent_id for intent in selected_plan.intents}
+    hit_intent_ids = {
+        intent_id
+        for hit in hits
+        for intent_id in hit.intent_ids
+    }
+    unknown_intent_ids = sorted(hit_intent_ids - plan_intent_ids)
+    covered_intent_ids = sorted(
+        intent_id
+        for intent_id, decision in alignment.items()
+        if decision.get("aligned", False)
+    )
+    missing_intent_ids = sorted(plan_intent_ids - set(covered_intent_ids))
+    # A partial request is still answerable for the intents that have
+    # qualified evidence.  Completeness is reported separately through
+    # ``missing_intent_ids``; it is not used to discard supported portions.
+    # Multi-intent hits must nevertheless carry plan intent provenance, so an
+    # unannotated citation cannot claim coverage for several intents.
+    provenance_is_valid = (
+        len(selected_plan.intents) == 1
+        or (not unknown_intent_ids and all(hit.intent_ids for hit in hits))
+    )
+    intent_coverage = bool(covered_intent_ids)
+    appropriate = (
+        bool(hits)
+        and not duplicate_ids
+        and not malformed
+        and provenance_is_valid
+        and intent_coverage
+    )
     return {
         "decision": "appropriate" if appropriate else "rejected",
         "final_query": final_query,
@@ -2877,13 +3384,18 @@ def reuse_validation(
         "hit_ids": [hit.chunk_id for hit in hits],
         "duplicate_hit_ids": duplicate_ids,
         "malformed_hit_ids": malformed,
+        "unknown_intent_ids": unknown_intent_ids,
         "intent_query_term_overlap": coverage,
+        "intent_alignment": alignment,
+        "covered_intent_ids": covered_intent_ids,
+        "missing_intent_ids": missing_intent_ids,
+        "complete_intent_coverage": not missing_intent_ids,
         "lexical_relevance_proxy": appropriate,
         "semantic_support": "not_evaluated",
         "reason": (
-            "non-empty evidence has lexical support for every final intent"
+            "non-empty evidence passes conservative alignment for at least one final intent"
             if appropriate
-            else "chunk IDs or evidence overlap do not establish support for every final intent"
+            else "chunk IDs or weak lexical overlap do not establish aligned evidence for any final intent"
         ),
     }
 
@@ -2897,6 +3409,62 @@ def evidence_is_appropriate(
     """Boolean convenience wrapper for scheduler/replay correctness gates."""
 
     return bool(reuse_validation(final_query, hits, plan=plan)["lexical_relevance_proxy"])
+
+
+def single_query_reuse_validation(
+    final_query: str,
+    hits: Sequence[RetrievalHit],
+) -> dict[str, Any]:
+    """Validate Phase 2 evidence without decomposing the parent query.
+
+    Phase 2 deliberately treats one final transcript as one retrieval query.
+    Reusing :func:`reuse_validation` here would silently create a Phase 3
+    decomposition for a coordinated query and reject otherwise valid
+    single-query evidence whenever one clause was not independently covered.
+    This remains a lexical provenance proxy, not semantic entailment.
+    """
+
+    duplicate_ids = len({hit.chunk_id for hit in hits}) != len(hits)
+    malformed = [
+        hit.chunk_id
+        for hit in hits
+        if not hit.chunk_id.strip()
+        or not hit.source_location.strip()
+        or not hit.snippet_text.strip()
+    ]
+    query_terms = tokenize(final_query)
+    overlap_by_hit = {
+        hit.chunk_id: len(query_terms & tokenize(hit.snippet_text))
+        for hit in hits
+    }
+    aligned_hits, alignment_decisions = filter_single_query_evidence(final_query, hits)
+    appropriate = bool(aligned_hits) and not duplicate_ids and not malformed
+    return {
+        "decision": "appropriate" if appropriate else "rejected",
+        "final_query": final_query,
+        "final_intent_ids": [],
+        "hit_ids": [hit.chunk_id for hit in hits],
+        "duplicate_hit_ids": duplicate_ids,
+        "malformed_hit_ids": malformed,
+        "query_term_overlap_by_hit": overlap_by_hit,
+        "alignment_decisions": alignment_decisions,
+        "lexical_relevance_proxy": appropriate,
+        "semantic_support": "not_evaluated",
+        "reason": (
+            "non-empty evidence passes conservative alignment for the complete single retrieval query"
+            if appropriate
+            else "chunk IDs or weak lexical overlap do not establish aligned single-query evidence"
+        ),
+    }
+
+
+def single_query_evidence_is_appropriate(
+    final_query: str,
+    hits: Sequence[RetrievalHit],
+) -> bool:
+    """Boolean convenience wrapper for the Phase 2 single-query gate."""
+
+    return bool(single_query_reuse_validation(final_query, hits)["lexical_relevance_proxy"])
 
 
 def intent_metadata_from_hits(hits: Sequence[RetrievalHit]) -> dict[str, Any]:

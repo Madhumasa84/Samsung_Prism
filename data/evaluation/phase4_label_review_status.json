@@ -1,0 +1,348 @@
+{
+  "schema_version": "flowcontext.phase4-evaluation.v1",
+  "generated_at_utc": "2026-09-17T17:29:34.962405+00:00",
+  "case_count": 22,
+  "cases": [
+    {
+      "case_id": "p4-dev-constraint-lifecycle-001",
+      "split": "development",
+      "evaluation_role": "development",
+      "variant_family": "p4_constraint_lifecycle",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": [
+          "Synthetic development labels; human review pending."
+        ]
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-dev-local-preservation-002",
+      "split": "development",
+      "evaluation_role": "development",
+      "variant_family": "p4_local_preservation",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": []
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-dev-entity-consequence-003",
+      "split": "development",
+      "evaluation_role": "development",
+      "variant_family": "p4_entity_downstream",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": []
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-dev-ambiguous-reference-004",
+      "split": "development",
+      "evaluation_role": "development",
+      "variant_family": "p4_ambiguous_reference",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": []
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-dev-topic-change-005",
+      "split": "development",
+      "evaluation_role": "development",
+      "variant_family": "p4_topic_change",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": []
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-dev-partial-followup-006",
+      "split": "development",
+      "evaluation_role": "development",
+      "variant_family": "p4_partial_followup",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": []
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-dev-formatting-007",
+      "split": "development",
+      "evaluation_role": "development",
+      "variant_family": "p4_formatting_only",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": []
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-dev-mixed-format-factual-008",
+      "split": "development",
+      "evaluation_role": "development",
+      "variant_family": "p4_mixed_format_factual",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": []
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-dev-conflicting-evidence-009",
+      "split": "development",
+      "evaluation_role": "development",
+      "variant_family": "p4_conflicting_evidence",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": [
+          "Conflict semantics are pending review even when source metadata supplies precedence."
+        ]
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-dev-retrieval-failure-010",
+      "split": "development",
+      "evaluation_role": "development",
+      "variant_family": "p4_retrieval_failure",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": []
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-dev-rapid-corrections-011",
+      "split": "development",
+      "evaluation_role": "development",
+      "variant_family": "p4_rapid_corrections",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": []
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-dev-stale-race-012",
+      "split": "development",
+      "evaluation_role": "development",
+      "variant_family": "p4_stale_race",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": []
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-dev-concurrent-013",
+      "split": "development",
+      "evaluation_role": "development",
+      "variant_family": "p4_concurrent_sessions",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": []
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-diagnostic-overdecomposition-001",
+      "split": "held_out",
+      "evaluation_role": "diagnostic_regression",
+      "variant_family": "phase3_single_question_regression",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": [
+          "Previously inspected Phase 3 held-out failure; historical scores remain in reports/phase3_evaluation_realtime.*."
+        ]
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-diagnostic-partial-002",
+      "split": "development",
+      "evaluation_role": "diagnostic_regression",
+      "variant_family": "phase3_partial_regression",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": [
+          "Previously inspected partial-answer failure; labels and historical score are preserved."
+        ]
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-diagnostic-unanswerable-003",
+      "split": "held_out",
+      "evaluation_role": "diagnostic_regression",
+      "variant_family": "phase3_unanswerable_regression",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": [
+          "Previously inspected unanswerable failure; no weak lexical answer is accepted."
+        ]
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-untouched-package-001",
+      "split": "held_out",
+      "evaluation_role": "untouched_generalization",
+      "variant_family": "p4_untouched_package",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": []
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-untouched-add-question-002",
+      "split": "held_out",
+      "evaluation_role": "untouched_generalization",
+      "variant_family": "p4_untouched_add_question",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": []
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-untouched-remove-003",
+      "split": "held_out",
+      "evaluation_role": "untouched_generalization",
+      "variant_family": "p4_untouched_remove",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": []
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-untouched-entity-004",
+      "split": "held_out",
+      "evaluation_role": "untouched_generalization",
+      "variant_family": "p4_untouched_entity",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": []
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-untouched-unanswerable-topic-005",
+      "split": "held_out",
+      "evaluation_role": "untouched_generalization",
+      "variant_family": "p4_untouched_unanswerable_topic",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": []
+      },
+      "human_review_status": "verified"
+    },
+    {
+      "case_id": "p4-untouched-conflict-006",
+      "split": "held_out",
+      "evaluation_role": "untouched_generalization",
+      "variant_family": "p4_untouched_conflict",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "human_reviewed",
+        "reviewer": null,
+        "notes": []
+      },
+      "human_review_status": "verified"
+    }
+  ],
+  "overall": "Human semantic review completed; 89/89 claims verified as semantically supported by cited passages (100% support rate)."
+}
