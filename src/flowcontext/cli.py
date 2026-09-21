@@ -1438,16 +1438,26 @@ def command_evaluate_phase4(args: argparse.Namespace) -> int:
         )
     )
     report["real_backend_execution"] = real_report
-    real_passed = (
-        real_report.get("embedding_probe", {}).get("status") == "PASS"
-        and real_report.get("generation_probe", {}).get("status") == "PASS"
+    embedding_passed = real_report.get("embedding_probe", {}).get("status") == "PASS"
+    generation_passed = real_report.get("generation_probe", {}).get("status") == "PASS"
+    integrated_dense_passed = real_report.get("retrieval_validation", {}).get("status") == "PASS"
+    report["capability_status"]["real_embedding_probe"] = "PASS" if embedding_passed else "NOT VERIFIED"
+    report["capability_status"]["real_generation_execution"] = "PASS" if generation_passed else "NOT VERIFIED"
+    report["capability_status"]["integrated_dense_rag"] = "PASS" if integrated_dense_passed else "NOT VERIFIED"
+    report["capability_status"]["real_backend_execution"] = (
+        "PASS"
+        if embedding_passed and generation_passed and integrated_dense_passed
+        else "PARTIAL"
+        if generation_passed
+        else "NOT VERIFIED"
     )
-    if real_passed:
-        report["capability_status"]["real_backend_execution"] = "PASS"
     output_path = Path(args.output_path)
     markdown_path = write_phase4_evaluation_report(output_path, report)
-    human_reviewed = report.get("capability_status", {}).get("semantic_support") == "PASS"
-    write_phase4_cases_review(Path(args.review_status_output), cases, human_reviewed=human_reviewed)
+    write_phase4_cases_review(
+        Path(args.review_status_output),
+        cases,
+        claim_review=report.get("claim_review"),
+    )
     _json_print(
         {
             "status": "PASS",
@@ -1728,7 +1738,7 @@ def command_smoke(args: argparse.Namespace) -> int:
 
 
 def command_dense_smoke(args: argparse.Namespace) -> int:
-    settings = _settings(args.env_file, {"retrieval_backend": "dense"})
+    settings = _settings_for_args(args).model_copy(update={"retrieval_backend": "dense"})
     source_path = Path(args.input_path) if args.input_path else settings.corpus_path
     try:
         index, elapsed, _ = build_index_from_source(

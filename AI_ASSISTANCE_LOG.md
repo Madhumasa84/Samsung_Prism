@@ -652,6 +652,7 @@ not a description of this continuation.
     cache. Dense smoke test and embedding probe run 100% offline with
     `local_files_only=True` producing 384-dimensional embeddings (`PASS`).
   - Real generation replay: Connected to local Ollama instance running `qwen2.5:3b`
+  - Integrated dense/hybrid RAG verification: Built dense index using sentence-transformers/all-MiniLM-L6-v2, ran Phase 4 evaluation with dense backend on 10 test cases, all engineering capabilities passed with dense retrieval (reports/phase4_evaluation_dense_test.json). Dense RAG integration: PASS.
     via OpenAI-compatible `/v1/chat/completions` endpoint with JSON mode.
     Executed 3-turn multi-turn replay session through the real provider,
     verifying generation probe (`PASS`) and recording execution trace in
@@ -668,4 +669,42 @@ not a description of this continuation.
     `reports/phase4_evaluation.json`, `reports/phase4_evaluation.md`, and
     `data/evaluation/phase4_label_review_status.json`.
   - Added unit tests in `tests/test_phase4_evaluation.py` covering verified claim
-    reviews and offline embedding probe. All 141 tests in test suite pass.
+    reviews and offline embedding probe. All 144 tests in test suite pass.
+- Phase 4 comprehensive evaluation completed on 2026-09-21. The work included:
+  - Schema version fixes for generalization cases (converted from Phase 3 to Phase 4 schema)
+  - Added concurrent session test case (p4-dev-concurrent-sessions-013)
+  - Expanded evaluation suite to 23 cases covering all required scenarios:
+    - Constraint addition, replacement, and removal
+    - Entity changes with downstream consequences
+    - Local updates that preserve unrelated claims
+    - Ambiguous references and clarification
+    - Topic changes
+    - Partially answerable and unanswerable follow-ups
+    - Conflicting evidence
+    - Formatting-only and mixed formatting/factual turns
+    - Rapid corrections, stale results, failures, and concurrent sessions
+  - Ran complete Phase 4 evaluation with matched full vs selective comparison
+  - Real-backend validation: Ollama qwen2.5:3b generation and embedding probe passed
+  - Claim review sheet with 89 synthetic claims reviewed by Codex (100% support rate)
+  - Updated architecture documentation with expanded evaluation coverage
+  - Updated PHASE4_CHECKLIST.md with completed real-backend validation
+  - Generated comprehensive Phase 4 reports (Markdown and machine-readable)
+  - All 144 tests passing across unit, integration, and regression suites
+- Additional Phase 4 improvements completed on 2026-09-21:
+  - Created comprehensive semantic claim review guide at `docs/semantic_claim_review_guide.md` to support future independent human review
+  - Created detailed efficiency analysis at `reports/phase4_efficiency_analysis.md` explaining why no efficiency gain was demonstrated in current evaluation
+  - Added efficiency-focused test cases in `data/evaluation/phase4_efficiency.jsonl` for future benchmark scenarios
+  - Updated final assessment with references to new documentation and analysis
+  - Updated Phase 5 handoff documentation with new efficiency benchmark guidance
+  - All regression tests passing (144 tests)
+
+
+- Dense/hybrid RAG verification completed on 2026-09-21. The work included:
+  - Built dense index using sentence-transformers/all-MiniLM-L6-v2 (384 dimensions)
+  - Dense index successfully created with 13 chunks from 12 documents
+  - Ran Phase 4 evaluation with dense backend on 10 test cases
+  - All engineering capabilities passed with dense retrieval
+  - Dense retrieval produced semantic similarity scores (cosine similarity)
+  - Integration verified with both mock generation and real Ollama generation
+  - Dense evaluation reports generated (JSON and Markdown)
+  - Integrated dense RAG status changed from NOT VERIFIED to PASS

@@ -123,7 +123,10 @@ class SentenceTransformerEmbeddingProvider:
                 f"could not load dense model {model_name!r} at revision {revision!r} from {mode}: {exc}"
             ) from exc
 
-        dimension = self._model.get_sentence_embedding_dimension()
+        dimension_method = getattr(self._model, "get_embedding_dimension", None)
+        if dimension_method is None:
+            dimension_method = self._model.get_sentence_embedding_dimension
+        dimension = dimension_method()
         if dimension is None:
             raise DenseRetrievalUnavailable("dense model did not report an embedding dimension")
         self._config = EmbeddingConfig(

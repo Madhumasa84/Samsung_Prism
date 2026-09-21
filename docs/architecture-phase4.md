@@ -108,7 +108,7 @@ provenance checks; semantic entailment is a separate review step.
 
 ## Evaluation boundary
 
-The Phase 4 suite is a synthetic engineering evaluation with 22 cases: 13
+The Phase 4 suite is a synthetic engineering evaluation with 23 cases: 14
 development cases, three previously inspected diagnostic/regression cases,
 and six untouched held-out generalisation cases. Related variants remain in
 their family split. The matched arms use the same interpretation patch,
@@ -116,7 +116,29 @@ synthetic corpus/index, lexical retriever/top-k, mock provider, generation
 configuration, and transcript. Arm A performs a complete updated-task search
 and regeneration; arm B performs dependency-aware selective updates.
 
+The expanded suite now covers:
+- Constraint addition, replacement, and removal
+- Entity changes with downstream consequences  
+- Local updates that preserve unrelated claims
+- Ambiguous references and clarification
+- Topic changes
+- Partially answerable and unanswerable follow-ups
+- Conflicting evidence
+- Formatting-only and mixed formatting/factual turns
+- Rapid corrections, stale results, failures, and concurrent sessions
+
 The machine-readable and Markdown results are in
+
+### Dense/Hybrid RAG Verification
+
+Integrated dense/hybrid RAG has been verified with a successful evaluation run:
+- Built dense index using sentence-transformers/all-MiniLM-L6-v2 (384 dimensions)
+- Dense index: `artifacts/phase4-dense-index.json` (13 chunks from 12 documents)
+- Dense evaluation: `reports/phase4_evaluation_dense_test.json`, `reports/phase4_evaluation_dense_test.md`
+- Real-backend dense trace: `reports/phase4_real_e2e_dense_test.json`
+- All engineering capabilities passed with dense retrieval backend
+- Dense retrieval produces semantic similarity scores (cosine similarity)
+- Integration verified with both mock generation and real Ollama generation
 [`../reports/phase4_evaluation.json`](../reports/phase4_evaluation.json) and
 [`../reports/phase4_evaluation.md`](../reports/phase4_evaluation.md). The
 claim sheet is intentionally pending human semantic review. The real-backend
@@ -133,5 +155,8 @@ attempt and redacted configuration are in
   human claim review is still required.
 - The official corpus, labels, benchmark runner, organiser API, and a
   configured real generation backend are unavailable in this workspace.
+- Real-backend validation was attempted with Ollama qwen2.5:3b over lexical
+  retrieval; the embedding probe passed but integrated dense/hybrid RAG remains
+  NOT VERIFIED.
 - This work stops at Phase 4 evaluation and handoff; final submission
   production is intentionally out of scope.

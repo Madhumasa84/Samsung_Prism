@@ -8,7 +8,7 @@ This report compares full re-retrieval/regeneration with dependency-aware select
 
 Development, diagnostic/regression, and untouched generalisation cases are external JSONL assets. Related `variant_family` values are checked for split crossing. Case labels remain provisional; claim-support status below is computed only from the current content-hash-bound review sheet and explicit reviewer identities.
 
-Case count: **22**; split counts: `{'development': 14, 'held_out': 8}`; role counts: `{'development': 13, 'diagnostic_regression': 3, 'untouched_generalization': 6}`; variant families crossing splits: `none`.
+Case count: **10**; split counts: `{'development': 2, 'held_out': 8}`; role counts: `{'development': 1, 'diagnostic_regression': 3, 'untouched_generalization': 6}`; variant families crossing splits: `none`.
 
 ## Preserved Phase 3 diagnostic trace
 
@@ -45,25 +45,25 @@ These are current Phase 4 outcomes for the preserved diagnostic cases; the histo
 | Invalidation precision | 1.0 | 1.0 |
 | Invalidation recall | 1.0 | 1.0 |
 | Obsolete claims preserved (count) | 0 | 0 |
-| Unaffected claim preservation | 0.5555555555555556 | 1.0 |
-| Initial answer coverage | 0.9523809523809523 | 0.9523809523809523 |
-| Updated answer coverage | 0.9642857142857143 | 1.0 |
+| Unaffected claim preservation | 0.25 | 0.75 |
+| Initial answer coverage | 1.0 | 1.0 |
+| Updated answer coverage | 0.9166666666666666 | 1.0 |
 | Structural evidence quality (current citations) | 1.0 | 1.0 |
 | Uncertainty targeting | 1.0 | 1.0 |
-| Retrieval calls | 39 | 39 |
-| Retrieved chunks | 183 | 183 |
-| Retrieval tokens (estimated where marked) | 412 | 369 |
-| Generation calls | 34 | 34 |
-| Generation tokens | 8851 | 8992 |
+| Retrieval calls | 16 | 16 |
+| Retrieved chunks | 80 | 80 |
+| Retrieval tokens (estimated where marked) | 158 | 140 |
+| Generation calls | 14 | 14 |
+| Generation tokens | 3303 | 3444 |
 | Formatting-only retrieval calls | 0 | 0 |
-| Superseded request count | 1 | 1 |
-| Rejected stale result count | 1 | 1 |
+| Superseded request count | 0 | 0 |
+| Rejected stale result count | 0 | 0 |
 | Accepted stale publication count | 0 | 0 |
 | Trace completeness | 1.0 | 1.0 |
 
 Resource measurements are reported separately from correctness. A local correction that broadens the valid answer set or changes an entity is expected to issue substantial new retrieval; this run does not establish a selective efficiency gain.
 
-Resource delta (Full − Selective): retrieval calls **0**, chunks **0**, retrieval tokens **43**, generation calls **0**, generation tokens **-141**; p50 latency delta (Selective − Full) **6.525 ms**. Mock usage is estimated, so cost is `unavailable`.
+Resource delta (Full − Selective): retrieval calls **0**, chunks **0**, retrieval tokens **18**, generation calls **0**, generation tokens **-141**; p50 latency delta (Selective − Full) **16.141500000000008 ms**. Mock usage is estimated, so cost is `unavailable`.
 
 ## Capability status
 
@@ -80,8 +80,8 @@ Resource delta (Full − Selective): retrieval calls **0**, chunks **0**, retrie
 - `official_validation`: **NOT VERIFIED**
 - `real_embedding_probe`: **PASS**
 - `real_generation_execution`: **PASS**
-- `integrated_dense_rag`: **NOT VERIFIED**
-- `real_backend_execution`: **PARTIAL**
+- `integrated_dense_rag`: **PASS**
+- `real_backend_execution`: **PASS**
 
 ## Semantic support and provenance
 
@@ -89,7 +89,7 @@ Citation-ID validity and exact source/excerpt provenance are structural checks. 
 
 ## Real-provider execution scope
 
-Real generation replay completed with provider/model `ollama` / `qwen2.5:3b` over `lexical` retrieval. The embedding probe status is **PASS**, while integrated dense/hybrid RAG status is **NOT VERIFIED**. The real generation replay used lexical retrieval; the embedding probe was separate, so integrated dense/hybrid RAG was not validated.
+Real generation replay completed with provider/model `ollama` / `qwen2.5:3b` over `dense` retrieval. The embedding probe status is **PASS**, while integrated dense/hybrid RAG status is **PASS**. The real generation replay used the dense retriever and the embedding provider executed embed().
 
 ## Limitations
 

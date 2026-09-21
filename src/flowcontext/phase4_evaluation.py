@@ -11,9 +11,10 @@ interpretation patch, retrieval configuration, and generation configuration:
   unresolved information needs.
 
 This is an engineering evaluation over synthetic data.  Citation-ID validity
-and source/excerpt provenance are structural checks; semantic claim support is
-reported as pending until a human reviewer actually completes the review
-sheet.
+and source/excerpt provenance are structural checks.  Semantic claim support
+is promoted only from an explicit, content-bound review sheet; that review is
+reported separately from provisional case labels and independent human ground
+truth.
 """
 
 from __future__ import annotations
@@ -59,6 +60,15 @@ from .retrieval import make_retriever
 
 PHASE4_EVALUATION_SCHEMA_VERSION = "flowcontext.phase4-evaluation.v1"
 _TOKEN_PATTERN = re.compile(r"[\w]+", re.UNICODE)
+_CLAIM_REVIEW_VERDICTS = {"supported", "unsupported", "uncertain"}
+_GENERIC_REVIEWER_IDS = {
+    "human",
+    "human reviewer",
+    "human_reviewer",
+    "reviewer",
+    "unknown",
+    "n/a",
+}
 
 
 PHASE3_FAILURE_TRACE: list[dict[str, Any]] = [
@@ -609,6 +619,130 @@ def _semantic_review_status(state: Phase4SessionState) -> dict[str, Any]:
     }
 
 
+def _sha256_text(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _sha256_json(value: Any) -> str:
+    payload = json.dumps(
+        value,
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _reviewer_identity_is_explicit(value: str | None) -> bool:
+    normalized = (value or "").strip().casefold()
+    return bool(normalized) and normalized not in _GENERIC_REVIEWER_IDS
+
+
+def _review_content_hashes(
+    *,
+    claim_text: str,
+    supporting_chunk_ids: str,
+    supporting_passages: str,
+    source_locations: str,
+) -> dict[str, str]:
+    """Hash the exact claim and support material persisted in the review CSV.
+
+    The CSV stores flattened fields for portability. Hashing those exact
+    serialized values lets the loader detect both a changed current claim and
+    a hand-edited review row whose old hash was left in place.
+    """
+
+    claim_text_sha256 = _sha256_text(claim_text)
+    supporting_passages_sha256 = _sha256_json(
+        {
+            "supporting_chunk_ids": supporting_chunk_ids,
+            "supporting_passages": supporting_passages,
+            "source_locations": source_locations,
+        }
+    )
+    return {
+        "claim_text_sha256": claim_text_sha256,
+        "supporting_passages_sha256": supporting_passages_sha256,
+        "review_content_sha256": _sha256_json(
+            {
+                "claim_text_sha256": claim_text_sha256,
+                "supporting_passages_sha256": supporting_passages_sha256,
+            }
+        ),
+    }
+
+
+def _review_entry_matches_content(
+    entry: dict[str, str],
+    *,
+    claim_text: str,
+    supporting_chunk_ids: str,
+    supporting_passages: str,
+    source_locations: str,
+) -> bool:
+    expected = _review_content_hashes(
+        claim_text=claim_text,
+        supporting_chunk_ids=supporting_chunk_ids,
+        supporting_passages=supporting_passages,
+        source_locations=source_locations,
+    )
+    stored = _review_content_hashes(
+        claim_text=entry.get("claim_text", ""),
+        supporting_chunk_ids=entry.get("supporting_chunk_ids", ""),
+        supporting_passages=entry.get("supporting_passages", ""),
+        source_locations=entry.get("source_locations", ""),
+    )
+    return (
+        all(entry.get(key) == value for key, value in expected.items())
+        and all(entry.get(key) == value for key, value in stored.items())
+    )
+
+
+def _review_summary(rows: Sequence[dict[str, str]]) -> dict[str, Any]:
+    """Summarize one strategy's content-bound review rows only."""
+
+    reviewed = [
+        row
+        for row in rows
+        if row.get("semantic_support_verdict") in _CLAIM_REVIEW_VERDICTS
+        and _reviewer_identity_is_explicit(row.get("reviewer"))
+    ]
+    pending = len(rows) - len(reviewed)
+    supported = [row for row in reviewed if row.get("semantic_support_verdict") == "supported"]
+    support_rate = len(supported) / len(reviewed) if reviewed else None
+    status = (
+        "NOT VERIFIED"
+        if not reviewed or pending
+        else "PASS"
+        if support_rate is not None and support_rate >= 0.85
+        else "FAIL"
+    )
+    reviewers = sorted(
+        {
+            row["reviewer"].strip()
+            for row in reviewed
+            if row.get("reviewer", "").strip()
+        }
+    )
+    return {
+        "status": status,
+        "reviewed_claim_count": len(reviewed),
+        "supported_claim_count": len(supported),
+        "unsupported_claim_count": sum(
+            row.get("semantic_support_verdict") == "unsupported" for row in reviewed
+        ),
+        "uncertain_claim_count": sum(
+            row.get("semantic_support_verdict") == "uncertain" for row in reviewed
+        ),
+        "pending_claim_count": pending,
+        "support_rate": support_rate,
+        "semantic_support_rate": support_rate,
+        "reviewer_ids": reviewers,
+        "content_hash_bound": True,
+        "independent_human_review_verified": False,
+    }
+
+
 def _status_text(state: Phase4SessionState) -> str:
     answer = state.current_answer
     return answer.answer.uncertainty.casefold() if answer is not None else ""
@@ -675,10 +809,14 @@ async def _run_strategy(
     patches: list[Phase4ProposedPatch] = []
     coordinator = Phase4SelectiveUpdateCoordinator(store, retriever) if strategy == "selective" else None
     old_generation_task: asyncio.Task[Any] | None = None
+    rejected_stale_results = 0
+    accepted_stale_publications = 0
 
     for position, turn in enumerate(case.transcript[1:]):
         expected = case.expected_follow_ups[position]
         before = store.get(case.session_id)
+        stale_rejections_before_turn = rejected_stale_results
+        accepted_stale_before_turn = accepted_stale_publications
         before_mapping = dict(intent_mapping)
         before_claims = {record.record_id: record for record in before.current_claims}
         before_claim_key_map = _claim_key_map(before, before_mapping)
@@ -785,6 +923,11 @@ async def _run_strategy(
         if old_generation_task is not None:
             old_result = await old_generation_task
             notes.append(f"race old generation: {old_result.status}")
+            if old_result.published:
+                accepted_stale_publications += 1
+                notes.append("stale generation result was incorrectly accepted")
+            else:
+                rejected_stale_results += 1
         after_mapping = dict(before_mapping)
         if patch.classification == "change_topic":
             after_mapping = _intent_mapping(after, case.expected_intents, preferred_origin="follow_up")
@@ -839,6 +982,15 @@ async def _run_strategy(
             invalidated_evidence_ids = list(plan.invalidated_evidence_ids)
             discarded_result_ids = list(plan.discarded_result_ids)
             retrieval_reasons = dict(plan.retrieval_reasons)
+            rejected_stale_results += sum(
+                len(task.discarded_result_ids)
+                for task in plan.retrieval_tasks
+                if task.error is not None
+                and any(
+                    marker in task.error.casefold()
+                    for marker in ("obsolete candidate revision", "superseded", "revision changed")
+                )
+            )
         labelled_invalidated_keys = set(expected.invalidated_claim_intent_keys)
         if not labelled_invalidated_keys and expected.classification in {
             "replace_constraint",
@@ -959,7 +1111,9 @@ async def _run_strategy(
                 item.model_dump(mode="json")
                 for item in version.claim_changes
             ] if version is not None else [],
-            "superseded_requests": len(after.superseded_requests),
+            "superseded_request_count": len(after.superseded_requests),
+            "rejected_stale_result_count": rejected_stale_results - stale_rejections_before_turn,
+            "accepted_stale_publication_count": accepted_stale_publications - accepted_stale_before_turn,
             "trace_complete": bool(after.trace_ids and after.revision_history),
         }
         rows.append(turn_rows)
@@ -1034,7 +1188,9 @@ async def _run_strategy(
                 [row["latency_ms"] for row in rows]
             ) if rows else None,
             "formatting_only_retrieval_calls": formatting_retrieval_calls,
-            "stale_publication_count": len(final.superseded_requests),
+            "superseded_request_count": len(final.superseded_requests),
+            "rejected_stale_result_count": rejected_stale_results,
+            "accepted_stale_publication_count": accepted_stale_publications,
         },
         "provider": {
             "backend": getattr(provider.config, "backend", "unknown"),
@@ -1138,7 +1294,7 @@ def _label_review_summary(cases: Sequence[Phase4EvaluationCase]) -> dict[str, An
             case.label_review_status.semantic_claim_support == "human_reviewed" for case in cases
         ),
         "reviewer": "none",
-        "honest_boundary": "Intent, operation, answerability, and semantic-support labels remain provisional/pending; no human review was performed.",
+        "honest_boundary": "Intent, operation, answerability, and case semantic-support labels remain provisional; the separate claim sheet records any identified manual review.",
     }
 
 
@@ -1292,7 +1448,13 @@ def _aggregate_strategy(rows: Sequence[dict[str, Any]], strategy: str) -> dict[s
                 turn["latency_ms"] for turn in turns
             )[max(0, int(0.95 * len(turns)) - 1)] if turns else None,
             "formatting_only_retrieval_calls": sum(item["formatting_only_retrieval_calls"] for item in resources),
-            "stale_publication_count": sum(item["stale_publication_count"] for item in resources),
+            "superseded_request_count": sum(item["superseded_request_count"] for item in resources),
+            "rejected_stale_result_count": sum(
+                item["rejected_stale_result_count"] for item in resources
+            ),
+            "accepted_stale_publication_count": sum(
+                item["accepted_stale_publication_count"] for item in resources
+            ),
         },
         "trace_completeness": _metric_fraction(
             sum(record["trace"]["complete"] for record in records), len(records)
@@ -1303,7 +1465,7 @@ def _aggregate_strategy(rows: Sequence[dict[str, Any]], strategy: str) -> dict[s
 
 def _review_rows(
     rows: Sequence[dict[str, Any]],
-    review_lookup: dict[tuple[str, str, int, str], dict[str, str]] | None = None,
+    review_lookup: dict[tuple[str, str, int, str, str, str, str], dict[str, str]] | None = None,
 ) -> list[dict[str, Any]]:
     output: list[dict[str, Any]] = []
     for row in rows:
@@ -1352,14 +1514,32 @@ def _review_rows(
                         for chunk_id in claim["supporting_chunk_ids"]
                     ):
                         structural_valid = False
+                    supporting_chunk_ids = ";".join(claim["supporting_chunk_ids"])
+                    supporting_passages = " || ".join(passage["text"] for passage in passages)
+                    source_locations = ";".join(passage["source_location"] for passage in passages)
+                    content_hashes = _review_content_hashes(
+                        claim_text=claim["claim_text"],
+                        supporting_chunk_ids=supporting_chunk_ids,
+                        supporting_passages=supporting_passages,
+                        source_locations=source_locations,
+                    )
                     lookup_key = (
                         row["case_id"],
                         strategy_name,
                         int(version["answer_version"]),
                         claim["claim_id"],
+                        content_hashes["claim_text_sha256"],
+                        content_hashes["supporting_passages_sha256"],
+                        content_hashes["review_content_sha256"],
                     )
                     existing_entry = review_lookup.get(lookup_key) if review_lookup else None
-                    if existing_entry is not None:
+                    if existing_entry is not None and _review_entry_matches_content(
+                        existing_entry,
+                        claim_text=claim["claim_text"],
+                        supporting_chunk_ids=supporting_chunk_ids,
+                        supporting_passages=supporting_passages,
+                        source_locations=source_locations,
+                    ):
                         verdict = existing_entry.get("semantic_support_verdict", "pending_human_review")
                         reviewer = existing_entry.get("reviewer", "")
                         review_notes = existing_entry.get("review_notes", "")
@@ -1374,10 +1554,11 @@ def _review_rows(
                             "answer_version": version["answer_version"],
                             "claim_id": claim["claim_id"],
                             "claim_text": claim["claim_text"],
-                            "supporting_chunk_ids": ";".join(claim["supporting_chunk_ids"]),
-                            "supporting_passages": " || ".join(passage["text"] for passage in passages),
-                            "source_locations": ";".join(passage["source_location"] for passage in passages),
+                            "supporting_chunk_ids": supporting_chunk_ids,
+                            "supporting_passages": supporting_passages,
+                            "source_locations": source_locations,
                             "structural_citation_valid": str(structural_valid).lower(),
+                            **content_hashes,
                             "semantic_support_verdict": verdict,
                             "reviewer": reviewer,
                             "review_notes": review_notes,
@@ -1447,6 +1628,31 @@ async def evaluate_phase4(
         )
     full_summary = _aggregate_strategy(case_rows, "full")
     selective_summary = _aggregate_strategy(case_rows, "selective")
+    retrieval_calls_avoided = (
+        full_summary["resources"]["retrieval_calls"]
+        - selective_summary["resources"]["retrieval_calls"]
+    )
+    retrieved_chunks_avoided = (
+        full_summary["resources"]["retrieved_chunks"]
+        - selective_summary["resources"]["retrieved_chunks"]
+    )
+    generation_tokens_avoided = (
+        full_summary["resources"]["generation_tokens"]
+        - selective_summary["resources"]["generation_tokens"]
+    )
+    latency_delta = (
+        selective_summary["resources"]["final_event_to_updated_answer_latency_ms_p50"]
+        - full_summary["resources"]["final_event_to_updated_answer_latency_ms_p50"]
+        if selective_summary["resources"]["final_event_to_updated_answer_latency_ms_p50"] is not None
+        and full_summary["resources"]["final_event_to_updated_answer_latency_ms_p50"] is not None
+        else None
+    )
+    efficiency_established = (
+        retrieval_calls_avoided > 0
+        and retrieved_chunks_avoided >= 0
+        and generation_tokens_avoided >= 0
+        and (latency_delta is None or latency_delta <= 0)
+    )
     report = {
         "schema_version": "flowcontext.phase4-audit.v1",
         "report_version": PHASE4_EVALUATION_SCHEMA_VERSION,
@@ -1492,17 +1698,21 @@ async def evaluate_phase4(
             "selective": selective_summary,
         },
         "resource_savings": {
-            "retrieval_calls_avoided": full_summary["resources"]["retrieval_calls"]
-            - selective_summary["resources"]["retrieval_calls"],
-            "retrieved_chunks_avoided": full_summary["resources"]["retrieved_chunks"]
-            - selective_summary["resources"]["retrieved_chunks"],
+            "retrieval_calls_avoided": retrieval_calls_avoided,
+            "retrieved_chunks_avoided": retrieved_chunks_avoided,
             "retrieval_tokens_avoided": full_summary["resources"]["retrieval_tokens"]
             - selective_summary["resources"]["retrieval_tokens"],
             "generation_calls_avoided": full_summary["resources"]["generation_calls"]
             - selective_summary["resources"]["generation_calls"],
-            "generation_tokens_avoided": full_summary["resources"]["generation_tokens"]
-            - selective_summary["resources"]["generation_tokens"],
-            "quality_guard": "Savings are not treated as an improvement when invalidation, coverage, citation, uncertainty, or preservation metrics regress.",
+            "generation_tokens_avoided": generation_tokens_avoided,
+            "efficiency_established": efficiency_established,
+            "efficiency_status": "PASS" if efficiency_established else "NOT VERIFIED",
+            "efficiency_reason": (
+                "Selective retrieval reduced calls and did not worsen measured token/latency resources."
+                if efficiency_established
+                else "This matched run does not establish a speed or cost win; compare calls, chunks, tokens, and latency directly."
+            ),
+            "quality_guard": "Resource savings are not treated as an improvement when invalidation, coverage, citation, uncertainty, or preservation metrics regress.",
         },
         "quality_comparison": {
             "updated_answer_coverage_delta_selective_minus_full": (
@@ -1532,13 +1742,7 @@ async def evaluate_phase4(
                 and full_summary["affected_claim_invalidation_recall"] is not None
                 else None
             ),
-            "latency_p50_delta_selective_minus_full_ms": (
-                selective_summary["resources"]["final_event_to_updated_answer_latency_ms_p50"]
-                - full_summary["resources"]["final_event_to_updated_answer_latency_ms_p50"]
-                if selective_summary["resources"]["final_event_to_updated_answer_latency_ms_p50"] is not None
-                and full_summary["resources"]["final_event_to_updated_answer_latency_ms_p50"] is not None
-                else None
-            ),
+            "latency_p50_delta_selective_minus_full_ms": latency_delta,
             "interpretation": (
                 "Selective updates preserve more unrelated claims in this fixture, but the mock/lexical run "
                 "does not establish real-model quality. Broad entity and constraint-removal corrections "
@@ -1577,6 +1781,7 @@ async def evaluate_phase4(
                 for turn in row["strategies"]["selective"]["turns"]
             ) else "FAIL",
             "selective_retrieval": "PASS" if selective_summary["resources"]["retrieval_calls"] <= full_summary["resources"]["retrieval_calls"] else "FAIL",
+            "selective_efficiency": "PASS" if efficiency_established else "NOT VERIFIED",
             "answer_version_consistency": "PASS" if all(
                 record["trace"]["complete"] for row in case_rows for record in row["strategies"].values()
             ) else "FAIL",
@@ -1628,7 +1833,7 @@ def write_phase4_evaluation_report(
         "",
         "## Label and review boundary",
         "",
-        "Development, diagnostic/regression, and untouched generalisation cases are external JSONL assets. Related `variant_family` values are checked for split crossing. Labels remain provisional and semantic claim support fields remain pending because no human reviewer completed the sheet.",
+        "Development, diagnostic/regression, and untouched generalisation cases are external JSONL assets. Related `variant_family` values are checked for split crossing. Case labels remain provisional; claim-support status below is computed only from the current content-hash-bound review sheet and explicit reviewer identities.",
         "",
         f"Case count: **{report['data_integrity']['case_count']}**; split counts: `{report['data_integrity']['split_counts']}`; role counts: `{report['data_integrity']['evaluation_role_counts']}`; variant families crossing splits: `{report['data_integrity']['variant_families_crossing_splits'] or 'none'}`.",
         "",
@@ -1708,10 +1913,12 @@ def write_phase4_evaluation_report(
             f"| Generation calls | {full['resources']['generation_calls']} | {selective['resources']['generation_calls']} |",
             f"| Generation tokens | {full['resources']['generation_tokens']} | {selective['resources']['generation_tokens']} |",
             f"| Formatting-only retrieval calls | {full['resources']['formatting_only_retrieval_calls']} | {selective['resources']['formatting_only_retrieval_calls']} |",
-            f"| Stale publication count | {full['resources']['stale_publication_count']} | {selective['resources']['stale_publication_count']} |",
+            f"| Superseded request count | {full['resources']['superseded_request_count']} | {selective['resources']['superseded_request_count']} |",
+            f"| Rejected stale result count | {full['resources']['rejected_stale_result_count']} | {selective['resources']['rejected_stale_result_count']} |",
+            f"| Accepted stale publication count | {full['resources']['accepted_stale_publication_count']} | {selective['resources']['accepted_stale_publication_count']} |",
             f"| Trace completeness | {full['trace_completeness']} | {selective['trace_completeness']} |",
             "",
-            "Resource savings are reported separately from quality. A local correction that broadens the valid answer set or changes an entity is expected to issue substantial new retrieval; it is not treated as a failure of selectivity.",
+            "Resource measurements are reported separately from correctness. A local correction that broadens the valid answer set or changes an entity is expected to issue substantial new retrieval; this run does not establish a selective efficiency gain.",
             "",
             f"Resource delta (Full − Selective): retrieval calls **{report['resource_savings']['retrieval_calls_avoided']}**, chunks **{report['resource_savings']['retrieved_chunks_avoided']}**, retrieval tokens **{report['resource_savings']['retrieval_tokens_avoided']}**, generation calls **{report['resource_savings']['generation_calls_avoided']}**, generation tokens **{report['resource_savings']['generation_tokens_avoided']}**; p50 latency delta (Selective − Full) **{report['quality_comparison']['latency_p50_delta_selective_minus_full_ms']} ms**. Mock usage is estimated, so cost is `unavailable`.",
             "",
@@ -1720,15 +1927,34 @@ def write_phase4_evaluation_report(
         ]
     )
     review_path = review_path or path.with_name(path.stem + "_claim_review.csv")
-    existing_reviews: dict[tuple[str, str, int, str], dict[str, str]] = {}
+    existing_reviews: dict[tuple[str, str, int, str, str, str, str], dict[str, str]] = {}
     if review_path.is_file():
         try:
             with review_path.open(encoding="utf-8", newline="") as handle:
                 reader = csv.DictReader(handle)
                 for r in reader:
                     verdict = r.get("semantic_support_verdict", "").strip()
-                    if verdict and verdict != "pending_human_review":
-                        key = (r["case_id"], r["strategy"], int(r["answer_version"]), r["claim_id"])
+                    if (
+                        verdict in _CLAIM_REVIEW_VERDICTS
+                        and _reviewer_identity_is_explicit(r.get("reviewer"))
+                        and all(
+                            r.get(field)
+                            for field in (
+                                "claim_text_sha256",
+                                "supporting_passages_sha256",
+                                "review_content_sha256",
+                            )
+                        )
+                    ):
+                        key = (
+                            r["case_id"],
+                            r["strategy"],
+                            int(r["answer_version"]),
+                            r["claim_id"],
+                            r["claim_text_sha256"],
+                            r["supporting_passages_sha256"],
+                            r["review_content_sha256"],
+                        )
                         existing_reviews.setdefault(key, r)
         except Exception:
             pass
@@ -1740,51 +1966,90 @@ def write_phase4_evaluation_report(
             fieldnames=[
                 "case_id", "strategy", "answer_version", "claim_id", "claim_text",
                 "supporting_chunk_ids", "supporting_passages", "source_locations",
-                "structural_citation_valid", "semantic_support_verdict", "reviewer", "review_notes",
+                "structural_citation_valid", "claim_text_sha256", "supporting_passages_sha256",
+                "review_content_sha256", "semantic_support_verdict", "reviewer", "review_notes",
             ],
+            lineterminator="\n",
         )
         writer.writeheader()
         for row in review_rows:
             writer.writerow(row)
     report["claim_review_sheet"] = str(review_path)
 
-    reviewed_rows = [r for r in review_rows if r.get("semantic_support_verdict") != "pending_human_review"]
-    if reviewed_rows:
-        supported_rows = [r for r in reviewed_rows if r.get("semantic_support_verdict") == "supported"]
-        support_rate = len(supported_rows) / len(reviewed_rows)
-        semantic_status = "PASS" if support_rate >= 0.85 else "FAIL"
-        report["capability_status"]["semantic_support"] = semantic_status
-        for strategy in report["strategies"].values():
-            strategy["evidence_quality"]["semantic_support"] = semantic_status
-            strategy["semantic_claim_support"] = {
-                "status": semantic_status,
-                "reviewed_claim_count": len(reviewed_rows),
-                "supported_claim_count": len(supported_rows),
-                "support_rate": support_rate,
-                "semantic_support_rate": support_rate,
+    review_by_strategy = {
+        strategy_name: _review_summary(
+            [row for row in review_rows if row["strategy"] == strategy_name]
+        )
+        for strategy_name in ("full", "selective")
+    }
+    for strategy_name, summary in review_by_strategy.items():
+        report["strategies"][strategy_name]["evidence_quality"]["semantic_support"] = summary["status"]
+        report["strategies"][strategy_name]["semantic_claim_support"] = summary
+    reviewed_rows = [
+        row
+        for row in review_rows
+        if row.get("semantic_support_verdict") in _CLAIM_REVIEW_VERDICTS
+        and _reviewer_identity_is_explicit(row.get("reviewer"))
+    ]
+    supported_rows = [row for row in reviewed_rows if row.get("semantic_support_verdict") == "supported"]
+    review_pending = sum(summary["pending_claim_count"] for summary in review_by_strategy.values())
+    overall_support_rate = len(supported_rows) / len(reviewed_rows) if reviewed_rows else None
+    overall_review_status = (
+        "NOT VERIFIED"
+        if review_pending or not reviewed_rows
+        else "PASS"
+        if all(summary["status"] == "PASS" for summary in review_by_strategy.values())
+        else "FAIL"
+    )
+    report["claim_review"] = {
+        "status": overall_review_status,
+        "reviewed_claim_count": len(reviewed_rows),
+        "supported_claim_count": len(supported_rows),
+        "pending_claim_count": review_pending,
+        "support_rate": overall_support_rate,
+        "content_hash_bound": True,
+        "reviewer_ids": sorted(
+            {
+                reviewer
+                for summary in review_by_strategy.values()
+                for reviewer in summary["reviewer_ids"]
             }
+        ),
+        "independent_human_review_verified": False,
+        "by_strategy": review_by_strategy,
+    }
+    report["capability_status"]["semantic_support"] = overall_review_status
 
     real_exec = report.get("real_backend_execution")
     if isinstance(real_exec, dict):
-        real_passed = (
-            real_exec.get("embedding_probe", {}).get("status") == "PASS"
-            and real_exec.get("generation_probe", {}).get("status") == "PASS"
+        embedding_passed = real_exec.get("embedding_probe", {}).get("status") == "PASS"
+        generation_passed = real_exec.get("generation_probe", {}).get("status") == "PASS"
+        integrated_passed = real_exec.get("retrieval_validation", {}).get("status") == "PASS"
+        report["capability_status"]["real_embedding_probe"] = "PASS" if embedding_passed else "NOT VERIFIED"
+        report["capability_status"]["real_generation_execution"] = "PASS" if generation_passed else "NOT VERIFIED"
+        report["capability_status"]["integrated_dense_rag"] = "PASS" if integrated_passed else "NOT VERIFIED"
+        report["capability_status"]["real_backend_execution"] = (
+            "PASS"
+            if embedding_passed and generation_passed and integrated_passed
+            else "PARTIAL"
+            if generation_passed
+            else "NOT VERIFIED"
         )
-        if real_passed:
-            report["capability_status"]["real_backend_execution"] = "PASS"
 
     lines.extend(
         f"- `{name}`: **{status}**"
         for name, status in report["capability_status"].items()
     )
-    if reviewed_rows:
+    if reviewed_rows and overall_review_status in {"PASS", "FAIL"}:
+        reviewer_text = ", ".join(report["claim_review"]["reviewer_ids"])
         semantic_section = [
             "",
             "## Semantic support and provenance",
             "",
-            f"Human semantic review was completed across all {len(reviewed_rows)} emitted claims. "
-            f"All {len(supported_rows)} claims ({support_rate:.1%}) were verified to be semantically entailed "
-            f"and supported verbatim by their cited passages, exceeding the 85% citation-support target.",
+            f"Manual claim review by **{reviewer_text}** covered {len(reviewed_rows)} emitted claims; "
+            f"{len(supported_rows)} ({overall_support_rate:.1%}) were judged supported by their cited synthetic passages. "
+            "This is an identified Codex review, not independent human ground truth or official-data validation. "
+            "The verdicts are reusable only when the claim and supporting-content hashes match.",
         ]
     else:
         semantic_section = [
@@ -1793,17 +2058,28 @@ def write_phase4_evaluation_report(
             "",
             "Citation-ID validity and exact source/excerpt provenance are structural checks. "
             "They do not prove that a claim is semantically entailed. The review sheet therefore keeps "
-            "`semantic_support_verdict=pending_human_review` and does not turn valid IDs or retrieval scores into a quality pass.",
+            "`semantic_support_verdict=pending_human_review` (or lacks an explicit reviewer identity) and does not turn valid IDs or retrieval scores into a quality pass.",
         ]
     lines.extend(semantic_section)
-    if isinstance(real_exec, dict) and report["capability_status"].get("real_backend_execution") == "PASS":
+    if isinstance(real_exec, dict):
+        generation_status = report["capability_status"].get("real_generation_execution")
+        embedding_status = report["capability_status"].get("real_embedding_probe")
+        integrated_status = report["capability_status"].get("integrated_dense_rag")
+        generation_scope = (
+            f"Real generation replay completed with provider/model `{real_exec.get('generation_probe', {}).get('provider', 'configured')}` / `{real_exec.get('generation_probe', {}).get('model', 'configured')}` over `{real_exec.get('corpus', {}).get('backend', 'unknown')}` retrieval."
+            if generation_status == "PASS"
+            else "No real-provider generation replay completed in this run."
+        )
+        retrieval_reason = real_exec.get("retrieval_validation", {}).get(
+            "reason",
+            "Integrated dense/hybrid retrieval was not verified.",
+        )
         lines.extend(
             [
                 "",
-                "## Real-backend execution",
+                "## Real-provider execution scope",
                 "",
-                "Real-backend execution was verified with the local sentence-transformers all-MiniLM-L6-v2 dense embedding probe (PASS) "
-                "and the real Ollama Qwen 2.5 3B OpenAI-compatible provider replay (PASS). Exact execution trace is preserved in the real report.",
+                f"{generation_scope} The embedding probe status is **{embedding_status}**, while integrated dense/hybrid RAG status is **{integrated_status}**. {retrieval_reason}",
             ]
         )
     lines.extend(
@@ -1814,7 +2090,7 @@ def write_phase4_evaluation_report(
             "- The corpus is synthetic and the labels are provisional; no official competition validation is claimed.",
             "- The default generation execution is the repository mock provider. Mock behavior tests fixture plumbing and revision correctness, not real-model answer quality.",
             "- Cost is unavailable for estimated mock tokens; real-provider usage and pricing require configured credentials and documented prices.",
-            "- Conflict and semantic entailment review remain pending; this report records emitted claims and passages for later human review.",
+            "- Case labels remain provisional, and the manual Codex claim review is not independent human ground truth.",
             "- Persistence, retention policy, and production-scale scheduler capacity remain outside this lightweight Phase 4 implementation.",
         ]
     )
@@ -1827,32 +2103,47 @@ def write_phase4_cases_review(
     path: Path,
     cases: Sequence[Phase4EvaluationCase],
     *,
-    human_reviewed: bool = False,
+    claim_review: dict[str, Any] | None = None,
 ) -> None:
-    """Write a compact machine-readable review-status index for the suite."""
+    """Write case-label status without promoting it to semantic ground truth."""
+
+    review = claim_review or {
+        "status": "NOT VERIFIED",
+        "reviewed_claim_count": 0,
+        "supported_claim_count": 0,
+        "pending_claim_count": 0,
+        "support_rate": None,
+        "reviewer_ids": [],
+        "content_hash_bound": False,
+        "independent_human_review_verified": False,
+    }
+    review_status = str(review.get("status", "NOT VERIFIED"))
 
     payload = {
         "schema_version": PHASE4_EVALUATION_SCHEMA_VERSION,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "case_count": len(cases),
+        "claim_review": review,
         "cases": [
             {
                 "case_id": case.case_id,
                 "split": case.split,
                 "evaluation_role": case.evaluation_role,
                 "variant_family": case.variant_family,
-                "label_review_status": {
-                    **case.label_review_status.model_dump(mode="json"),
-                    **({"semantic_claim_support": "human_reviewed"} if human_reviewed else {}),
-                },
-                "human_review_status": "verified" if human_reviewed else "pending",
+                "label_review_status": case.label_review_status.model_dump(mode="json"),
+                "semantic_claim_review_status": review_status,
+                "independent_human_review_status": (
+                    "verified"
+                    if review.get("independent_human_review_verified")
+                    else "not_verified"
+                ),
             }
             for case in cases
         ],
         "overall": (
-            "Human semantic review completed; 89/89 claims verified as semantically supported by cited passages (100% support rate)."
-            if human_reviewed
-            else "No human review completed; semantic claim support remains NOT VERIFIED."
+            f"Manual claim review status: {review_status}; "
+            f"{review.get('supported_claim_count', 0)}/{review.get('reviewed_claim_count', 0)} reviewed claims supported. "
+            "Case labels remain provisional and independent human review is NOT VERIFIED."
         ),
     }
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1901,20 +2192,30 @@ async def attempt_real_e2e(
         },
         "embedding_probe": {"status": "NOT VERIFIED"},
         "generation_probe": {"status": "NOT VERIFIED"},
+        "retrieval_validation": {
+            "status": "NOT VERIFIED",
+            "backend": backend,
+            "integrated_with_generation_replay": False,
+            "reason": "No integrated dense/hybrid retrieval replay has completed.",
+        },
         "execution_trace": None,
     }
     try:
-        SentenceTransformerEmbeddingProvider(
+        embedding_provider = SentenceTransformerEmbeddingProvider(
             model_name=settings.embedding_model,
             revision=settings.embedding_revision,
             license_name=settings.embedding_license,
             cache_dir=settings.embedding_cache_dir,
             local_files_only=True,
         )
+        probe_vectors = embedding_provider.embed(["FlowContext dense embedding probe"])
+        if len(probe_vectors) != 1 or len(probe_vectors[0]) != embedding_provider.config.dimensions:
+            raise ValueError("embedding probe returned an unexpected vector shape")
+        vector_norm = sum(float(value) ** 2 for value in probe_vectors[0]) ** 0.5
     except Exception as exc:
         result["embedding_probe"] = {
             "status": "NOT VERIFIED",
-            "reason": f"permitted local embedding probe unavailable: {type(exc).__name__}: {exc}",
+            "reason": f"permitted local embedding probe unavailable or failed: {type(exc).__name__}: {exc}",
             "model": settings.embedding_model,
             "revision": settings.embedding_revision,
             "secret_values_written": False,
@@ -1925,6 +2226,10 @@ async def attempt_real_e2e(
             "model": settings.embedding_model,
             "revision": settings.embedding_revision,
             "local_files_only": True,
+            "operation": "embed",
+            "batch_size": 1,
+            "dimensions": embedding_provider.config.dimensions,
+            "vector_l2_norm": round(vector_norm, 6),
         }
     real_settings = settings
     if real_settings.generation_backend != "openai_compatible":
@@ -1973,11 +2278,13 @@ async def attempt_real_e2e(
             "status": "NOT VERIFIED",
             "reason": "configured generation backend is mock; no real provider was substituted",
             "required": "FLOWCONTEXT_GENERATION_BACKEND=openai_compatible plus configured credential",
+            "retrieval_backend": backend,
         }
     elif not config_asset_status(real_settings)["generation_api_key_configured"]:
         result["generation_probe"] = {
             "status": "NOT VERIFIED",
             "reason": f"credential environment variable {real_settings.generation_api_key_env!r} is not configured",
+            "retrieval_backend": backend,
         }
     else:
         from .phase4_replay import replay_phase4_session
@@ -1997,7 +2304,23 @@ async def attempt_real_e2e(
                 local_files_only=real_settings.embedding_local_files_only,
             )
             replay = await replay_phase4_session(turns, corpus=corpus, retriever=retriever, generation_provider=provider)
-            result["generation_probe"] = {"status": "PASS", "provider": real_settings.generation_provider, "model": real_settings.generation_model}
+            result["generation_probe"] = {
+                "status": "PASS",
+                "provider": real_settings.generation_provider,
+                "model": real_settings.generation_model,
+                "retrieval_backend": backend,
+            }
+            integrated_dense = backend == "dense" and result["embedding_probe"]["status"] == "PASS"
+            result["retrieval_validation"] = {
+                "status": "PASS" if integrated_dense else "NOT VERIFIED",
+                "backend": backend,
+                "integrated_with_generation_replay": integrated_dense,
+                "reason": (
+                    "The real generation replay used the dense retriever and the embedding provider executed embed()."
+                    if integrated_dense
+                    else "The real generation replay used lexical retrieval; the embedding probe was separate, so integrated dense/hybrid RAG was not validated."
+                ),
+            }
             result["execution_trace"] = replay.model_dump(mode="json")
         except Exception as exc:
             result["generation_probe"] = {
@@ -2005,6 +2328,7 @@ async def attempt_real_e2e(
                 "reason": f"real provider execution failed: {type(exc).__name__}: {exc}",
                 "provider": real_settings.generation_provider,
                 "model": real_settings.generation_model,
+                "retrieval_backend": backend,
             }
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

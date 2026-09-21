@@ -17,10 +17,13 @@ are supplied.
 - Atomic factual and presentation answer publication with historical versions,
   stable unchanged claim IDs, claim/evidence deltas, and explicit unresolved
   content.
-- Actual replay examples and a 22-case matched full-versus-selective suite.
+- Actual replay examples and a 23-case matched full-versus-selective suite.
   The local run is synthetic, lexical, and mock-provider engineering data.
-- Redacted real-backend execution verified. Local dense embedding probe passed using offline sentence-transformers (all-MiniLM-L6-v2), and real provider generation replay passed using local Ollama Qwen 2.5 3B with OpenAI-compatible endpoint. Trace is preserved in `reports/phase4_real_e2e.json`.
-- Human semantic claim review verified. All 89 emitted claims were audited against cited corpus passages, achieving 100% semantic citation support (exceeding 85% requirement), preserved in `reports/phase4_evaluation_claim_review.csv`.
+- Redacted real-provider execution is scope-limited. The report records whether the offline sentence-transformers provider actually called `embed()` and whether the local Ollama Qwen 2.5 3B generation replay completed. The current run completed Ollama qwen2.5:3b generation and embedding probe; dense/hybrid RAG integration was verified with dense retrieval backend evaluation (reports/phase4_evaluation_dense_test.json). Trace is preserved in `reports/phase4_real_e2e.json` and `reports/phase4_real_e2e_dense_test.json`.
+- An identified Codex manual claim review covers the 89 emitted synthetic claim rows against their cited passages. It is content-hash-bound and is not independent human ground truth or official benchmark validation. The sheet is preserved in `reports/phase4_evaluation_claim_review.csv`.
+- Comprehensive semantic claim review guide created at `docs/semantic_claim_review_guide.md` to support future independent human review.
+- Detailed efficiency analysis created at `reports/phase4_efficiency_analysis.md` explaining why no efficiency gain was demonstrated and proposing efficiency-focused test cases.
+- Efficiency-focused test cases added in `data/evaluation/phase4_efficiency.jsonl` for future benchmark scenarios.
 
 ## Remaining product work
 
@@ -33,15 +36,18 @@ are supplied.
    backpressure, and cost accounting; keep rule/mock/real execution labels
    distinct.
 4. Establish a human-readable answer UI/API for historical versus current
-   versions, partial answers, uncertainty, citations, and pending work.
+  versions, partial answers, uncertainty, citations, and pending work.
 5. Load the official corpus only through an approved read-only ingestion path
-   and rebuild/pin its index identity.
+  and rebuild/pin its index identity.
 
 ## Remaining evaluation work
 
 - Obtain and review official multi-turn transcripts, intent/operation labels,
-  answerability labels, and claim-support passages. Complete the pending claim
-  review sheet; do not count structural citation validity as semantic support.
+  answerability labels, and claim-support passages. Obtain an independent human
+  review of the current claim sheet; do not count structural citation validity or
+  the Codex manual review as official semantic ground truth. A comprehensive
+  semantic claim review guide is available at `semantic_claim_review_guide.md`
+  to support independent human review when official corpus becomes available.
 - Repeat the matched A/B evaluation on official data with identical provider,
   retrieval, and generation settings. Include broad corrections as a separate
   stratum rather than treating their substantial retrieval as a regression.
@@ -53,6 +59,12 @@ are supplied.
   and provider usage are available.
 - Reconcile metric definitions and thresholds with the organiser before making
   any competition or guide-target claim.
+- Conduct a separate efficiency-focused benchmark using the test cases in
+  `data/evaluation/phase4_efficiency.jsonl` and the analysis framework in
+  `reports/phase4_efficiency_analysis.md`. The current correctness-focused evaluation
+  legitimately requires broad retrieval for entity changes and constraint removals,
+  masking potential efficiency gains that would be visible in clarification and
+  formatting scenarios.
 
 ## Demo and submission work
 
@@ -101,8 +113,9 @@ provider and lexical backend in their envelopes.
 | Gate | Status | Boundary |
 |---|---|---|
 | Phase 4 engineering contracts | PASS | Local tests and actual replay pipeline |
-| Matched synthetic full/selective evaluation | PASS | Provisional lexical/mock fixture result |
-| Human semantic claim review | PASS | 89/89 claims verified supported (100% support rate, >=85% target) |
-| Real embedding/generation E2E | PASS | sentence-transformers dense embedding probe and Ollama Qwen 2.5 3B replay trace |
+| Matched synthetic full/selective evaluation | PASS | Provisional lexical/mock fixture result (23 cases) |
+| Identified manual claim review | MANUAL | Codex reviewed 89/89 synthetic rows; independent human review is not verified |
+| Real-provider generation replay | PASS | Ollama qwen2.5:3b generation and embedding probe passed; dense/hybrid RAG integration verified with dense retrieval backend (reports/phase4_evaluation_dense_test.json) |
+| Selective efficiency gain | NOT VERIFIED | The matched run did not demonstrate fewer calls/chunks or lower mock latency/cost; efficiency analysis and test cases provided for future benchmarks |
 | Official competition validation | NOT VERIFIED | Official assets and harness absent |
 | Final submission production | NOT STARTED | Explicitly outside this phase |

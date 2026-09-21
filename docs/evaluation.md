@@ -281,12 +281,14 @@ Phase 4 evaluation is a separate follow-up/update measurement pass; the
 Phase 1 and Phase 3 sections above retain their original scope and historical
 results. The dedicated synthetic suite contains 22 cases: 13 development,
 three previously inspected diagnostic regressions, and six untouched held-out
-cases. Related conversation variants remain in one split. Human semantic
-review was completed and verified across all 89 emitted claims (100% support rate,
-exceeding the 85% citation-support target; recorded in
+cases. Related conversation variants remain in one split. An identified Codex
+manual claim review covers all 89 emitted claim rows against their cited
+passages; this is not independent human ground truth (recorded in
 [`../reports/phase4_evaluation_claim_review.csv`](../reports/phase4_evaluation_claim_review.csv)).
-Real-backend execution was verified with the local sentence-transformers dense
-embedding probe and real Ollama Qwen 2.5 3B replay.
+The attempted real-provider replay is configured for lexical retrieval, but the
+current rerun did not complete it. The dense embedding probe now calls `embed()`
+separately; integrated dense/hybrid RAG is `NOT VERIFIED` unless the report
+records a dense integrated replay.
 
 Run the matched full-update and selective-update arms with the same
 interpretation, corpus/index, providers, retrieval settings, and generation
@@ -305,13 +307,14 @@ The report measures follow-up interpretation, direct and propagated claim
 invalidation, obsolete-claim preservation, unaffected-claim preservation,
 updated coverage, evidence and citation structure, uncertainty and
 clarification, retrieval/generation usage, latency, formatting-only
-suppression, stale publication, isolation, and trace completeness. A broad
+suppression, superseded requests, rejected stale results, accepted stale
+publications, isolation, and trace completeness. A broad
 correction may legitimately retrieve across the full corpus; selective means
 that only changed information needs are scheduled. The local result records
-quality separately from resource savings and does not treat synthetic lexical
-or mock-provider behavior as real-model quality. Both structural citation
-validity and semantic claim support are verified (PASS, 100% support rate across
-89 audited claims exceeding the 85% target).
+quality separately from resource measurements and does not treat synthetic
+lexical or mock-provider behavior as real-model quality. This matched run did
+not establish a selective speed or cost gain: retrieval calls/chunks did not
+decrease, generation tokens increased, and mock median latency was higher.
 
 The current artifacts are the [Phase 4 Markdown report](../reports/phase4_evaluation.md),
 [machine-readable report](../reports/phase4_evaluation.json), [claim review

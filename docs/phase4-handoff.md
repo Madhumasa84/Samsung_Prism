@@ -199,12 +199,13 @@ real provider configuration is supplied.
 The completed matched evaluation is recorded in
 [`../reports/phase4_evaluation.md`](../reports/phase4_evaluation.md) and
 [`../reports/phase4_evaluation.json`](../reports/phase4_evaluation.json), with
-the pending claim sheet at
+the content-hash-bound claim sheet at
 [`../reports/phase4_evaluation_claim_review.csv`](../reports/phase4_evaluation_claim_review.csv).
 The redacted real-backend attempt is
 [`../reports/phase4_real_e2e.json`](../reports/phase4_real_e2e.json). The
 22-case suite keeps development, diagnostic/regression, and untouched held-out
-roles separate; historical Phase 3 reports are preserved.
+roles separate; historical Phase 3 reports are preserved. The claim sheet records
+an identified Codex manual review, not independent human ground truth.
 
 ## Still deferred
 
@@ -212,5 +213,7 @@ The lightweight state, follow-up interpretation, selective retrieval, answer
 publication, and presentation boundary described by this interface is
 implemented in [docs/phase4-session-state.md](phase4-session-state.md). The
 local evaluation is complete, but persistence/retention, clarification-answer
-resolution, independently reviewed semantic entailment, real-model execution,
-and official benchmark validation remain deferred or `NOT VERIFIED`.
+resolution, independent human semantic entailment, integrated dense/hybrid
+real-model retrieval, and official benchmark validation remain deferred or
+`NOT VERIFIED`. The matched fixture measurements do not establish a selective
+speed or cost gain.

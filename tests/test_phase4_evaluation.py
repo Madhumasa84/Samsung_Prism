@@ -8,6 +8,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 from flowcontext.config import load_settings
 from flowcontext.ingestion import CorpusIngestor, load_document_inputs
@@ -161,7 +162,7 @@ class Phase4EvaluationTests(unittest.TestCase):
 
             for row in rows:
                 row["semantic_support_verdict"] = "supported"
-                row["reviewer"] = "human_reviewer"
+                row["reviewer"] = "Codex manual claim review"
                 row["review_notes"] = "verified citation match"
             with review_csv.open("w", newline="", encoding="utf-8") as handle:
                 writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
@@ -169,16 +170,87 @@ class Phase4EvaluationTests(unittest.TestCase):
                 writer.writerows(rows)
 
             write_phase4_evaluation_report(output, report, review_path=review_csv)
-            write_phase4_cases_review(review_status, cases, human_reviewed=True)
-
             updated = json.loads(output.read_text(encoding="utf-8"))
+            write_phase4_cases_review(review_status, cases, claim_review=updated["claim_review"])
+
             self.assertEqual(updated["capability_status"]["semantic_support"], "PASS")
             self.assertEqual(updated["strategies"]["selective"]["semantic_claim_support"]["status"], "PASS")
             self.assertEqual(updated["strategies"]["selective"]["semantic_claim_support"]["support_rate"], 1.0)
 
             review_json = json.loads(review_status.read_text(encoding="utf-8"))
-            self.assertEqual(review_json["cases"][0]["label_review_status"]["semantic_claim_support"], "human_reviewed")
-            self.assertEqual(review_json["cases"][0]["human_review_status"], "verified")
+            self.assertEqual(review_json["cases"][0]["semantic_claim_review_status"], "PASS")
+            self.assertEqual(review_json["cases"][0]["independent_human_review_status"], "not_verified")
+
+    def test_review_content_hashes_invalidate_edited_claim_rows(self) -> None:
+        cases = load_phase4_evaluation_cases(EVALUATION / "phase4_untouched.jsonl")[:1]
+        report = asyncio.run(
+            evaluate_phase4(
+                cases,
+                corpus=self.index,
+                settings=self.settings,
+                backend="lexical",
+                top_k=3,
+            )
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "phase4.json"
+            review_csv = Path(directory) / "phase4_claim_review.csv"
+            write_phase4_evaluation_report(output, report, review_path=review_csv)
+            with review_csv.open(newline="", encoding="utf-8") as handle:
+                rows = list(csv.DictReader(handle))
+            for row in rows:
+                row["semantic_support_verdict"] = "supported"
+                row["reviewer"] = "Codex manual claim review"
+            with review_csv.open("w", newline="", encoding="utf-8") as handle:
+                writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
+                writer.writeheader()
+                writer.writerows(rows)
+
+            rows[0]["claim_text"] += " Tampered after review."
+            with review_csv.open("w", newline="", encoding="utf-8") as handle:
+                writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
+                writer.writeheader()
+                writer.writerows(rows)
+
+            write_phase4_evaluation_report(output, report, review_path=review_csv)
+            with review_csv.open(newline="", encoding="utf-8") as handle:
+                updated_rows = list(csv.DictReader(handle))
+            self.assertEqual(updated_rows[0]["semantic_support_verdict"], "pending_human_review")
+
+    def test_review_support_is_aggregated_per_strategy(self) -> None:
+        cases = load_phase4_evaluation_cases(EVALUATION / "phase4_untouched.jsonl")[:1]
+        report = asyncio.run(
+            evaluate_phase4(
+                cases,
+                corpus=self.index,
+                settings=self.settings,
+                backend="lexical",
+                top_k=3,
+            )
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "phase4.json"
+            review_csv = Path(directory) / "phase4_claim_review.csv"
+            write_phase4_evaluation_report(output, report, review_path=review_csv)
+            with review_csv.open(newline="", encoding="utf-8") as handle:
+                rows = list(csv.DictReader(handle))
+            for row in rows:
+                row["semantic_support_verdict"] = (
+                    "supported" if row["strategy"] == "full" else "unsupported"
+                )
+                row["reviewer"] = "Codex manual claim review"
+            with review_csv.open("w", newline="", encoding="utf-8") as handle:
+                writer = csv.DictWriter(handle, fieldnames=list(rows[0].keys()))
+                writer.writeheader()
+                writer.writerows(rows)
+
+            write_phase4_evaluation_report(output, report, review_path=review_csv)
+            updated = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(updated["strategies"]["full"]["semantic_claim_support"]["status"], "PASS")
+            self.assertEqual(updated["strategies"]["selective"]["semantic_claim_support"]["status"], "FAIL")
+            self.assertEqual(updated["strategies"]["full"]["semantic_claim_support"]["reviewed_claim_count"], 1)
+            self.assertEqual(updated["strategies"]["selective"]["semantic_claim_support"]["reviewed_claim_count"], 1)
+            self.assertEqual(updated["capability_status"]["semantic_support"], "FAIL")
 
     def test_attempt_real_e2e_records_offline_embedding_probe(self) -> None:
         import os
@@ -186,20 +258,29 @@ class Phase4EvaluationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             out_path = Path(directory) / "real_e2e.json"
             test_settings = self.settings.model_copy(update={"generation_backend": "mock"})
+            embedding_provider = mock.Mock()
+            embedding_provider.config = SimpleNamespace(dimensions=3)
+            embedding_provider.embed.return_value = [[1.0, 0.0, 0.0]]
             with mock.patch.dict(os.environ, {"FLOWCONTEXT_REAL_GENERATION_BASE_URL": "http://127.0.0.1:9/v1"}):
-                result = asyncio.run(
-                    attempt_real_e2e(
-                        settings=test_settings,
-                        corpus=self.index,
-                        backend="lexical",
-                        output_path=out_path,
+                with mock.patch(
+                    "flowcontext.phase4_evaluation.SentenceTransformerEmbeddingProvider",
+                    return_value=embedding_provider,
+                ):
+                    result = asyncio.run(
+                        attempt_real_e2e(
+                            settings=test_settings,
+                            corpus=self.index,
+                            backend="lexical",
+                            output_path=out_path,
+                        )
                     )
-                )
             self.assertTrue(out_path.is_file())
             self.assertEqual(result["embedding_probe"]["status"], "PASS")
             self.assertIn("model", result["embedding_probe"])
+            self.assertEqual(result["embedding_probe"]["operation"], "embed")
+            embedding_provider.embed.assert_called_once_with(["FlowContext dense embedding probe"])
+            self.assertEqual(result["retrieval_validation"]["status"], "NOT VERIFIED")
 
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -37,64 +37,64 @@ Cases: 13 (single 9, compound 4). Multi-intent exact identification: 4/4 = `1.0`
 
 | Condition | Matched Recall@5 | Matched cases | Completed / all | Final-event→answer p50/p95 ms |
 |---|---:|---:|---:|---:|
-| A_original_baseline | 1.0 | 9 | 11/13 | 3.8753039998482564 / 86.08901460001988 |
-| B_phase2_streaming_single_query | 1.0 | 9 | 11/13 | 4.494742000133556 / 88.24985979999809 |
-| C_phase3_streaming_fused | 0.9074074074074073 | 9 | 10/13 | 7.524385000124312 / 92.27940760001701 |
+| A_original_baseline | 1.0 | 7 | 10/13 | 12.102448003133759 / 95.25532380066554 |
+| B_phase2_streaming_single_query | 1.0 | 7 | 10/13 | 14.587985002435744 / 96.43121239932927 |
+| C_phase3_streaming_fused | 0.9285714285714286 | 7 | 7/13 | 23.227996003697626 / 119.17652540141694 |
 
 Per-condition resources:
 **A_original_baseline**
-- Retrieval calls: 13; model calls: {'generation': 12, 'decomposition': 0, 'total': 12}
-- Tokens: retrieval 96, decomposition 0, generation 5117, repair 0, verification 0, total 5213
+- Retrieval calls: 13; model calls: {'generation': 11, 'decomposition': 0, 'total': 11}
+- Tokens: retrieval 96, decomposition 0, generation 4245, repair 0, verification 0, total 4341
 - Errors: 2 events across 2 cases; cost: `unavailable` (unavailable)
 **B_phase2_streaming_single_query**
-- Retrieval calls: 14; model calls: {'generation': 12, 'decomposition': 0, 'total': 12}
-- Tokens: retrieval 99, decomposition 0, generation 5117, repair 0, verification 0, total 5216
+- Retrieval calls: 14; model calls: {'generation': 11, 'decomposition': 0, 'total': 11}
+- Tokens: retrieval 99, decomposition 0, generation 4245, repair 0, verification 0, total 4344
 - Errors: 2 events across 2 cases; cost: `unavailable` (unavailable)
 **C_phase3_streaming_fused**
-- Retrieval calls: 14; model calls: {'generation': 12, 'decomposition': 14, 'total': 26}
-- Tokens: retrieval 99, decomposition 2319, generation 2908, repair 0, verification 682, total 6008
-- Errors: 3 events across 2 cases; cost: `unavailable` (unavailable)
+- Retrieval calls: 14; model calls: {'generation': 8, 'decomposition': 14, 'total': 22}
+- Tokens: retrieval 99, decomposition 2328, generation 1420, repair 0, verification 436, total 4283
+- Errors: 4 events across 3 cases; cost: `unavailable` (unavailable)
 
-Phase 3 complete-request evidence coverage (macro): `0.8333333333333334` over 12 cases.
-Phase 3 per-intent retrieval Recall@1/@3/@5 (macro): `0.5333333333333333` / `0.8666666666666667` / `0.9333333333333333` over 15 applicable labelled intent records.
-Phase 3 supported-answer coverage (provisional substring check): `2/15` = `0.13333333333333333`; this is not semantic support.
-Phase 3 citation-ID validity: `10/10` emitted-citation runs = `1.0`; 3 runs emitted no citations; semantic support: **NOT VERIFIED**.
+Phase 3 complete-request evidence coverage (macro): `0.7083333333333334` over 12 cases.
+Phase 3 per-intent retrieval Recall@1/@3/@5 (macro): `0.5333333333333333` / `0.8666666666666667` / `0.8666666666666667` over 15 applicable labelled intent records.
+Phase 3 supported-answer coverage (provisional substring check): `8/15` = `0.5333333333333333`; this is not semantic support.
+Phase 3 citation-ID validity: `7/7` emitted-citation runs = `1.0`; 6 runs emitted no citations; semantic support: **NOT VERIFIED**.
 Phase 2/3 early retrieval and reuse: B started 1/1, useful reuse 0, stale accepted 0; C started 1/1, useful reuse 0, stale accepted 0.
 
 ### Held Out
 
-Cases: 7 (single 3, compound 4). Multi-intent exact identification: 3/4 = `0.75`; missed intents: 1; unnecessary extra intents: 1.
+Cases: 7 (single 3, compound 4). Multi-intent exact identification: 3/4 = `0.75`; missed intents: 1; unnecessary extra intents: 0.
 
 | Condition | Matched Recall@5 | Matched cases | Completed / all | Final-event→answer p50/p95 ms |
 |---|---:|---:|---:|---:|
-| A_original_baseline | 1.0 | 5 | 7/7 | 5.158859999937704 / 95.18003099997252 |
-| B_phase2_streaming_single_query | 1.0 | 5 | 6/7 | 5.751918999976624 / 29.6049851000589 |
-| C_phase3_streaming_fused | 1.0 | 5 | 6/7 | 8.517489000041678 / 31.151270799955448 |
+| A_original_baseline | 1.0 | 5 | 6/7 | 9.234002005541697 / 90.9811241021088 |
+| B_phase2_streaming_single_query | 1.0 | 5 | 5/7 | 10.310545003449079 / 26.078002400026875 |
+| C_phase3_streaming_fused | 0.8 | 5 | 5/7 | 17.343829000310507 / 29.309701998863595 |
 
 Per-condition resources:
 **A_original_baseline**
-- Retrieval calls: 7; model calls: {'generation': 7, 'decomposition': 0, 'total': 7}
-- Tokens: retrieval 54, decomposition 0, generation 3050, repair 0, verification 0, total 3104
+- Retrieval calls: 7; model calls: {'generation': 6, 'decomposition': 0, 'total': 6}
+- Tokens: retrieval 54, decomposition 0, generation 2159, repair 0, verification 0, total 2213
 - Errors: 0 events across 0 cases; cost: `unavailable` (unavailable)
 **B_phase2_streaming_single_query**
-- Retrieval calls: 7; model calls: {'generation': 6, 'decomposition': 0, 'total': 6}
-- Tokens: retrieval 54, decomposition 0, generation 2777, repair 0, verification 0, total 2831
+- Retrieval calls: 7; model calls: {'generation': 5, 'decomposition': 0, 'total': 5}
+- Tokens: retrieval 54, decomposition 0, generation 1886, repair 0, verification 0, total 1940
 - Errors: 1 events across 1 cases; cost: `unavailable` (unavailable)
 **C_phase3_streaming_fused**
-- Retrieval calls: 7; model calls: {'generation': 6, 'decomposition': 7, 'total': 13}
-- Tokens: retrieval 54, decomposition 1029, generation 1819, repair 0, verification 510, total 3412
+- Retrieval calls: 7; model calls: {'generation': 5, 'decomposition': 7, 'total': 12}
+- Tokens: retrieval 54, decomposition 990, generation 1226, repair 0, verification 416, total 2686
 - Errors: 1 events across 1 cases; cost: `unavailable` (unavailable)
 
-Phase 3 complete-request evidence coverage (macro): `0.8333333333333334` over 6 cases.
+Phase 3 complete-request evidence coverage (macro): `0.6666666666666666` over 6 cases.
 Phase 3 per-intent retrieval Recall@1/@3/@5 (macro): `0.4444444444444444` / `0.7777777777777778` / `0.8888888888888888` over 9 applicable labelled intent records.
-Phase 3 supported-answer coverage (provisional substring check): `2/10` = `0.2`; this is not semantic support.
-Phase 3 citation-ID validity: `6/6` emitted-citation runs = `1.0`; 1 runs emitted no citations; semantic support: **NOT VERIFIED**.
+Phase 3 supported-answer coverage (provisional substring check): `6/10` = `0.6`; this is not semantic support.
+Phase 3 citation-ID validity: `5/5` emitted-citation runs = `1.0`; 2 runs emitted no citations; semantic support: **NOT VERIFIED**.
 Phase 2/3 early retrieval and reuse: B started 0/0, useful reuse 0, stale accepted 0; C started 0/0, useful reuse 0, stale accepted 0.
 
 ## Focused ablations
 
 Single-query versus decomposed retrieval: `measured` over 13 normal, answerable labelled cases; lexical-only engineering measurement, not a model-quality finding.
-Dense-only versus hybrid: **NOT VERIFIED** — sentence-transformers is not installed; no dense index/model run is available.
+Dense-only versus hybrid: **NOT VERIFIED** — the supplied index is lexical-only and contains no dense embeddings; a dense build/model run was not performed.
 
 ## Failures and limitations
 
@@ -115,7 +115,7 @@ Dense-only versus hybrid: **NOT VERIFIED** — sentence-transformers is not inst
 
 | Capability | Status | Evidence boundary |
 |---|---|---|
-| `single_questions_not_decomposed` | **FAIL** | synthetic_fixture_provisional_labels |
+| `single_questions_not_decomposed` | **PASS** | synthetic_fixture_provisional_labels |
 | `compound_independent_questions` | **PASS** | synthetic_fixture_provisional_labels |
 | `dependent_questions` | **PASS** | synthetic_fixture_provisional_labels |
 | `shared_constraints` | **PASS** | synthetic_fixture_provisional_labels |
@@ -123,8 +123,8 @@ Dense-only versus hybrid: **NOT VERIFIED** — sentence-transformers is not inst
 | `comparisons` | **PASS** | synthetic_fixture_provisional_labels |
 | `partial_answerability` | **PASS** | synthetic_fixture_provisional_labels |
 | `entity_confusion` | **PASS** | synthetic_fixture_provisional_labels |
-| `uncertainty_on_partial_requests` | **FAIL** | Phase 3 C answer uncertainty behavior; semantic fabrication remains unreviewed |
-| `uncertainty_on_unanswerable_requests` | **FAIL** | Phase 3 C answer uncertainty behavior; semantic fabrication remains unreviewed |
+| `uncertainty_on_partial_requests` | **PASS** | Phase 3 C answer uncertainty behavior; semantic fabrication remains unreviewed |
+| `uncertainty_on_unanswerable_requests` | **PASS** | Phase 3 C answer uncertainty behavior; semantic fabrication remains unreviewed |
 | `conflicting_evidence_handling` | **PASS** | structured conflict/precedence status and provenance; semantic claim support is NOT VERIFIED |
 | `corrections_and_stale_protection` | **PASS** | local audit record |
 | `provider_and_retrieval_failures` | **PASS** | local audit record |
@@ -137,14 +137,14 @@ Dense-only versus hybrid: **NOT VERIFIED** — sentence-transformers is not inst
 | `official_benchmark_validation` | **NOT VERIFIED** | local audit record |
 | `phase4_selective_claim_updates` | **NOT VERIFIED** | intentionally not implemented or evaluated in Phase 3 |
 | `engineering_implementation` | **PASS** | local runtime implementation and audit trace execution |
-| `local_measured_quality` | **FAIL** | synthetic lexical/mock fixture with provisional external labels |
+| `local_measured_quality` | **PASS** | synthetic lexical/mock fixture with provisional external labels |
 
 ### Validation domains
 
 | Domain | Status | Evidence boundary |
 |---|---|---|
 | `engineering_implementation` | **PASS** | dedicated A/B/C runner completed and trace completeness was checked |
-| `local_measured_quality` | **FAIL** | provisional synthetic corpus/label measurements; see per-capability results |
+| `local_measured_quality` | **PASS** | provisional synthetic corpus/label measurements; see per-capability results |
 | `real_backend_validation` | **NOT VERIFIED** | no usable dense model/index or live provider run was available |
 | `official_benchmark_validation` | **NOT VERIFIED** | official corpus, labels, harness, and organiser API are unavailable |
 
