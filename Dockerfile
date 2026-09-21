@@ -20,7 +20,6 @@ COPY data/synthetic ./data/synthetic
 COPY data/evaluation ./data/evaluation
 COPY examples ./examples
 COPY docs ./docs
-COPY PHASE1_CHECKLIST.md ./
 COPY .env.example ./
 
 ENTRYPOINT ["python", "-m", "flowcontext"]

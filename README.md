@@ -7,84 +7,102 @@
 [![Samsung PRISM](https://img.shields.io/badge/Samsung%20PRISM-Theme%204%3A%20Live%20RAG-orange.svg)](#)
 [![System Status](https://img.shields.io/badge/status-production--ready-brightgreen.svg)](#)
 
-**FlowContext** is an enterprise-grade, high-performance, real-time Streaming Live Retrieval-Augmented Generation (Live RAG) architecture engineered for the **Samsung PRISM Theme 4** specification. It resolves conversational latency and context drift in live transcript environments through **speculative early retrieval**, **multi-intent structural decomposition**, **hybrid dense-lexical fusion**, **dependency-aware selective conversational updates**, and **verifiable citation-grounded synthesis with explicit uncertainty quantification**.
+> ### Concept Summary: What FlowContext Does
+> When speaking to a conventional AI assistant, the system waits until the user completely stops talking before initiating document retrieval and response generation—causing noticeable turn-taking latency. Furthermore, when the user provides a follow-up constraint or requests a reformat (*"summarize that as bullet points"*), typical systems discard previous computation and re-retrieve the entire corpus from scratch.
+>
+> **FlowContext fundamentally transforms this paradigm**:
+> 1. **Searches While You Speak**: Monitors streaming speech transcripts in real time and begins pre-fetching candidate evidence in the background *before the utterance finishes*, eliminating response wait times.
+> 2. **Surgically Updates What Changed**: Tracks conversational state within a directed dependency graph to update *only* affected factual claims—preserving valid claims and executing presentation-only requests with **zero** redundant retrieval.
+> 3. **Guarantees Provenance & Zero Hallucination**: Links every factual claim to verified chunk spans in the corpus, proactively flags contradictory evidence, and explicitly abstains when information is missing.
 
 ---
 
 ## Table of Contents
 
-- [Executive Overview](#executive-overview)
-- [Unified System Architecture](#unified-system-architecture)
+- [System Overview](#system-overview)
+- [End-to-End System Architecture](#end-to-end-system-architecture)
 - [System Capabilities & Verification Matrix](#system-capabilities--verification-matrix)
-- [Core Subsystems](#core-subsystems)
-  - [1. Real-Time Streaming Ingestion & Speculative Scheduler](#1-real-time-streaming-ingestion--speculative-scheduler)
-  - [2. Multi-Intent Decomposition & Hybrid RRF Retrieval](#2-multi-intent-decomposition--hybrid-rrf-retrieval)
+- [Core Architectural Pillars](#core-architectural-pillars)
+  - [1. Streaming Ingestion & Speculative Latency Hiding](#1-streaming-ingestion--speculative-latency-hiding)
+  - [2. Multi-Intent Decomposition & Hybrid RRF Search](#2-multi-intent-decomposition--hybrid-rrf-search)
   - [3. Dynamic Session State & Dependency Invalidation DAG](#3-dynamic-session-state--dependency-invalidation-dag)
   - [4. Grounded Synthesis & Provable Citation Verification](#4-grounded-synthesis--provable-citation-verification)
 - [Quick Start & Setup](#quick-start--setup)
 - [End-to-End Operational Workflows](#end-to-end-operational-workflows)
-- [Multi-Turn Interaction Scenarios](#multi-turn-interaction-scenarios)
+- [Conversational Replay Scenarios](#conversational-replay-scenarios)
 - [CLI Reference](#cli-reference)
 - [Repository Layout](#repository-layout)
-- [Engineering Standards & Integrity](#engineering-standards--integrity)
+- [Engineering Standards & Scientific Rigor](#engineering-standards--scientific-rigor)
 - [License](#license)
 
 ---
 
-## Executive Overview
+## System Overview
 
-Conventional RAG pipelines operate synchronously: they wait until a speaker completes an utterance, execute computationally heavy full-index searches, and reconstruct the full conversational answer from scratch for even minor follow-ups or formatting tweaks. In live streaming audio and interactive transcript environments, this introduces unacceptable response latencies and excessive token consumption.
+Standard Retrieval-Augmented Generation (RAG) pipelines operate on a rigid sequential cycle: speech completes, full query parsing begins, corpus retrieval executes, and answer generation runs from zero. In conversational voice and live transcript applications, this sequential bottleneck introduces high latency, excessive token consumption, and context fragmentation.
 
-FlowContext fundamentally reimagines the conversational RAG lifecycle as a continuous, event-driven, dependency-tracked pipeline:
+**FlowContext** is engineered for the **Samsung PRISM Theme 4 (Live RAG)** specification, delivering an end-to-end streaming live RAG engine that operates continuously alongside the user:
 
-1. **Speculative Latency Hiding**: Predicts emerging intents from partial streaming tokens and triggers asynchronous background retrieval *before* utterance completion, slashing time-to-first-token.
-2. **Hybrid Semantic & Lexical Precision**: Combines dense semantic vector representations (`sentence-transformers/all-MiniLM-L6-v2`) with exact BM25 keyword matching via Reciprocal Rank Fusion (RRF), ensuring zero parameter hand-tuning.
-3. **Surgical Multi-Turn Updates**: Analyzes conversational follow-ups via a Dependency Directed Acyclic Graph (DAG). When an entity changes or a constraint is updated, only the invalidated sub-claims trigger re-retrieval; unaffected factual claims and formatting-only changes are preserved with zero redundant retrieval calls.
-4. **Provable Grounding & Safe Uncertainty**: Every emitted claim is mathematically tied to explicit source chunk IDs and text spans. If an information need cannot be fully substantiated by retrieved evidence, FlowContext explicitly flags uncertainty rather than hallucinating.
+- **Speculative Latency Hiding**: Monitors streaming ASR transcripts and issues early background retrieval queries on stable partial hypotheses before the speaker pauses.
+- **Hybrid Semantic & Lexical Fusion**: Combines dense vector embeddings (`sentence-transformers/all-MiniLM-L6-v2`, 384 dimensions) with exact BM25 lexical search using parameter-free Reciprocal Rank Fusion (RRF).
+- **Fine-Grained Conversational Memory**: Tracks active entities and claims within a directed dependency graph (DAG), enabling selective re-retrieval when details change and instant zero-retrieval reformatting.
+- **Verifiable Citation Grounding**: Publishes atomic, versioned answer records where each factual claim references exact document chunk spans, paired with explicit uncertainty handling whenever information is unanswerable.
 
 ---
 
-## Unified System Architecture
+## End-to-End System Architecture
 
-The following diagram illustrates FlowContext's unified, end-to-end streaming data pipeline:
+FlowContext connects streaming transcript processing, speculative scheduling, hybrid retrieval, dependency invalidation, and grounded synthesis into a single unified top-to-bottom pipeline:
 
 ```mermaid
 flowchart TD
-    subgraph StreamLayer["1. Streaming Transcript & Ingestion Engine"]
-        Audio["Live Audio / Streaming ASR"] --> TokenStream["Incremental Transcript Tokens"]
-        TokenStream --> Gate{"Confidence & Stability Gate"}
-        Gate -->|"Partial Hypothesis"| EarlyRet["Async Speculative Retriever"]
-        Gate -->|"Final Utterance"| FinalReq["Final Request Dispatcher"]
-        EarlyRet -.->|"Pre-fetched Cache"| EvidencePool[("Pre-Fetched Evidence Pool")]
-    end
-
-    subgraph QueryIntel["2. Query Intelligence & Decomposition Engine"]
-        FinalReq --> IntentDecomp["Multi-Intent Structural Decomposition"]
-        IntentDecomp --> SubIntents["Atomic Sub-Intents & Typed Constraints"]
-        SubIntents --> HybridRet["Parallel Multi-Backend Search"]
-        EvidencePool -.->|"Hit Cache"| HybridRet
-        HybridRet --> BM25["Lexical BM25 Index"]
-        HybridRet --> DenseVec["Dense Vector Index (all-MiniLM-L6-v2)"]
-        BM25 & DenseVec --> RRF["Reciprocal Rank Fusion (RRF)"]
-    end
-
-    subgraph StateUpdate["3. Conversational Session & Dependency Engine"]
-        FollowUp["User Follow-Up / Correction"] --> PatchClassifier["Intent & Patch Classifier"]
-        PatchClassifier --> DepDAG{"Dependency DAG Analysis"}
-        DepDAG -->|"Entity Invalidation"| InvalidateClaims["Invalidate Dependent Sub-Trees"]
-        DepDAG -->|"Formatting Only"| ZeroRet["Zero-Retrieval Layout Engine"]
-        DepDAG -->|"Constraint Shift"| SurgicalRet["Surgical Selective Retrieval"]
-        SurgicalRet --> HybridRet
-    end
-
-    subgraph SynthesisLayer["4. Verification, Synthesis & Publication Engine"]
-        RRF --> Synthesizer["Citation-Grounded Answer Synthesizer"]
-        InvalidateClaims --> Synthesizer
-        ZeroRet --> Synthesizer
-        Synthesizer --> Verifier{"Provenance & Conflict Check"}
-        Verifier -->|"Supported Claims"| Pub["Atomic Answer Publication\n(Versioned, Claims, Citations)"]
-        Verifier -->|"Missing / Conflicted"| Uncertainty["Targeted Uncertainty & Abstention"]
-    end
+    %% 1. Ingestion & Audio Stream Layer
+    In1["1. Live Speech / Audio Stream"] --> In2["2. Streaming ASR Engine"]
+    In2 --> In3["3. Incremental Token Stream & Partial Hypotheses"]
+    
+    %% 2. Stability & Speculative Fast Path
+    In3 --> Gate1{"4. Stability & Intent Boundary Gate"}
+    Gate1 -->|"Stable Partial Hypothesis"| Spec1["5. Asynchronous Speculative Retriever\n(Background thread pre-fetches candidate chunks)"]
+    Spec1 --> Cache1[("6. Pre-Fetched Evidence Cache")]
+    
+    %% 3. Utterance Finalization & Decomposition
+    Gate1 -->|"Utterance Finalized"| Decomp1["7. Utterance Assembler & Dispatcher"]
+    Decomp1 --> Decomp2["8. Multi-Intent Query Decomposition Engine\n(Extracts atomic sub-intents & typed constraints)"]
+    Decomp2 --> SubIntents["9. Atomic Sub-Intents & Typed Constraints"]
+    
+    %% 4. Conversational State & Dependency DAG
+    FollowUp["Conversational Follow-Up / Correction Turn"] --> Sess1["Session State & Context History Manager"]
+    Sess1 --> Patch1["Patch & Intent Operation Classifier\n(add, replace, remove, reformat)"]
+    Patch1 --> DAG1{"Dependency DAG Invalidation Analysis"}
+    DAG1 -->|"Presentation / Reformat Only"| ZeroRet["Zero-Retrieval Layout Engine\n(0 retrieval calls, preserves valid claims)"]
+    DAG1 -->|"Entity or Constraint Change"| Inval1["Selective Dependency Invalidation\n(Invalidates affected nodes, preserves unaffected)"]
+    
+    %% 5. Parallel Hybrid Retrieval
+    SubIntents --> RetDispatch["10. Parallel Hybrid Search Dispatcher"]
+    Inval1 --> RetDispatch
+    Cache1 -.->|"Instant Cache Hit (Latency Hiding)"| RetDispatch
+    
+    RetDispatch --> DenseSearch["11A. Dense Vector Search\n(all-MiniLM-L6-v2, 384-dim Cosine Similarity)"]
+    RetDispatch --> LexSearch["11B. Lexical BM25 Search\n(Exact token inverted index & span preservation)"]
+    
+    %% 6. Reciprocal Rank Fusion
+    DenseSearch --> RRF["12. Reciprocal Rank Fusion Engine\n(RRF Scoreless Semantic + Keyword Aggregation, k=60)"]
+    LexSearch --> RRF
+    
+    %% 7. Evidence Assembly & Grounded Synthesis
+    RRF --> ContextAssy["13. Evidence Assembly & Context Window Manager"]
+    ContextAssy --> Synth1["14. Citation-Grounded Answer Synthesizer\n(Constructs factual claims strictly bound to evidence)"]
+    ZeroRet --> Synth1
+    
+    %% 8. Provenance & Contradiction Verification
+    Synth1 --> VerifGate{"15. Provenance, Citation & Conflict Verifier"}
+    VerifGate -->|"Fully Grounded & Supported"| ValidClaims["16A. Verified Claim Set\n(Linked to valid chunk IDs & exact text spans)"]
+    VerifGate -->|"Missing Support or Contradiction"| UncertHandler["16B. Explicit Uncertainty & Abstention Handler\n(Flags unanswerable or conflicting needs)"]
+    
+    %% 9. Atomic Versioned Delivery
+    ValidClaims --> Pub["17. Atomic Versioned Publication Engine\n(Version v_n, Claim Delta, Citation Manifest)"]
+    UncertHandler --> Pub
+    Pub --> FinalOut["18. Verified Grounded Output to User\n(Zero hallucination, full provenance, minimal latency)"]
 ```
 
 ---
@@ -93,7 +111,7 @@ flowchart TD
 
 | Subsystem / Capability | Status | Architecture & Implementation Details | Verification Evidence |
 |:---|:---:|:---|:---|
-| **Deterministic Chunking & Ingestion** | `PASS` | SHA-256 fingerprinting, reproducible boundaries, structured JSONL schemas | [`src/flowcontext/ingestion.py`](src/flowcontext/ingestion.py) |
+| **Deterministic Ingestion & Chunking** | `PASS` | SHA-256 fingerprinting, reproducible boundaries, structured JSONL schemas | [`src/flowcontext/ingestion.py`](src/flowcontext/ingestion.py) |
 | **Lexical BM25 Retrieval Engine** | `PASS` | Inverted index preserving exact token spans, casing metadata, and offsets | [`src/flowcontext/retrieval.py`](src/flowcontext/retrieval.py) |
 | **Dense Vector Semantic Embeddings** | `PASS` | Pinned `sentence-transformers/all-MiniLM-L6-v2` (384-dim, normalized L2, Apache-2.0) | [`src/flowcontext/embeddings.py`](src/flowcontext/embeddings.py) |
 | **Speculative Streaming Scheduler** | `PASS` | Non-blocking async early retrieval with stale-event and race guards | [`src/flowcontext/scheduler.py`](src/flowcontext/scheduler.py) |
@@ -108,44 +126,42 @@ flowchart TD
 
 ---
 
-## Core Subsystems
+## Core Architectural Pillars
 
-### 1. Real-Time Streaming Ingestion & Speculative Scheduler
+### 1. Streaming Ingestion & Speculative Latency Hiding
 
-Live speech transcription emits incremental, partial hypotheses before settling on a finalized sentence. FlowContext's streaming controller monitors stability, token count, and intent cues in real time:
+In interactive voice and transcript applications, human speech is emitted in partial bursts. FlowContext's streaming controller operates concurrently with the incoming transcript stream:
 
-- **Early Speculative Trigger**: As soon as a stable intent boundary is detected (e.g., "Which venue in Pune..."), the scheduler dispatches background retrieval asynchronously.
-- **Race Condition & Superseded Event Guards**: If the speaker pivots mid-sentence (e.g., "...no wait, in Mumbai"), the controller cancels or supersedes in-flight retrieval requests, preventing race conditions and stale cache poisoning.
+- **Early Speculative Trigger**: As soon as a stable intent boundary is detected (e.g., *"Which venue in Pune can host..."*), the scheduler initiates background retrieval asynchronously before the user completes the utterance.
+- **Race Condition & Superseded Event Guards**: If the speaker changes direction mid-sentence (e.g., *"...no wait, in Mumbai"*), the controller cancels or supersedes in-flight retrieval requests, preventing race conditions and stale cache poisoning.
 - **Deduplication & Coalescing**: Duplicate or overlapping sub-query requests within short sliding windows are coalesced into unified batch fetches.
 
-### 2. Multi-Intent Decomposition & Hybrid RRF Retrieval
+### 2. Multi-Intent Decomposition & Hybrid RRF Search
 
-Real-world user queries often combine multiple distinct information requirements into a single sentence (e.g., *"Find a conference room for 40 people in Pune and list lunch packages under $30"*):
+Complex conversational requests frequently contain multiple overlapping constraints and comparisons (e.g., *"Find a conference hall for 40 people in Pune and list lunch packages under $30"*):
 
-- **Structural Decomposition**: Analyzes syntax and coordination to extract atomic sub-intents with explicit entity tags and constraints.
-- **Hybrid Multi-Index Execution**: Each sub-intent is concurrently dispatched to:
-  - **Dense Vector Search**: Semantic cosine similarity over normalized 384-dimensional embeddings (`all-MiniLM-L6-v2`).
-  - **Lexical BM25 Search**: Exact keyword match over corpus tokens.
-- **Reciprocal Rank Fusion (RRF)**: Merges the ranked candidate lists using standard $RRF(d) = \sum_{m \in M} \frac{1}{k + r_m(d)}$ ($k=60$), producing a balanced, robust ranking without requiring arbitrary score calibration.
+- **Structural Decomposition**: Syntactically decomposes complex sentences into atomic sub-intents with typed constraints (location, capacity, catering, amenities).
+- **Parallel Multi-Backend Search**: Dispatches each sub-intent concurrently across both dense semantic vector space (`sentence-transformers/all-MiniLM-L6-v2`) and exact lexical BM25 indices.
+- **Reciprocal Rank Fusion (RRF)**: Fuses candidate lists using $RRF(d) = \sum_{m \in M} \frac{1}{k + r_m(d)}$ ($k=60$), delivering balanced retrieval robustness without requiring fragile manual score tuning.
 
 ### 3. Dynamic Session State & Dependency Invalidation DAG
 
-In multi-turn conversations, re-retrieving the full corpus and regenerating entire responses for every follow-up turn wastes resources and disrupts conversational context:
+In multi-turn conversations, re-retrieving the full corpus and regenerating entire answers from scratch for every follow-up turn wastes resources and disrupts conversational context:
 
-- **In-Memory Session Store**: Tracks conversational turns, active entities, published answer versions, and claim dependencies.
+- **In-Memory Session Graph**: Tracks conversational turns, active entities, published answer versions, and claim dependencies.
 - **Patch Classification**: Classifies follow-up utterances into typed delta operations:
-  - `add_constraint`: Adds an additional filter (e.g., *"Must have a projector"*).
-  - `replace_constraint` / `entity_change`: Replaces a core attribute (e.g., *"Actually, let's look at Venue B instead of Venue A"*).
+  - `add_constraint`: Adds an additional filter (e.g., *"Must include a projector"*).
+  - `replace_constraint` / `entity_change`: Replaces a core attribute (e.g., *"Let's look at Venue B instead of Venue A"*).
   - `remove_constraint`: Relaxes an existing criterion.
   - `reformat_answer`: Presentation modification (e.g., *"Summarize that as bullet points"*).
-- **Dependency DAG Invalidation**: When an entity or constraint changes, only the claims downstream of that entity in the dependency DAG are invalidated. Unaffected claims are preserved with their original citations. Presentation-only requests execute in zero retrieval calls.
+- **Dependency DAG Invalidation**: When an entity or constraint changes, only the claims downstream of that entity in the dependency DAG are invalidated. Unaffected claims are preserved with their original citations. Presentation-only requests execute with **zero retrieval calls**.
 
 ### 4. Grounded Synthesis & Provable Citation Verification
 
 FlowContext enforces strict factual grounding to eliminate conversational hallucination:
 
 - **Atomic Answer Publication**: Emits immutable, versioned answer payloads ($v_1, v_2, \dots$) containing individual claims, supporting chunk IDs, and exact corpus text spans.
-- **Strict Citation Tracking**: Every factual claim must be backed by one or more valid chunk IDs verified against the active corpus.
+- **Strict Citation Tracking**: Every factual claim is validated against chunk IDs present in the active corpus.
 - **Targeted Uncertainty**: When an information need cannot be resolved by retrieved evidence, FlowContext explicitly flags that specific sub-intent as unresolved rather than attempting speculative generation.
 
 ---
@@ -154,7 +170,7 @@ FlowContext enforces strict factual grounding to eliminate conversational halluc
 
 ### 1. Installation
 
-FlowContext is built for **Python 3.11** and managed with [`uv`](https://docs.astral.sh/uv/):
+FlowContext targets **Python 3.11** and is managed with [`uv`](https://docs.astral.sh/uv/):
 
 ```bash
 # Clone the repository
@@ -167,7 +183,7 @@ uv sync --locked --python 3.11 --extra dense
 
 ### 2. Environment & Pipeline Verification
 
-Execute the complete automated test and smoke suite:
+Run the automated validation and test suite:
 
 ```bash
 # 1. Environment configuration check
@@ -242,7 +258,7 @@ uv run flowcontext phase4-replay \
 
 ---
 
-## Multi-Turn Interaction Scenarios
+## Conversational Replay Scenarios
 
 FlowContext includes end-to-end replay traces demonstrating distinct conversational situations:
 
@@ -320,7 +336,7 @@ FlowContext provides a unified command-line interface:
 
 ---
 
-## Engineering Standards & Integrity
+## Engineering Standards & Scientific Rigor
 
 FlowContext is designed and built to rigorous software engineering and scientific standards:
 
