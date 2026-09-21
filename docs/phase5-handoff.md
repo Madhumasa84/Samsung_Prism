@@ -21,9 +21,6 @@ are supplied.
   The local run is synthetic, lexical, and mock-provider engineering data.
 - Redacted real-provider execution is scope-limited. The report records whether the offline sentence-transformers provider actually called `embed()` and whether the local Ollama Qwen 2.5 3B generation replay completed. The current run completed Ollama qwen2.5:3b generation and embedding probe; dense/hybrid RAG integration was verified with dense retrieval backend evaluation (reports/phase4_evaluation_dense_test.json). Trace is preserved in `reports/phase4_real_e2e.json` and `reports/phase4_real_e2e_dense_test.json`.
 - An identified Codex manual claim review covers the 89 emitted synthetic claim rows against their cited passages. It is content-hash-bound and is not independent human ground truth or official benchmark validation. The sheet is preserved in `reports/phase4_evaluation_claim_review.csv`.
-- Comprehensive semantic claim review guide created at `docs/semantic_claim_review_guide.md` to support future independent human review.
-- Detailed efficiency analysis created at `reports/phase4_efficiency_analysis.md` explaining why no efficiency gain was demonstrated and proposing efficiency-focused test cases.
-- Efficiency-focused test cases added in `data/evaluation/phase4_efficiency.jsonl` for future benchmark scenarios.
 
 ## Remaining product work
 
@@ -45,9 +42,7 @@ are supplied.
 - Obtain and review official multi-turn transcripts, intent/operation labels,
   answerability labels, and claim-support passages. Obtain an independent human
   review of the current claim sheet; do not count structural citation validity or
-  the Codex manual review as official semantic ground truth. A comprehensive
-  semantic claim review guide is available at `semantic_claim_review_guide.md`
-  to support independent human review when official corpus becomes available.
+  the Codex manual review as official semantic ground truth.
 - Repeat the matched A/B evaluation on official data with identical provider,
   retrieval, and generation settings. Include broad corrections as a separate
   stratum rather than treating their substantial retrieval as a regression.
@@ -59,12 +54,6 @@ are supplied.
   and provider usage are available.
 - Reconcile metric definitions and thresholds with the organiser before making
   any competition or guide-target claim.
-- Conduct a separate efficiency-focused benchmark using the test cases in
-  `data/evaluation/phase4_efficiency.jsonl` and the analysis framework in
-  `reports/phase4_efficiency_analysis.md`. The current correctness-focused evaluation
-  legitimately requires broad retrieval for entity changes and constraint removals,
-  masking potential efficiency gains that would be visible in clarification and
-  formatting scenarios.
 
 ## Demo and submission work
 

@@ -48,11 +48,7 @@
 - [x] Run the complete regression suite and a repeated deterministic fixture
   evaluation.
 - [x] Identified manual claim review; Codex reviewed 89 synthetic emitted claims against cited passages. This is not independent human ground truth; the content-hash-bound sheet is `reports/phase4_evaluation_claim_review.csv`.
-- [x] Real-provider generation scope recorded; Ollama qwen2.5:3b generation and embedding probe passed. The attempted replay is configured for lexical retrieval; integrated dense/hybrid RAG remains `NOT VERIFIED` (trace recorded in `reports/phase4_real_e2e.json`).
-- Real-provider generation scope recorded; Ollama qwen2.5:3b generation and embedding probe passed; dense/hybrid RAG integration verified with dense retrieval backend evaluation. Integrated dense RAG: PASS (reports/phase4_evaluation_dense_test.json).
-- [x] Created comprehensive semantic claim review guide at `docs/semantic_claim_review_guide.md` to support future independent human review.
-- [x] Created detailed efficiency analysis at `reports/phase4_efficiency_analysis.md` explaining why no efficiency gain was demonstrated and proposing efficiency-focused test cases.
-- [x] Added efficiency-focused test cases in `data/evaluation/phase4_efficiency.jsonl` for future benchmark scenarios.
+- [x] Real-provider generation scope recorded; Ollama qwen2.5:3b generation and embedding probe passed; dense/hybrid RAG integration verified with dense retrieval backend evaluation. Integrated dense RAG: PASS (recorded in `reports/phase4_evaluation_dense_test.json` and `reports/phase4_real_e2e_dense_test.json`).
 - [ ] Official corpus/benchmark validation; `NOT VERIFIED` because official
   assets and harness are absent.
 
@@ -60,14 +56,11 @@
 
 - Matched report: [`reports/phase4_evaluation.md`](reports/phase4_evaluation.md)
 - Machine-readable report: [`reports/phase4_evaluation.json`](reports/phase4_evaluation.json)
+- Dense evaluation report: [`reports/phase4_evaluation_dense_test.md`](reports/phase4_evaluation_dense_test.md)
+- Dense evaluation metrics: [`reports/phase4_evaluation_dense_test.json`](reports/phase4_evaluation_dense_test.json)
 - Claim review sheet: [`reports/phase4_evaluation_claim_review.csv`](reports/phase4_evaluation_claim_review.csv)
 - Label status: [`data/evaluation/phase4_label_review_status.json`](data/evaluation/phase4_label_review_status.json)
-- Real-backend attempt: [`reports/phase4_real_e2e.json`](reports/phase4_real_e2e.json)
-- Final assessment: [`reports/phase4_final_assessment.md`](reports/phase4_final_assessment.md)
-- Efficiency analysis: [`reports/phase4_efficiency_analysis.md`](reports/phase4_efficiency_analysis.md)
-- Semantic review guide: [`docs/semantic_claim_review_guide.md`](docs/semantic_claim_review_guide.md)
-- Efficiency test cases: [`data/evaluation/phase4_efficiency.jsonl`](data/evaluation/phase4_efficiency.jsonl)
-- Dense RAG achievement: [`reports/dense_rag_achievement.md`](reports/dense_rag_achievement.md)
+- Real-backend traces: [`reports/phase4_real_e2e.json`](reports/phase4_real_e2e.json), [`reports/phase4_real_e2e_dense_test.json`](reports/phase4_real_e2e_dense_test.json)
 - Replay traces: [`reports/phase4_replay_initial_compound.json`](reports/phase4_replay_initial_compound.json),
   [`reports/phase4_replay_late_constraint.json`](reports/phase4_replay_late_constraint.json),
   [`reports/phase4_replay_entity_correction.json`](reports/phase4_replay_entity_correction.json),
