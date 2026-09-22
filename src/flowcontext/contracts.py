@@ -150,6 +150,8 @@ class GenerationConfig(ContractModel):
     retry_backoff_s: float = Field(default=0.5, ge=0.0, le=10.0, allow_inf_nan=False)
     max_repair_attempts: int = Field(default=1, ge=0, le=2)
     max_output_tokens: int = Field(default=600, ge=1, le=4096)
+    max_request_bytes: int = Field(default=1 * 1024 * 1024, ge=1, le=32 * 1024 * 1024)
+    max_response_bytes: int = Field(default=4 * 1024 * 1024, ge=1, le=32 * 1024 * 1024)
     input_price_per_million: float | None = Field(default=None, ge=0.0, allow_inf_nan=False)
     output_price_per_million: float | None = Field(default=None, ge=0.0, allow_inf_nan=False)
 
@@ -1321,6 +1323,10 @@ class EvaluationSuiteReport(ContractModel):
     labels_status: Literal["provisional_generated", "human_review_pending", "human_reviewed"]
     competition_performance_claim: Literal[False] = False
     passed: bool
+    audit_status: Literal["PASS", "FAIL"] = "FAIL"
+    workflow_status: Literal["PASS", "PARTIAL", "FAIL"] = "PARTIAL"
+    verification_status: Literal["PASS", "PARTIAL", "NOT_VERIFIED"] = "NOT_VERIFIED"
+    release_status: Literal["PASS", "PARTIAL", "FAIL"] = "PARTIAL"
     created_at_utc: str = Field(min_length=1)
     code_revision: str | None = None
     configuration: dict[str, Any] = Field(min_length=1)
@@ -1576,6 +1582,10 @@ class StreamingEvaluationReport(ContractModel):
     labels_status: Literal["provisional_generated", "human_review_pending", "human_reviewed"]
     competition_performance_claim: Literal[False] = False
     passed: bool
+    audit_status: Literal["PASS", "FAIL"] = "FAIL"
+    workflow_status: Literal["PASS", "PARTIAL", "FAIL"] = "PARTIAL"
+    verification_status: Literal["PASS", "PARTIAL", "NOT_VERIFIED"] = "NOT_VERIFIED"
+    release_status: Literal["PASS", "PARTIAL", "FAIL"] = "PARTIAL"
     created_at_utc: str = Field(min_length=1)
     code_revision: str | None = None
     configuration: dict[str, Any] = Field(min_length=1)

@@ -10,7 +10,15 @@ from pathlib import Path
 from pydantic import ValidationError
 
 from flowcontext.config import Settings, config_asset_status, load_settings
-from flowcontext.contracts import DocumentInput, ExecutionTrace, GenerationConfig, ReplayRunManifest, TranscriptEvent
+from flowcontext.contracts import (
+    DocumentInput,
+    ExecutionTrace,
+    GenerationConfig,
+    GenerationRequest,
+    GenerationResult,
+    ReplayRunManifest,
+    TranscriptEvent,
+)
 from flowcontext.evaluation import evaluate, evaluate_suite, load_evaluation_cases
 from flowcontext.generation import MockGenerationProvider, generate_grounded_answer
 from flowcontext.indexing import build_index_from_source
@@ -155,6 +163,9 @@ class Phase1Tests(unittest.TestCase):
             )
         )
         self.assertTrue(report.passed)
+        self.assertEqual(report.audit_status, "PASS")
+        self.assertEqual(report.release_status, "PARTIAL")
+        self.assertEqual(report.verification_status, "PARTIAL")
         self.assertEqual(report.asset_status, "synthetic_fixture")
         self.assertEqual(report.labels_status, "provisional_generated")
         self.assertEqual(set(report.sections), {"mock", "fixture", "real_model"})
@@ -609,6 +620,38 @@ class Phase1Tests(unittest.TestCase):
         self.assertIn("No retrieved corpus evidence", outcome.answer.uncertainty)
         self.assertEqual(outcome.cost, "unavailable")
 
+    def test_generation_skips_empty_query_without_constructing_invalid_spans(self) -> None:
+        index = CorpusIngestor().ingest(
+            load_document_inputs(SYNTHETIC / "documents.jsonl"), "synthetic_fixture"
+        )
+        hits = make_retriever(index, backend="lexical", top_k=1).search("venue Pune")
+        provider = MockGenerationProvider(config=self._mock_generation_config())
+        outcome = asyncio.run(generate_grounded_answer("", hits, index, provider))
+        self.assertEqual(outcome.status, "skipped")
+        self.assertFalse(outcome.answer.factual_claims)
+        self.assertEqual(provider.calls, 0)
+
+    def test_generation_abstains_when_anchor_matches_but_answer_term_is_missing(self) -> None:
+        """Location overlap must not turn an out-of-scope request into success."""
+
+        index = CorpusIngestor().ingest(
+            load_document_inputs(SYNTHETIC / "documents.jsonl"), "synthetic_fixture"
+        )
+        hits = make_retriever(index, backend="lexical", top_k=2).search(
+            "Which venue in Pune has free parking?"
+        )
+        outcome = asyncio.run(
+            generate_grounded_answer(
+                "Which venue in Pune has free parking?",
+                hits,
+                index,
+                MockGenerationProvider(),
+            )
+        )
+        self.assertEqual(outcome.status, "skipped")
+        self.assertFalse(outcome.answer.factual_claims)
+        self.assertNotIn("accommodates", outcome.answer.answer_text.casefold())
+
     def test_generation_abstains_on_unknown_citation_after_bounded_repair(self) -> None:
         index = CorpusIngestor().ingest(
             load_document_inputs(SYNTHETIC / "documents.jsonl"), "synthetic_fixture"
@@ -624,6 +667,94 @@ class Phase1Tests(unittest.TestCase):
         self.assertEqual(outcome.repair_attempts, 1)
         self.assertEqual(outcome.attempts, 2)
         self.assertEqual(provider.calls, 2)
+        self.assertFalse(outcome.answer.factual_claims)
+
+    def test_baseline_rejects_model_claim_not_present_in_cited_chunk(self) -> None:
+        """A valid chunk ID must not make an arbitrary model claim publishable."""
+
+        index = CorpusIngestor().ingest(
+            load_document_inputs(SYNTHETIC / "documents.jsonl"), "synthetic_fixture"
+        )
+        hits = make_retriever(index, backend="lexical", top_k=1).search(
+            "Which venue accommodates attendees?"
+        )
+
+        class FalseClaimProvider(MockGenerationProvider):
+            async def generate(self, request: GenerationRequest) -> GenerationResult:
+                passage = request.passages[0]
+                return GenerationResult(
+                    raw_text=json.dumps(
+                        {
+                            "answer_text": "Venue A accommodates 300 attendees.",
+                            "factual_claims": [
+                                {
+                                    "claim_id": "false-capacity",
+                                    "claim_text": "Venue A accommodates 300 attendees.",
+                                    "supporting_chunk_ids": [passage.chunk_id],
+                                }
+                            ],
+                            "uncertainty": "none",
+                            "answer_version": 1,
+                        }
+                    )
+                )
+
+        provider = FalseClaimProvider(
+            config=self._mock_generation_config(max_retries=0, max_repair_attempts=0)
+        )
+        outcome = asyncio.run(
+            generate_grounded_answer(
+                "Which venue accommodates attendees?", hits, index, provider
+            )
+        )
+        self.assertEqual(outcome.status, "abstained")
+        self.assertEqual(outcome.error_type, "GenerationOutputError")
+        self.assertFalse(outcome.answer.factual_claims)
+        self.assertNotIn("300 attendees", outcome.answer.answer_text)
+
+    def test_baseline_rejects_false_claim_even_with_valid_excerpt(self) -> None:
+        """A valid excerpt does not make a contradictory provider claim safe."""
+
+        index = CorpusIngestor().ingest(
+            load_document_inputs(SYNTHETIC / "documents.jsonl"), "synthetic_fixture"
+        )
+        hits = make_retriever(index, backend="lexical", top_k=1).search(
+            "Which venue accommodates attendees?"
+        )
+
+        class MisleadingClaimProvider(MockGenerationProvider):
+            async def generate(self, request: GenerationRequest) -> GenerationResult:
+                passage = request.passages[0]
+                excerpt = passage.text[:20]
+                return GenerationResult(
+                    raw_text=json.dumps(
+                        {
+                            "answer_text": "Venue A accommodates 300 attendees.",
+                            "factual_claims": [
+                                {
+                                    "claim_id": "misleading-capacity",
+                                    "claim_text": "Venue A accommodates 300 attendees.",
+                                    "supporting_chunk_ids": [passage.chunk_id],
+                                    "supporting_excerpts": [excerpt],
+                                }
+                            ],
+                            "uncertainty": "none",
+                            "answer_version": 1,
+                        }
+                    )
+                )
+
+        provider = MisleadingClaimProvider(
+            config=self._mock_generation_config(max_retries=0, max_repair_attempts=0)
+        )
+        outcome = asyncio.run(
+            generate_grounded_answer(
+                "Which venue accommodates attendees?", hits, index, provider
+            )
+        )
+        self.assertEqual(outcome.status, "abstained")
+        self.assertEqual(outcome.error_type, "InvalidClaimTextError")
+        self.assertNotIn("300 attendees", outcome.answer.answer_text)
         self.assertFalse(outcome.answer.factual_claims)
 
     def test_generation_abstains_on_invalid_structured_output(self) -> None:

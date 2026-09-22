@@ -22,6 +22,7 @@ from __future__ import annotations
 import asyncio
 import csv
 import hashlib
+import io
 import json
 import os
 import re
@@ -56,6 +57,7 @@ from .phase4 import (
 )
 from .phase4_replay import _passage_for_hit, _record_initial_retrieval
 from .retrieval import make_retriever
+from .storage import atomic_write_text
 
 
 PHASE4_EVALUATION_SCHEMA_VERSION = "flowcontext.phase4-evaluation.v1"
@@ -1819,8 +1821,7 @@ def write_phase4_evaluation_report(
 ) -> Path:
     """Write JSON and Markdown reports plus the pending claim review sheet."""
 
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    atomic_write_text(path, json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     markdown_path = path.with_suffix(".md")
     full = report["strategies"]["full"]
     selective = report["strategies"]["selective"]
@@ -1960,20 +1961,22 @@ def write_phase4_evaluation_report(
             pass
 
     review_rows = _review_rows(report["case_results"], review_lookup=existing_reviews)
-    with review_path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(
-            handle,
-            fieldnames=[
-                "case_id", "strategy", "answer_version", "claim_id", "claim_text",
-                "supporting_chunk_ids", "supporting_passages", "source_locations",
-                "structural_citation_valid", "claim_text_sha256", "supporting_passages_sha256",
-                "review_content_sha256", "semantic_support_verdict", "reviewer", "review_notes",
-            ],
-            lineterminator="\n",
-        )
-        writer.writeheader()
-        for row in review_rows:
-            writer.writerow(row)
+    buffer = io.StringIO(newline="")
+    writer = csv.DictWriter(
+        buffer,
+        fieldnames=[
+            "case_id", "strategy", "answer_version", "claim_id", "claim_text",
+            "supporting_chunk_ids", "supporting_passages", "source_locations",
+            "structural_citation_valid", "claim_text_sha256", "supporting_passages_sha256",
+            "review_content_sha256", "semantic_support_verdict", "reviewer", "review_notes",
+        ],
+        lineterminator="\n",
+    )
+    writer.writeheader()
+    for row in review_rows:
+        writer.writerow(row)
+    atomic_write_text(review_path, buffer.getvalue(), newline="")
+    buffer.close()
     report["claim_review_sheet"] = str(review_path)
 
     review_by_strategy = {
@@ -2094,8 +2097,8 @@ def write_phase4_evaluation_report(
             "- Persistence, retention policy, and production-scale scheduler capacity remain outside this lightweight Phase 4 implementation.",
         ]
     )
-    markdown_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    atomic_write_text(markdown_path, "\n".join(lines) + "\n")
+    atomic_write_text(path, json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     return markdown_path
 
 
@@ -2146,8 +2149,7 @@ def write_phase4_cases_review(
             "Case labels remain provisional and independent human review is NOT VERIFIED."
         ),
     }
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    atomic_write_text(path, json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
 
 
 def _redacted_runtime_config(settings: Settings) -> dict[str, Any]:
@@ -2330,8 +2332,7 @@ async def attempt_real_e2e(
                 "model": real_settings.generation_model,
                 "retrieval_backend": backend,
             }
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    atomic_write_text(output_path, json.dumps(result, indent=2, ensure_ascii=False) + "\n")
     return result
 
 

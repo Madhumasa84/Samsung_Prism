@@ -254,10 +254,12 @@ async def replay_phase4_session(
     store: Phase4SessionStore | None = None,
     race_follow_up: Phase4ReplayTurn | None = None,
     race_delay_s: float = 0.0,
+    resume: bool = False,
 ) -> Phase4ReplayResult:
     """Execute an initial answer and follow-ups through the Phase 4 pipeline.
 
-    ``race_follow_up`` is an optional replay-only concurrency exercise.  It
+    ``resume`` loads the existing session from a durable store and treats all
+    supplied turns as follow-ups. ``race_follow_up`` is an optional replay-only concurrency exercise. It
     starts the older answer generation task, applies that turn through the
     normal patch/retrieval/publication path, and then awaits the old task so a
     late result is observed and rejected by revision protection.
@@ -273,35 +275,51 @@ async def replay_phase4_session(
     if race_follow_up is not None and race_follow_up.session_id != first.session_id:
         raise ValueError("race follow-up must belong to the replay session")
     store = store or Phase4SessionStore(max_sessions=8, max_records_per_session=256)
-    initial_plan = decompose_query(first.text, transcript_revision=0, max_intents=6)
-    state = store.create_session(
-        first.session_id,
-        initial_plan=initial_plan,
-        utterance_id=first.utterance_id,
-        initial_turn=first.turn_index,
-        corpus_id=corpus.corpus_id,
-        index_id=corpus.manifest.index_id,
-    )
-    state, initial_usage, initial_calls, notes = await _record_initial_retrieval(
-        store,
-        state,
-        corpus,
-        retriever,
-        first.text,
-    )
+    if resume and race_follow_up is not None:
+        raise ValueError("--resume cannot be combined with --race")
+    resuming = resume and first.session_id in store.session_ids()
+    if resume and not resuming:
+        raise ValueError(f"cannot resume unknown Phase 4 session {first.session_id!r}")
+    notes: list[str] = []
+    initial_usage = Usage()
+    initial_calls = 0
+    if resuming:
+        state = store.get(first.session_id)
+        if state.corpus_id != corpus.corpus_id or state.index_id != corpus.manifest.index_id:
+            raise ValueError("durable Phase 4 session belongs to a different corpus or index")
+        notes.append("resumed durable Phase 4 session")
+    else:
+        initial_plan = decompose_query(first.text, transcript_revision=0, max_intents=6)
+        state = store.create_session(
+            first.session_id,
+            initial_plan=initial_plan,
+            utterance_id=first.utterance_id,
+            initial_turn=first.turn_index,
+            corpus_id=corpus.corpus_id,
+            index_id=corpus.manifest.index_id,
+        )
+        state, initial_usage, initial_calls, notes = await _record_initial_retrieval(
+            store,
+            state,
+            corpus,
+            retriever,
+            first.text,
+        )
     publisher = Phase4AnswerPublisher(store, corpus, generation_provider=generation_provider)
-    initial_publication = await publisher.generate_and_publish(
-        first.session_id,
-        expected_revision=state.state_revision,
-        triggering_turn=first.turn_index,
-        triggering_utterance_id=first.utterance_id,
-        retrieval_usage=initial_usage,
-        retrieval_call_count=initial_calls,
-        retrieval_attempt_count=initial_calls,
-        retrieval_model_identity="flowcontext.phase4.replay.retriever",
-    )
-    state = initial_publication.state
-    steps = [_step(first, state, classification="initial", publication=initial_publication)]
+    steps: list[dict[str, Any]] = []
+    if not resuming:
+        initial_publication = await publisher.generate_and_publish(
+            first.session_id,
+            expected_revision=state.state_revision,
+            triggering_turn=first.turn_index,
+            triggering_utterance_id=first.utterance_id,
+            retrieval_usage=initial_usage,
+            retrieval_call_count=initial_calls,
+            retrieval_attempt_count=initial_calls,
+            retrieval_model_identity="flowcontext.phase4.replay.retriever",
+        )
+        state = initial_publication.state
+        steps.append(_step(first, state, classification="initial", publication=initial_publication))
     interpreter = follow_up_interpreter or Phase4FollowUpInterpreter()
     coordinator = Phase4SelectiveUpdateCoordinator(store, retriever)
 
@@ -399,7 +417,7 @@ async def replay_phase4_session(
             },
         )
     else:
-        for turn in turns[1:]:
+        for turn in turns if resuming else turns[1:]:
             state, turn_step = await apply_follow_up(turn)
             steps.append(turn_step)
 

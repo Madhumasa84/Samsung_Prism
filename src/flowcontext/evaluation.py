@@ -43,6 +43,7 @@ from .contracts import (
 from .generation import GenerationProvider, generation_provider_for_settings
 from .replay import replay_transcript
 from .retrieval import make_retriever
+from .storage import atomic_write_text
 
 
 class EvaluationError(ValueError):
@@ -678,20 +679,43 @@ async def evaluate_suite(
     )
     splits = {case.split for case in all_cases}
     selected_split = next(iter(splits)) if len(splits) == 1 else "all"
+    passed = all(result.passed for result in case_results)
+    labels_status = (
+        "human_reviewed"
+        if all(case.relevance_label_status == "human_reviewed" for case in all_cases)
+        else "human_review_pending"
+        if any(case.relevance_label_status == "human_review_pending" for case in all_cases)
+        else "provisional_generated"
+    )
+    audit_status = "PASS" if passed else "FAIL"
+    workflow_status = "FAIL" if any(
+        result.run_status == "failed" or result.errors for result in case_results
+    ) else "PASS"
+    verification_complete = (
+        asset_status == "official"
+        and labels_status == "human_reviewed"
+        and all(result.semantic_support_evaluated for result in case_results)
+    )
+    verification_status = "PASS" if verification_complete else "PARTIAL"
+    release_status = (
+        "PASS"
+        if audit_status == "PASS" and workflow_status == "PASS" and verification_complete
+        else "FAIL"
+        if audit_status == "FAIL" or workflow_status == "FAIL"
+        else "PARTIAL"
+    )
     return EvaluationSuiteReport(
         evaluation_label="phase1-baseline-suite",
         asset_status=asset_status,
         selected_split=selected_split,
         development_case_count=sum(case.split == "development" for case in all_cases),
         held_out_case_count=sum(case.split == "held_out" for case in all_cases),
-        labels_status=(
-            "human_reviewed"
-            if all(case.relevance_label_status == "human_reviewed" for case in all_cases)
-            else "human_review_pending"
-            if any(case.relevance_label_status == "human_review_pending" for case in all_cases)
-            else "provisional_generated"
-        ),
-        passed=all(result.passed for result in case_results),
+        labels_status=labels_status,
+        passed=passed,
+        audit_status=audit_status,
+        workflow_status=workflow_status,
+        verification_status=verification_status,
+        release_status=release_status,
         created_at_utc=datetime.now(timezone.utc).isoformat(),
         code_revision=_code_revision(),
         configuration={
@@ -763,5 +787,4 @@ async def evaluate_suite(
 
 
 def write_report(path: Path, report: EvaluationReport | EvaluationSuiteReport) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(report.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    atomic_write_text(path, report.model_dump_json(indent=2) + "\n")

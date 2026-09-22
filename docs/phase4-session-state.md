@@ -84,10 +84,13 @@ publication = await publisher.generate_and_publish(
 
 `propose_follow_up` is non-mutating. `apply_patch` rejects a stale base
 revision, so callers cannot silently apply an interpretation to a later
-session state. `clear(session_id)` and `clear_all()` are explicit; the store
-has no persistence, cross-session profile, or process-wide conversational
-cache. The store evicts the least-recently-used session at `max_sessions` and
-bounds per-session historical collections.
+session state. `clear(session_id)` and `clear_all()` are explicit. The default
+store is in memory; callers that need restart recovery can provide
+`storage_path=Path("artifacts/phase4-sessions.json")`, which writes an atomic,
+schema-tagged snapshot after each committed mutation. The snapshot is safe
+for one writer/process; shared multi-worker access still requires an external
+lock or database-backed store. The store evicts the least-recently-used
+session at `max_sessions` and bounds per-session historical collections.
 
 `state_revision` advances for every accepted transition. The transcript and
 retrieval revisions advance only for semantic changes; clarification and
@@ -267,10 +270,11 @@ real-model interpretation quality.
 - `semantic_support_status` remains `unreviewed` unless a separately governed
   verifier explicitly supplies a verdict. Retrieval rank, citation validity,
   and excerpt validity are provenance checks, not entailment.
-- State and scheduler runtimes are process-local and bounded. Persistence,
-  retention policy, clarification-answer resolution, semantic entailment
-  review, and cross-session identity are intentionally deferred. Cancellation
-  remains an optimisation; revision checks are the correctness boundary.
+- State and scheduler runtimes are bounded. Durable snapshots are optional and
+  single-writer; production retention, encryption, deletion, multi-worker
+  coordination, clarification-answer resolution, and semantic entailment
+  review remain deployment responsibilities. Cancellation remains an
+  optimisation; revision checks are the correctness boundary.
 
 The Phase 3 held-out failures remain historical diagnostic/regression cases in
 the existing reports; their scores are not rewritten by Phase 4 state tests.

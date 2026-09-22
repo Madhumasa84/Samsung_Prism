@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 import re
-import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING, Iterable, Sequence
 
@@ -22,6 +20,7 @@ from .contracts import (
     IndexManifest,
     SourceVersion,
 )
+from .storage import atomic_write_text
 
 if TYPE_CHECKING:
     from .embeddings import EmbeddingProvider
@@ -40,6 +39,9 @@ class StaleIndexError(IngestionError):
 
 
 SUPPORTED_CORPUS_SUFFIXES = {".jsonl"}
+DEFAULT_MAX_CORPUS_BYTES = 50 * 1024 * 1024
+DEFAULT_MAX_CORPUS_DOCUMENTS = 100_000
+DEFAULT_MAX_CORPUS_LINE_BYTES = 2 * 1024 * 1024
 
 
 def normalize_text(text: str) -> str:
@@ -55,7 +57,13 @@ def sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def load_document_inputs(path: Path) -> list[DocumentInput]:
+def load_document_inputs(
+    path: Path,
+    *,
+    max_bytes: int = DEFAULT_MAX_CORPUS_BYTES,
+    max_documents: int = DEFAULT_MAX_CORPUS_DOCUMENTS,
+    max_line_bytes: int = DEFAULT_MAX_CORPUS_LINE_BYTES,
+) -> list[DocumentInput]:
     """Load the only supplied corpus format: one JSON document per JSONL line."""
 
     if not path.is_file():
@@ -66,8 +74,31 @@ def load_document_inputs(path: Path) -> list[DocumentInput]:
             f"unsupported corpus format {path.suffix or '<no extension>'!r} for {path}; "
             f"supported formats: {supported}"
         )
+    if max_bytes < 1 or max_documents < 1 or max_line_bytes < 1:
+        raise ValueError("corpus input limits must be positive")
     try:
-        lines = path.read_text(encoding="utf-8").splitlines()
+        file_size = path.stat().st_size
+    except OSError as exc:
+        raise IngestionError(f"cannot inspect corpus input: {path}") from exc
+    if file_size > max_bytes:
+        raise IngestionError(
+            f"corpus input exceeds the configured byte limit ({file_size} > {max_bytes}): {path}"
+        )
+    try:
+        # Bound the actual read as well as the initial stat check.  A corpus
+        # can grow between those two operations when another process is
+        # writing it; reading max_bytes + 1 keeps that race from turning the
+        # configured limit into an unbounded allocation.
+        with path.open("rb") as source:
+            raw_content = source.read(max_bytes + 1)
+    except OSError as exc:
+        raise IngestionError(f"cannot read corpus input: {path}") from exc
+    if len(raw_content) > max_bytes:
+        raise IngestionError(
+            f"corpus input exceeds the configured byte limit ({len(raw_content)} > {max_bytes}): {path}"
+        )
+    try:
+        lines = raw_content.splitlines()
     except UnicodeDecodeError as exc:
         raise IngestionError(f"corpus input is not valid UTF-8: {path}") from exc
     documents: list[DocumentInput] = []
@@ -75,13 +106,21 @@ def load_document_inputs(path: Path) -> list[DocumentInput]:
     for line_number, raw_line in enumerate(lines, start=1):
         if not raw_line.strip():
             continue
+        if len(raw_line) > max_line_bytes:
+            raise IngestionError(
+                f"corpus line {line_number} exceeds the configured byte limit ({max_line_bytes}): {path}"
+            )
         try:
-            payload = json.loads(raw_line)
+            payload = json.loads(raw_line.decode("utf-8"))
             document_input = DocumentInput.model_validate(payload)
-        except (json.JSONDecodeError, ValidationError) as exc:
+        except (UnicodeDecodeError, json.JSONDecodeError, ValidationError) as exc:
             raise IngestionError(f"invalid document on line {line_number} of {path}: {exc}") from exc
         if document_input.document_id in seen_ids:
             raise IngestionError(f"duplicate document_id on line {line_number}: {document_input.document_id}")
+        if len(documents) >= max_documents:
+            raise IngestionError(
+                f"corpus input exceeds the configured document limit ({max_documents}): {path}"
+            )
         seen_ids.add(document_input.document_id)
         documents.append(document_input)
     if not documents:
@@ -351,25 +390,7 @@ class CorpusIngestor:
 
 
 def write_index(path: Path, index: CorpusIndex) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary_path: Path | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            dir=path.parent,
-            prefix=f".{path.name}.",
-            suffix=".tmp",
-            delete=False,
-        ) as temporary:
-            temporary_path = Path(temporary.name)
-            temporary.write(index.model_dump_json(indent=2) + "\n")
-            temporary.flush()
-            os.fsync(temporary.fileno())
-        os.replace(temporary_path, path)
-    finally:
-        if temporary_path is not None:
-            temporary_path.unlink(missing_ok=True)
+    atomic_write_text(path, index.model_dump_json(indent=2) + "\n")
 
 
 def load_index(path: Path) -> CorpusIndex:
@@ -387,10 +408,18 @@ def assert_index_matches_source(
     *,
     max_chars: int,
     overlap_chars: int,
+    max_bytes: int = DEFAULT_MAX_CORPUS_BYTES,
+    max_documents: int = DEFAULT_MAX_CORPUS_DOCUMENTS,
+    max_line_bytes: int = DEFAULT_MAX_CORPUS_LINE_BYTES,
 ) -> None:
     """Reject a stale index before a caller can query it."""
 
-    inputs = load_document_inputs(source_path)
+    inputs = load_document_inputs(
+        source_path,
+        max_bytes=max_bytes,
+        max_documents=max_documents,
+        max_line_bytes=max_line_bytes,
+    )
     source_fingerprint = source_fingerprint_for_inputs(inputs)
     expected_chunking = ChunkingConfig(max_chars=max_chars, overlap_chars=overlap_chars)
     if index.manifest.source_fingerprint != source_fingerprint:

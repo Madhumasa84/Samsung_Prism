@@ -1,19 +1,19 @@
-# FlowContext: Real-Time Streaming RAG Architecture
+# FlowContext: Offline Streaming-Transcript RAG Prototype
 
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)
-[![Tests Passing](https://img.shields.io/badge/tests-144%20passed-brightgreen.svg)](tests/)
+[![Tests Passing](https://img.shields.io/badge/tests-158%20passed-brightgreen.svg)](tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Dense Embeddings](https://img.shields.io/badge/embeddings-all--MiniLM--L6--v2-blueviolet.svg)](src/flowcontext/embeddings.py)
 [![Samsung PRISM](https://img.shields.io/badge/Samsung%20PRISM-Theme%204%3A%20Live%20RAG-orange.svg)](#)
-[![System Status](https://img.shields.io/badge/status-production--ready-brightgreen.svg)](#)
+[![System Status](https://img.shields.io/badge/status-scoped--prototype-blue.svg)](#)
 
 > ### Concept Summary: What FlowContext Does
 > When speaking to a conventional AI assistant, the system waits until the user completely stops talking before initiating document retrieval and response generation—causing noticeable turn-taking latency. Furthermore, when the user provides a follow-up constraint or requests a reformat (*"summarize that as bullet points"*), typical systems discard previous computation and re-retrieve the entire corpus from scratch.
 >
-> **FlowContext fundamentally transforms this paradigm**:
-> 1. **Searches While You Speak**: Monitors streaming speech transcripts in real time and begins pre-fetching candidate evidence in the background *before the utterance finishes*, eliminating response wait times.
-> 2. **Surgically Updates What Changed**: Tracks conversational state within a directed dependency graph to update *only* affected factual claims—preserving valid claims and executing presentation-only requests with **zero** redundant retrieval.
-> 3. **Guarantees Provenance & Zero Hallucination**: Links every factual claim to verified chunk spans in the corpus, proactively flags contradictory evidence, and explicitly abstains when information is missing.
+> **FlowContext is a bounded replay engine, not a complete voice product**:
+> 1. **Processes transcript events**: Consumes pre-transcribed incremental or final JSONL events and can schedule speculative retrieval before an utterance finishes.
+> 2. **Tracks follow-up state**: Uses bounded process-local session state to update affected factual claims and handle presentation-only turns.
+> 3. **Fails closed on weak evidence**: Preserves provenance, rejects unsupported provider claims, and abstains when the available evidence is insufficient. Semantic entailment still requires governed review.
 
 ---
 
@@ -41,10 +41,10 @@
 
 Standard Retrieval-Augmented Generation (RAG) pipelines operate on a rigid sequential cycle: speech completes, full query parsing begins, corpus retrieval executes, and answer generation runs from zero. In conversational voice and live transcript applications, this sequential bottleneck introduces high latency, excessive token consumption, and context fragmentation.
 
-**FlowContext** is engineered for the **Samsung PRISM Theme 4 (Live RAG)** specification, delivering an end-to-end streaming live RAG engine that operates continuously alongside the user:
+**FlowContext** is an engineering prototype for the **Samsung PRISM Theme 4 (Live RAG)** concept. The repository implements the transcript replay, retrieval, generation, and session-state layers; audio capture, ASR, HTTP serving, UI, and production persistence are outside this codebase:
 
-- **Speculative Latency Hiding**: Monitors streaming ASR transcripts and issues early background retrieval queries on stable partial hypotheses before the speaker pauses.
-- **Hybrid Semantic & Lexical Fusion**: Combines dense vector embeddings (`sentence-transformers/all-MiniLM-L6-v2`, 384 dimensions) with exact BM25 lexical search using parameter-free Reciprocal Rank Fusion (RRF).
+- **Speculative Latency Hiding**: Consumes incremental transcript events and issues bounded early retrieval queries on stable partial hypotheses.
+- **Dense and lexical retrieval**: Supports pinned local dense embeddings plus a deterministic lexical-overlap diagnostic backend; the lexical backend is not BM25.
 - **Fine-Grained Conversational Memory**: Tracks active entities and claims within a directed dependency graph (DAG), enabling selective re-retrieval when details change and instant zero-retrieval reformatting.
 - **Verifiable Citation Grounding**: Publishes atomic, versioned answer records where each factual claim references exact document chunk spans, paired with explicit uncertainty handling whenever information is unanswerable.
 
@@ -56,9 +56,9 @@ FlowContext connects streaming transcript processing, speculative scheduling, hy
 
 ```mermaid
 flowchart TD
-    %% 1. Ingestion & Audio Stream Layer
-    In1["1. Live Speech / Audio Stream"] --> In2["2. Streaming ASR Engine"]
-    In2 --> In3["3. Incremental Token Stream & Partial Hypotheses"]
+    %% 1. Ingestion & Transcript Stream Layer
+    In1["1. Pre-transcribed JSONL Stream"] --> In2["2. Transcript Event Normalizer"]
+    In2 --> In3["3. Incremental Events & Partial Hypotheses"]
     
     %% 2. Stability & Speculative Fast Path
     In3 --> Gate1{"4. Stability & Intent Boundary Gate"}
@@ -83,7 +83,7 @@ flowchart TD
     Cache1 -.->|"Instant Cache Hit (Latency Hiding)"| RetDispatch
     
     RetDispatch --> DenseSearch["11A. Dense Vector Search\n(all-MiniLM-L6-v2, 384-dim Cosine Similarity)"]
-    RetDispatch --> LexSearch["11B. Lexical BM25 Search\n(Exact token inverted index & span preservation)"]
+    RetDispatch --> LexSearch["11B. Lexical-overlap Search\n(Deterministic token coverage diagnostic)"]
     
     %% 6. Reciprocal Rank Fusion
     DenseSearch --> RRF["12. Reciprocal Rank Fusion Engine\n(RRF Scoreless Semantic + Keyword Aggregation, k=60)"]
@@ -102,7 +102,7 @@ flowchart TD
     %% 9. Atomic Versioned Delivery
     ValidClaims --> Pub["17. Atomic Versioned Publication Engine\n(Version v_n, Claim Delta, Citation Manifest)"]
     UncertHandler --> Pub
-    Pub --> FinalOut["18. Verified Grounded Output to User\n(Zero hallucination, full provenance, minimal latency)"]
+    Pub --> FinalOut["18. Grounded or Abstaining Output\n(Provenance preserved; semantic review still required)"]
 ```
 
 ---
@@ -112,17 +112,19 @@ flowchart TD
 | Subsystem / Capability | Status | Architecture & Implementation Details | Verification Evidence |
 |:---|:---:|:---|:---|
 | **Deterministic Ingestion & Chunking** | `PASS` | SHA-256 fingerprinting, reproducible boundaries, structured JSONL schemas | [`src/flowcontext/ingestion.py`](src/flowcontext/ingestion.py) |
-| **Lexical BM25 Retrieval Engine** | `PASS` | Inverted index preserving exact token spans, casing metadata, and offsets | [`src/flowcontext/retrieval.py`](src/flowcontext/retrieval.py) |
-| **Dense Vector Semantic Embeddings** | `PASS` | Pinned `sentence-transformers/all-MiniLM-L6-v2` (384-dim, normalized L2, Apache-2.0) | [`src/flowcontext/embeddings.py`](src/flowcontext/embeddings.py) |
-| **Speculative Streaming Scheduler** | `PASS` | Non-blocking async early retrieval with stale-event and race guards | [`src/flowcontext/scheduler.py`](src/flowcontext/scheduler.py) |
+| **Lexical-overlap Retrieval** | `MEASURED**` | Deterministic unique-token coverage diagnostic; not BM25 | [`src/flowcontext/retrieval.py`](src/flowcontext/retrieval.py) |
+| **Dense Vector Retrieval Smoke** | `MEASURED**` | Pinned `sentence-transformers/all-MiniLM-L6-v2` (384-dim); integrated live generation remains unverified | [`src/flowcontext/embeddings.py`](src/flowcontext/embeddings.py) |
+| **Speculative Transcript Scheduler** | `PASS*` | Bounded replay scheduler with stale-event and race guards; audio/ASR are external | [`src/flowcontext/scheduler.py`](src/flowcontext/scheduler.py) |
 | **Multi-Intent Decomposition** | `PASS` | Structural decomposition into independent sub-queries with typed constraints | [`src/flowcontext/multi_intent.py`](src/flowcontext/multi_intent.py) |
 | **Reciprocal Rank Fusion (RRF)** | `PASS` | Rank aggregation combining dense and lexical candidate lists without arbitrary score weighting | [`src/flowcontext/multi_intent.py`](src/flowcontext/multi_intent.py) |
 | **Stateful Selective Updates** | `PASS` | Process-local session tracking with dependency DAGs and surgical delta updates | [`src/flowcontext/phase4.py`](src/flowcontext/phase4.py) |
 | **Zero-Retrieval Formatting Suppression** | `PASS` | Presentation-only changes retain verified factual claims with 0 retrieval calls | [`examples/replay/phase4-formatting.jsonl`](examples/replay/phase4-formatting.jsonl) |
 | **Provenance-Grounded Synthesis** | `PASS` | Factual claim construction with strict chunk citation mapping and contradiction detection | [`src/flowcontext/synthesis.py`](src/flowcontext/synthesis.py) |
 | **Explicit Uncertainty Quantification** | `PASS` | Targeted abstention and partial-support detection for incomplete evidence | [`src/flowcontext/synthesis.py`](src/flowcontext/synthesis.py) |
-| **Real LLM & Provider Integration** | `PASS` | Verified end-to-end execution with local Ollama (`qwen2.5:3b`) and OpenAI-compatible endpoints | [`reports/phase4_real_e2e_dense_test.json`](reports/phase4_real_e2e_dense_test.json) |
-| **Automated Test Coverage** | `PASS` | **144 passed tests** across unit, integration, and end-to-end regression suites | [`tests/`](tests/) |
+| **Real LLM & Provider Integration** | `NOT VERIFIED` | Provider adapter exists; live credentials/provider compatibility and integrated generation require an external run | [`src/flowcontext/generation.py`](src/flowcontext/generation.py) |
+| **Automated Test Coverage** | `PASS` | **158 passed tests** across unit, integration, and end-to-end regression suites | [`tests/`](tests/) |
+
+`*` Engineering-contract result on local replay fixtures. `**` Local measurement, not an official benchmark or semantic-quality claim.
 
 ---
 
@@ -141,7 +143,7 @@ In interactive voice and transcript applications, human speech is emitted in par
 Complex conversational requests frequently contain multiple overlapping constraints and comparisons (e.g., *"Find a conference hall for 40 people in Pune and list lunch packages under $30"*):
 
 - **Structural Decomposition**: Syntactically decomposes complex sentences into atomic sub-intents with typed constraints (location, capacity, catering, amenities).
-- **Parallel Multi-Backend Search**: Dispatches each sub-intent concurrently across both dense semantic vector space (`sentence-transformers/all-MiniLM-L6-v2`) and exact lexical BM25 indices.
+- **Parallel Multi-Backend Search**: Dispatches each sub-intent concurrently across dense semantic vector space (`sentence-transformers/all-MiniLM-L6-v2`) and the deterministic lexical-overlap diagnostic backend.
 - **Reciprocal Rank Fusion (RRF)**: Fuses candidate lists using $RRF(d) = \sum_{m \in M} \frac{1}{k + r_m(d)}$ ($k=60$), delivering balanced retrieval robustness without requiring fragile manual score tuning.
 
 ### 3. Dynamic Session State & Dependency Invalidation DAG
@@ -195,7 +197,7 @@ uv run flowcontext smoke
 # 3. Dense vector embedding offline verification
 uv run flowcontext dense-smoke --local-files-only
 
-# 4. Full pytest test suite (144 tests)
+# 4. Full pytest test suite (158 tests)
 uv run pytest
 ```
 
@@ -205,10 +207,10 @@ uv run pytest
 
 ### Building Ingestion Indices
 
-Construct deterministic BM25 lexical indices and dense vector embeddings from source documents:
+Construct deterministic lexical-overlap indices and optional dense vector embeddings from source documents:
 
 ```bash
-# Build BM25 lexical index
+# Build lexical-overlap diagnostic index
 uv run flowcontext build-index \
   --input data/synthetic/documents.jsonl \
   --output artifacts/corpus-lexical-index.json \
@@ -226,7 +228,7 @@ uv run flowcontext retrieve \
 
 ### Running Streaming Speculative Replay
 
-Simulate real-time streaming audio transcript feeds and compare baseline versus speculative execution:
+Replay incremental transcript events and compare baseline versus speculative execution:
 
 ```bash
 # Baseline replay: waits for final utterance delivery
@@ -254,7 +256,24 @@ uv run flowcontext phase4-replay \
   --turns examples/replay/phase4-entity-correction.jsonl \
   --index artifacts/corpus-lexical-index.json \
   --output artifacts/session-trace.json
+
+# Optional single-writer durable session snapshot
+uv run flowcontext phase4-replay \
+  --turns examples/replay/phase4-entity-correction.jsonl \
+  --index artifacts/corpus-lexical-index.json \
+  --session-store artifacts/phase4-sessions.json
+
+# Resume that session in a later process with follow-up-only turns
+uv run flowcontext phase4-replay \
+  --turns examples/replay/phase4-resume-follow-up.jsonl \
+  --index artifacts/corpus-lexical-index.json \
+  --session-store artifacts/phase4-sessions.json --resume
 ```
+
+Evaluation commands expose separate `audit_status`, `workflow_status`,
+`verification_status`, and `release_status` fields. A local fixture can pass
+its engineering invariants while still returning `PARTIAL` and exit code `2`
+when official assets, semantic review, or a live provider are missing.
 
 ---
 
@@ -282,7 +301,7 @@ FlowContext provides a unified command-line interface:
 | `config-check` | Core | Validates environment variables and runtime settings | `flowcontext config-check` |
 | `inspect-corpus` | Ingestion | Analyzes document structure, schemas, and token stats | `flowcontext inspect-corpus --input data.jsonl` |
 | `build-index` | Indexing | Deterministically chunks and indices documents (dense/lexical) | `flowcontext build-index --input data.jsonl --output idx.json` |
-| `retrieve` | Retrieval | Queries index using dense, BM25, or hybrid modes | `flowcontext retrieve --index idx.json --query "..."` |
+| `retrieve` | Retrieval | Queries index using dense, lexical-overlap, or hybrid modes | `flowcontext retrieve --index idx.json --query "..."` |
 | `replay` | Streaming | Executes streaming transcript replay (baseline vs streaming) | `flowcontext replay --transcript t.jsonl --mode streaming` |
 | `phase4-replay` | Session | Replays multi-turn conversational follow-up sessions | `flowcontext phase4-replay --turns turns.jsonl` |
 | `smoke` | Core | Executes full offline end-to-end integration check | `flowcontext smoke` |
@@ -300,7 +319,7 @@ FlowContext provides a unified command-line interface:
 │   ├── ingestion.py             # Deterministic chunking, SHA-256 hashing & index I/O
 │   ├── indexing.py              # Index builder (dense, lexical, hybrid)
 │   ├── embeddings.py            # SentenceTransformers wrapper and vector protocols
-│   ├── retrieval.py             # Lexical BM25 & dense cosine similarity retrievers
+│   ├── retrieval.py             # Lexical-overlap & dense cosine similarity retrievers
 │   ├── generation.py            # Structured grounded answer synthesis & repair loops
 │   ├── scheduler.py             # Asynchronous speculative retrieval scheduler
 │   ├── streaming.py             # Streaming transcript controller & stability rules
@@ -321,9 +340,9 @@ FlowContext provides a unified command-line interface:
 │   ├── phase4_evaluation.json   # Machine-readable evaluation metrics
 │   ├── phase4_evaluation_dense_test.md   # Dense retrieval evaluation report
 │   ├── phase4_evaluation_dense_test.json # Dense retrieval evaluation metrics
-│   ├── phase4_real_e2e.json     # Execution trace for real embedding probe & Ollama LLM
+│   ├── phase4_real_e2e.json     # Redacted real-backend attempt when configured
 │   └── phase4_real_e2e_dense_test.json # Execution trace for integrated dense RAG
-├── tests/                       # Complete unit, integration & regression test suite (144 tests)
+├── tests/                       # Complete unit, integration & regression test suite (158 tests)
 ├── docs/                        # Architecture deep-dives & subsystem specifications
 │   ├── architecture-phase1.md   # Ingestion design & retrieval contracts
 │   ├── architecture-phase3.md   # Multi-intent decomposition & RRF fusion
@@ -342,8 +361,8 @@ FlowContext is designed and built to rigorous software engineering and scientifi
 
 1. **Deterministic Reproducibility**: Corpus chunking, SHA-256 fingerprinting, and retrieval scoring are completely deterministic. Given identical inputs, the pipeline produces identical indices and ranking scores.
 2. **Strict Split Isolation**: Development and held-out evaluation scenarios are isolated in [`data/evaluation/`](data/evaluation/) with strict verification against cross-split data leakage.
-3. **Robust Uncertainty Handling**: Hallucination prevention is prioritized over forced completion; unresolved intents trigger explicit abstention or targeted clarification requests.
-4. **Security & Data Privacy**: Purely local process memory is utilized for session states. No API keys, credentials, or private user transcripts are stored or logged.
+3. **Robust Uncertainty Handling**: Unsupported provider claims are rejected at the application boundary; unresolved intents trigger explicit abstention or targeted clarification requests. This is not a proof of semantic zero hallucination.
+4. **Security & Data Privacy**: Session state is bounded and local by default. API keys are read from environment variables and excluded from traces; persistence, retention, encryption, and deletion policy remain deployment responsibilities.
 
 ---
 

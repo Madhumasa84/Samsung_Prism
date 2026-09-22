@@ -13,12 +13,14 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import inspect
+import json
 import re
 import threading
 import time
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Literal, Mapping, Sequence
 
 from .contracts import (
@@ -60,6 +62,7 @@ from .multi_intent import (
     decompose_query,
     intent_evidence_alignment,
 )
+from .storage import atomic_write_text
 
 
 class Phase4Error(RuntimeError):
@@ -1626,15 +1629,68 @@ class Phase4FollowUpInterpreter:
 
 
 class Phase4SessionStore:
-    """Thread-safe bounded in-memory session store with explicit clearing."""
+    """Thread-safe bounded session store with optional durable snapshots.
 
-    def __init__(self, *, max_sessions: int = 32, max_records_per_session: int = 256) -> None:
+    The default remains in-memory for library callers and tests. When
+    ``storage_path`` is supplied, every committed mutation is written as an
+    atomic, schema-tagged snapshot so a later process can resume a session.
+    Cross-process concurrent writers are intentionally not supported; a
+    deployment that shares one store between workers must provide an external
+    lock or a database-backed implementation.
+    """
+
+    _STORE_SCHEMA_VERSION = "flowcontext.phase4-session-store.v1"
+
+    def __init__(
+        self,
+        *,
+        max_sessions: int = 32,
+        max_records_per_session: int = 256,
+        storage_path: Path | None = None,
+    ) -> None:
         if max_sessions < 1 or max_records_per_session < 1:
             raise ValueError("Phase 4 memory bounds are too small")
         self.max_sessions = max_sessions
         self.max_records_per_session = max_records_per_session
+        self.storage_path = storage_path
         self._sessions: OrderedDict[str, Phase4SessionState] = OrderedDict()
         self._lock = threading.RLock()
+        if self.storage_path is not None:
+            self._load_snapshot()
+
+    def _load_snapshot(self) -> None:
+        assert self.storage_path is not None
+        if not self.storage_path.is_file():
+            return
+        try:
+            payload = json.loads(self.storage_path.read_text(encoding="utf-8"))
+            if payload.get("schema_version") != self._STORE_SCHEMA_VERSION:
+                raise ValueError("unsupported Phase 4 session store schema")
+            sessions = payload.get("sessions")
+            if not isinstance(sessions, list):
+                raise ValueError("Phase 4 session store sessions must be a list")
+            loaded: OrderedDict[str, Phase4SessionState] = OrderedDict()
+            for raw_state in sessions:
+                state = Phase4SessionState.model_validate(raw_state)
+                self._assert_active_bounds(state)
+                loaded[state.session_id] = _clone(self._bounded(state))
+            while len(loaded) > self.max_sessions:
+                loaded.popitem(last=False)
+            self._sessions = loaded
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+            raise Phase4Error(f"invalid Phase 4 session store {self.storage_path}") from exc
+
+    def _persist_locked(self) -> None:
+        if self.storage_path is None:
+            return
+        payload = {
+            "schema_version": self._STORE_SCHEMA_VERSION,
+            "sessions": [state.model_dump(mode="json") for state in self._sessions.values()],
+        }
+        atomic_write_text(
+            self.storage_path,
+            json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+        )
 
     def _get_internal(self, session_id: str) -> Phase4SessionState:
         try:
@@ -1780,6 +1836,7 @@ class Phase4SessionStore:
         bounded = self._bounded(state)
         self._sessions[state.session_id] = _clone(bounded)
         self._sessions.move_to_end(state.session_id)
+        self._persist_locked()
         return _clone(bounded)
 
     def create_session(
@@ -1863,6 +1920,7 @@ class Phase4SessionStore:
             self._sessions.move_to_end(session_id)
             while len(self._sessions) > self.max_sessions:
                 self._sessions.popitem(last=False)
+            self._persist_locked()
         return _clone(state)
 
     def get(self, session_id: str) -> Phase4SessionState:
@@ -1875,11 +1933,15 @@ class Phase4SessionStore:
 
     def clear(self, session_id: str) -> bool:
         with self._lock:
-            return self._sessions.pop(session_id, None) is not None
+            removed = self._sessions.pop(session_id, None) is not None
+            if removed:
+                self._persist_locked()
+            return removed
 
     def clear_all(self) -> None:
         with self._lock:
             self._sessions.clear()
+            self._persist_locked()
 
     def propose_follow_up(
         self,

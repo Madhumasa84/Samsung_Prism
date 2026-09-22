@@ -44,6 +44,7 @@ from .streaming import (
     streaming_config_from_settings,
 )
 from .trace import TraceCollector
+from .storage import atomic_write_text
 
 
 class StreamingEvaluationError(ValueError):
@@ -161,8 +162,7 @@ def write_streaming_evaluation_report(
     path: Path,
     report: StreamingEvaluationReport,
 ) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(report.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    atomic_write_text(path, report.model_dump_json(indent=2) + "\n")
 
 
 def _error_types(errors: Sequence[TraceError | Exception | str]) -> list[str]:
@@ -1353,6 +1353,32 @@ async def evaluate_streaming_suite(
         and measured_metrics["false_retrieval_trigger_count"] == 0
         and measured_metrics["premature_trigger_count"] == 0
     )
+    all_mode_results = [
+        mode
+        for result in measured_results
+        for mode in (result.baseline, result.streaming)
+        if mode is not None
+    ]
+    normal_case_ids = {
+        case.case_id for case in cases if case.retrieval_behavior == "normal"
+    }
+    normal_failures = any(
+        mode.run_status == "failed"
+        for result in measured_results
+        if result.case_id in normal_case_ids
+        for mode in (result.baseline, result.streaming)
+        if mode is not None
+    )
+    any_failures = any(mode.run_status == "failed" for mode in all_mode_results)
+    workflow_status = (
+        "FAIL"
+        if normal_failures
+        else "PARTIAL"
+        if any_failures
+        or any(mode.run_status not in {"completed", "closed"} for mode in all_mode_results)
+        else "PASS"
+    )
+    audit_status = "PASS" if passed else "FAIL"
     sections = {
         "fixture": fixture_section,
         "simulated_delay": simulated_section,
@@ -1383,6 +1409,19 @@ async def evaluate_streaming_suite(
             ],
         ),
     }
+    verification_complete = (
+        labels_status == "human_reviewed"
+        and sections["real_backend"].status == "measured"
+        and sections["official_assets"].status == "measured"
+    )
+    verification_status = "PASS" if verification_complete else "PARTIAL"
+    release_status = (
+        "PASS"
+        if audit_status == "PASS" and workflow_status == "PASS" and verification_complete
+        else "FAIL"
+        if audit_status == "FAIL" or workflow_status == "FAIL"
+        else "PARTIAL"
+    )
     limitations = [
         "This is a local engineering audit over synthetic fixture data, not an official benchmark.",
         "All measured labels are provisional_generated; no human verification was performed.",
@@ -1403,6 +1442,10 @@ async def evaluate_streaming_suite(
         measured_case_count=len(cases),
         labels_status=labels_status,
         passed=passed,
+        audit_status=audit_status,
+        workflow_status=workflow_status,
+        verification_status=verification_status,
+        release_status=release_status,
         created_at_utc=datetime.now(timezone.utc).isoformat(),
         code_revision=_code_revision(),
         configuration={

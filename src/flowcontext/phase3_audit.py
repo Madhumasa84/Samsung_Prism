@@ -62,6 +62,7 @@ from .streaming import (
     replay_streaming_transcript,
     streaming_config_from_settings,
 )
+from .storage import atomic_write_text
 
 
 class Phase3AuditError(ValueError):
@@ -2278,8 +2279,7 @@ def _resource_markdown(summary: dict[str, Any]) -> list[str]:
 def write_phase3_audit_report(path: Path, report: dict[str, Any]) -> Path:
     """Write machine-readable JSON and its Markdown companion."""
 
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    atomic_write_text(path, json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     markdown_path = path.with_suffix(".md")
     lines = [
         "# Phase 3 dedicated evaluation and audit",
@@ -2427,5 +2427,5 @@ def write_phase3_audit_report(path: Path, report: dict[str, Any]) -> Path:
             "",
         ]
     )
-    markdown_path.write_text("\n".join(lines), encoding="utf-8")
+    atomic_write_text(markdown_path, "\n".join(lines))
     return markdown_path
