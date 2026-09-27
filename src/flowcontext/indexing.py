@@ -92,7 +92,12 @@ def build_index_from_source(
 
     selected_backend: RetrievalBackend = backend or settings.retrieval_backend
     started = time.perf_counter()
-    inputs = load_document_inputs(source_path)
+    inputs = load_document_inputs(
+        source_path,
+        max_bytes=settings.corpus_max_bytes,
+        max_documents=settings.corpus_max_documents,
+        max_line_bytes=settings.corpus_max_line_bytes,
+    )
     provider = provider_for_settings(settings, selected_backend)
     embedding_config = provider.config if provider is not None else embedding_config_for_settings(settings, selected_backend)
     if (
@@ -133,7 +138,12 @@ def build_index_from_source(
 def inspect_corpus(source_path: Path, *, settings: Settings) -> dict[str, object]:
     """Inspect supported source content without embeddings or retrieval."""
 
-    inputs = load_document_inputs(source_path)
+    inputs = load_document_inputs(
+        source_path,
+        max_bytes=settings.corpus_max_bytes,
+        max_documents=settings.corpus_max_documents,
+        max_line_bytes=settings.corpus_max_line_bytes,
+    )
     index = CorpusIngestor(
         max_chars=settings.chunk_max_chars,
         overlap_chars=settings.chunk_overlap_chars,

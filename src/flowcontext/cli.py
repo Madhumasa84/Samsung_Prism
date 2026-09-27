@@ -71,7 +71,8 @@ from .phase3_audit import (
     write_phase3_audit_report,
 )
 from .trace import write_trace_jsonl
-from .phase4 import Phase4Error
+from .storage import atomic_write_text
+from .phase4 import Phase4Error, Phase4SessionStore
 from .phase4_replay import load_phase4_turns, replay_phase4_session
 from .phase4_evaluation import (
     Phase4EvaluationError,
@@ -98,6 +99,11 @@ def _settings_for_args(args: argparse.Namespace) -> Settings:
     for argument_name, setting_name in (
         ("max_chars", "chunk_max_chars"),
         ("overlap_chars", "chunk_overlap_chars"),
+        ("corpus_max_bytes", "corpus_max_bytes"),
+        ("corpus_max_documents", "corpus_max_documents"),
+        ("corpus_max_line_bytes", "corpus_max_line_bytes"),
+        ("generation_max_request_bytes", "generation_max_request_bytes"),
+        ("generation_max_response_bytes", "generation_max_response_bytes"),
         ("top_k", "retrieval_top_k"),
         ("embedding_model", "embedding_model"),
         ("embedding_revision", "embedding_revision"),
@@ -147,6 +153,11 @@ def _settings_for_args(args: argparse.Namespace) -> Settings:
 
 def _add_common(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--env-file", default=None, help="dotenv-style config file; defaults to .env")
+    parser.add_argument("--corpus-max-bytes", type=int, default=None)
+    parser.add_argument("--corpus-max-documents", type=int, default=None)
+    parser.add_argument("--corpus-max-line-bytes", type=int, default=None)
+    parser.add_argument("--generation-max-request-bytes", type=int, default=None)
+    parser.add_argument("--generation-max-response-bytes", type=int, default=None)
 
 
 def _add_source_arguments(parser: argparse.ArgumentParser) -> None:
@@ -440,6 +451,16 @@ def build_parser() -> argparse.ArgumentParser:
     phase4_replay_parser.add_argument("--local-files-only", action="store_true")
     phase4_replay_parser.add_argument("--output", dest="output_path", default=None)
     phase4_replay_parser.add_argument(
+        "--session-store",
+        default=None,
+        help="optional atomic JSON snapshot for restartable Phase 4 sessions",
+    )
+    phase4_replay_parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="load the session from --session-store and treat supplied turns as follow-ups",
+    )
+    phase4_replay_parser.add_argument(
         "--race",
         action="store_true",
         help="start the initial answer again and apply the second turn while it is generating",
@@ -600,7 +621,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     phase4_evaluate_parser.add_argument(
         "--review-status-output",
-        default="data/evaluation/phase4_label_review_status.json",
+        default=None,
+        help="case-label status output; defaults beside --output",
     )
     phase4_evaluate_parser.add_argument(
         "--real-output",
@@ -655,9 +677,59 @@ def _json_print(value: object) -> None:
     print(json.dumps(value, indent=2, sort_keys=True))
 
 
+def _mapping_release_gate(report: dict[str, object]) -> dict[str, str]:
+    """Summarise audit, workflow, and verification status without hiding gaps."""
+
+    capability_status = report.get("capability_status", {})
+    statuses = [
+        item.get("status")
+        for item in capability_status.values()
+        if isinstance(item, dict)
+    ] if isinstance(capability_status, dict) else []
+    audit_status = "FAIL" if "FAIL" in statuses else "PASS"
+    validation_domains = report.get("validation_domains", {})
+    validation_statuses = [
+        item.get("status")
+        for item in validation_domains.values()
+        if isinstance(item, dict)
+    ] if isinstance(validation_domains, dict) else []
+    verification_status = "PASS" if validation_statuses and all(
+        status == "PASS" for status in validation_statuses
+    ) else "PARTIAL"
+    workflow_status = "FAIL" if audit_status == "FAIL" else "PASS"
+    release_status = (
+        "PASS"
+        if audit_status == workflow_status == verification_status == "PASS"
+        else "FAIL"
+        if audit_status == "FAIL" or workflow_status == "FAIL"
+        else "PARTIAL"
+    )
+    return {
+        "audit_status": audit_status,
+        "workflow_status": workflow_status,
+        "verification_status": verification_status,
+        "release_status": release_status,
+    }
+
+
+def _release_exit_code(status: str) -> int:
+    """Use a distinct exit code when a run is valid but not release-complete."""
+
+    return {"PASS": 0, "FAIL": 1, "PARTIAL": 2}[status]
+
+
+def _phase4_review_status_path(args: argparse.Namespace) -> Path:
+    """Choose a non-source-mutating default for generated label status."""
+
+    explicit_path = getattr(args, "review_status_output", None)
+    if explicit_path:
+        return Path(explicit_path)
+    output_path = Path(args.output_path)
+    return output_path.with_name(f"{output_path.stem}_label_review_status.json")
+
+
 def _write_json(path: Path, value: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    atomic_write_text(path, json.dumps(value, indent=2, ensure_ascii=False) + "\n")
 
 
 def command_config_check(args: argparse.Namespace) -> int:
@@ -724,12 +796,22 @@ def command_build_index(args: argparse.Namespace) -> int:
 
 def _load_query_index(args: argparse.Namespace, settings: Settings):
     index = load_index(Path(args.index_path))
-    if args.source_path:
+    source_path = Path(args.source_path) if getattr(args, "source_path", None) else None
+    if source_path is None and index.manifest.source_path:
+        embedded_source = Path(index.manifest.source_path)
+        candidates = [embedded_source]
+        if not embedded_source.is_absolute():
+            candidates.append(Path(args.index_path).parent / embedded_source)
+        source_path = next((candidate for candidate in candidates if candidate.is_file()), None)
+    if source_path is not None:
         assert_index_matches_source(
             index,
-            Path(args.source_path),
+            source_path,
             max_chars=settings.chunk_max_chars,
             overlap_chars=settings.chunk_overlap_chars,
+            max_bytes=settings.corpus_max_bytes,
+            max_documents=settings.corpus_max_documents,
+            max_line_bytes=settings.corpus_max_line_bytes,
         )
     return index
 
@@ -1088,6 +1170,13 @@ def command_phase4_replay(args: argparse.Namespace) -> int:
         local_files_only=settings.embedding_local_files_only,
     )
     turns = load_phase4_turns(Path(args.turns_path))
+    if args.resume and not args.session_store:
+        raise Phase4Error("--resume requires --session-store")
+    store = (
+        Phase4SessionStore(storage_path=Path(args.session_store))
+        if args.session_store
+        else None
+    )
     generation_provider = generation_provider_for_settings(settings)
     if args.generation_delay_s is not None:
         if getattr(generation_provider.config, "backend", None) != "mock":
@@ -1114,8 +1203,10 @@ def command_phase4_replay(args: argparse.Namespace) -> int:
             corpus=index,
             retriever=retriever,
             generation_provider=generation_provider,
+            store=store,
             race_follow_up=race_follow_up,
             race_delay_s=args.race_delay_s,
+            resume=args.resume,
         )
     )
     if args.output_path:
@@ -1204,7 +1295,11 @@ def command_evaluate_suite(args: argparse.Namespace) -> int:
     write_report(output_path, report)
     _json_print(
         {
-            "status": "PASS" if report.passed else "FAIL",
+            "status": report.release_status,
+            "audit_status": report.audit_status,
+            "workflow_status": report.workflow_status,
+            "verification_status": report.verification_status,
+            "release_status": report.release_status,
             "output": str(output_path),
             "evaluation_label": report.evaluation_label,
             "selected_split": report.selected_split,
@@ -1228,7 +1323,7 @@ def command_evaluate_suite(args: argparse.Namespace) -> int:
             },
         }
     )
-    return 0 if report.passed else 1
+    return _release_exit_code(report.release_status)
 
 
 def command_evaluate_streaming(args: argparse.Namespace) -> int:
@@ -1288,7 +1383,11 @@ def command_evaluate_streaming(args: argparse.Namespace) -> int:
     write_streaming_evaluation_report(output_path, report)
     _json_print(
         {
-            "status": "PASS" if report.passed else "FAIL",
+            "status": report.release_status,
+            "audit_status": report.audit_status,
+            "workflow_status": report.workflow_status,
+            "verification_status": report.verification_status,
+            "release_status": report.release_status,
             "output": str(output_path),
             "evaluation_asset": evaluation_asset,
             "evaluation_label": report.evaluation_label,
@@ -1312,7 +1411,7 @@ def command_evaluate_streaming(args: argparse.Namespace) -> int:
             },
         }
     )
-    return 0 if report.passed else 1
+    return _release_exit_code(report.release_status)
 
 
 def command_evaluate_phase3(args: argparse.Namespace) -> int:
@@ -1366,10 +1465,13 @@ def command_evaluate_phase3(args: argparse.Namespace) -> int:
         )
     )
     output_path = Path(args.output_path)
+    release_gate = _mapping_release_gate(report)
+    report["release_gate"] = release_gate
     markdown_path = write_phase3_audit_report(output_path, report)
     _json_print(
         {
-            "status": "PASS",
+            "status": release_gate["release_status"],
+            **release_gate,
             "audit_completed": True,
             "output": str(output_path),
             "markdown_output": str(markdown_path),
@@ -1383,7 +1485,7 @@ def command_evaluate_phase3(args: argparse.Namespace) -> int:
             "capability_status": report["capability_status"],
         }
     )
-    return 0
+    return _release_exit_code(release_gate["release_status"])
 
 
 def command_evaluate_phase4(args: argparse.Namespace) -> int:
@@ -1451,21 +1553,25 @@ def command_evaluate_phase4(args: argparse.Namespace) -> int:
         if generation_passed
         else "NOT VERIFIED"
     )
+    release_gate = _mapping_release_gate(report)
+    report["release_gate"] = release_gate
     output_path = Path(args.output_path)
+    review_status_path = _phase4_review_status_path(args)
     markdown_path = write_phase4_evaluation_report(output_path, report)
     write_phase4_cases_review(
-        Path(args.review_status_output),
+        review_status_path,
         cases,
         claim_review=report.get("claim_review"),
     )
     _json_print(
         {
-            "status": "PASS",
+            "status": release_gate["release_status"],
+            **release_gate,
             "evaluation_completed": True,
             "output": str(output_path),
             "markdown_output": str(markdown_path),
             "claim_review_sheet": report.get("claim_review_sheet"),
-            "review_status_output": str(Path(args.review_status_output)),
+            "review_status_output": str(review_status_path),
             "real_output": str(Path(args.real_output)),
             "case_count": report["data_integrity"]["case_count"],
             "strategies": report["strategies"],
@@ -1476,7 +1582,7 @@ def command_evaluate_phase4(args: argparse.Namespace) -> int:
             },
         }
     )
-    return 0
+    return _release_exit_code(release_gate["release_status"])
 
 
 def command_answer(args: argparse.Namespace) -> int:

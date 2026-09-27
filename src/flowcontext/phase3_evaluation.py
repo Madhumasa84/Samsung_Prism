@@ -34,6 +34,7 @@ from .multi_intent import (
 from .replay import ReplayResult, replay_transcript
 from .retrieval import Retriever, make_retriever
 from .streaming import replay_streaming_transcript
+from .storage import atomic_write_text
 
 
 class Phase3EvaluationError(ValueError):
@@ -989,8 +990,7 @@ def _compact_row(row: dict[str, Any]) -> str:
 def write_phase3_comparison_report(path: Path, report: dict[str, Any]) -> Path:
     """Write JSON plus a readable Markdown companion without overwriting history."""
 
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    atomic_write_text(path, json.dumps(report, indent=2, ensure_ascii=False) + "\n")
     markdown_path = path.with_suffix(".md")
     rows = [
         row
@@ -1072,7 +1072,7 @@ def write_phase3_comparison_report(path: Path, report: dict[str, Any]) -> Path:
             "",
         ]
     )
-    markdown_path.write_text("\n".join(lines), encoding="utf-8")
+    atomic_write_text(markdown_path, "\n".join(lines))
     return markdown_path
 
 

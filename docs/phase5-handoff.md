@@ -19,7 +19,7 @@ are supplied.
   content.
 - Actual replay examples and a 23-case matched full-versus-selective suite.
   The local run is synthetic, lexical, and mock-provider engineering data.
-- Redacted real-provider execution is scope-limited. The report records whether the offline sentence-transformers provider actually called `embed()` and whether the local Ollama Qwen 2.5 3B generation replay completed. The current run completed Ollama qwen2.5:3b generation and embedding probe; dense/hybrid RAG integration was verified with dense retrieval backend evaluation (reports/phase4_evaluation_dense_test.json). Trace is preserved in `reports/phase4_real_e2e.json` and `reports/phase4_real_e2e_dense_test.json`.
+- Redacted real-provider execution is scope-limited. The report records whether the offline sentence-transformers provider called `embed()` and whether a configured generation replay completed. A live provider, official corpus, and integrated dense-generation validation are not guaranteed by the checked-in artifacts; the current audit must report those capabilities as `NOT VERIFIED` unless the corresponding run is reproduced. Traces are preserved in `reports/phase4_real_e2e.json` and `reports/phase4_real_e2e_dense_test.json` when available.
 - An identified Codex manual claim review covers the 89 emitted synthetic claim rows against their cited passages. It is content-hash-bound and is not independent human ground truth or official benchmark validation. The sheet is preserved in `reports/phase4_evaluation_claim_review.csv`.
 
 ## Remaining product work
@@ -104,7 +104,7 @@ provider and lexical backend in their envelopes.
 | Phase 4 engineering contracts | PASS | Local tests and actual replay pipeline |
 | Matched synthetic full/selective evaluation | PASS | Provisional lexical/mock fixture result (23 cases) |
 | Identified manual claim review | MANUAL | Codex reviewed 89/89 synthetic rows; independent human review is not verified |
-| Real-provider generation replay | PASS | Ollama qwen2.5:3b generation and embedding probe passed; dense/hybrid RAG integration verified with dense retrieval backend (reports/phase4_evaluation_dense_test.json) |
+| Real-provider generation replay | NOT VERIFIED | Requires a configured live provider and reproducible integrated retrieval/generation run; local embedding smoke is reported separately |
 | Selective efficiency gain | NOT VERIFIED | The matched run did not demonstrate fewer calls/chunks or lower mock latency/cost; efficiency analysis and test cases provided for future benchmarks |
 | Official competition validation | NOT VERIFIED | Official assets and harness absent |
 | Final submission production | NOT STARTED | Explicitly outside this phase |

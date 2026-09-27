@@ -67,6 +67,7 @@ from .replay import (
 )
 from .retrieval import Retriever, make_retriever, tokenize
 from .trace import TraceCollector
+from .storage import atomic_write_text
 
 
 class StreamingControllerError(ValueError):
@@ -1691,8 +1692,7 @@ async def replay_streaming_transcript(
 
 
 def write_streaming_replay(path: Path, result: StreamingReplayResult) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(result.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    atomic_write_text(path, result.model_dump_json(indent=2) + "\n")
 
 
 def load_streaming_replay(path: Path) -> StreamingReplayResult:
@@ -1839,5 +1839,4 @@ def build_streaming_run_manifest(
 
 
 def write_streaming_run_manifest(path: Path, manifest: StreamingRunManifest) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(manifest.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    atomic_write_text(path, manifest.model_dump_json(indent=2) + "\n")

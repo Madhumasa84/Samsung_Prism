@@ -81,7 +81,7 @@ Return one JSON object only matching this schema:
   "factual_claims": [
     {
       "claim_id": "claim-01",
-      "claim_text": "atomic factual assertion",
+      "claim_text": "an exact excerpt from one supplied passage",
       "intent_ids": ["intent-id"],
       "supporting_chunk_ids": ["chunk-id"],
       "supporting_excerpts": ["exact excerpt from chunk text"]
@@ -99,7 +99,8 @@ Return one JSON object only matching this schema:
 }
 
 Every supporting_chunk_ids value must exactly match a chunk_id supplied in retrieved_passages.
-Every supporting_excerpts value must be an exact substring of the cited chunk's text.
+Every supporting_excerpts value must be an exact substring of the cited chunk's text,
+and claim_text must be an exact excerpt from a cited passage.
 """
 
 _TOKEN_PATTERN = re.compile(r"[\w]+", re.UNICODE)
@@ -225,6 +226,10 @@ class SynthesisError(GenerationError):
 
 class InvalidExcerptError(GenerationOutputError):
     """A claim cited an excerpt that does not exist in the cited chunk's text."""
+
+
+class InvalidClaimTextError(GenerationOutputError):
+    """A claim text was not an exact excerpt from its cited passage."""
 
 
 class CrossEntityViolationError(SynthesisError):
@@ -457,6 +462,24 @@ def validate_citations_and_excerpts(
                     f"Claim {claim.claim_id!r} cited excerpt {excerpt!r} which was not "
                     f"found in cited passages {claim.supporting_chunk_ids}."
                 )
+
+
+def validate_claim_texts(
+    claims: Sequence[FactualClaim],
+    supplied_passages: Mapping[str, EvidencePassage],
+) -> None:
+    """Require each published claim to be extractive from one cited passage."""
+
+    for claim in claims:
+        normalized_claim = " ".join(claim.claim_text.split()).casefold()
+        if not any(
+            normalized_claim in " ".join(supplied_passages[chunk_id].text.split()).casefold()
+            for chunk_id in claim.supporting_chunk_ids
+        ):
+            raise InvalidClaimTextError(
+                f"Claim {claim.claim_id!r} was not an exact excerpt from cited passages "
+                f"{claim.supporting_chunk_ids}."
+            )
 
 
 class SemanticVerifier(Protocol):
@@ -993,9 +1016,16 @@ async def synthesize_unified_answer(
                 payload = json.loads(result.raw_text)
                 candidate_answer = Answer.model_validate(payload)
                 validate_citations_and_excerpts(candidate_answer.factual_claims, supplied_map)
+                validate_claim_texts(candidate_answer.factual_claims, supplied_map)
                 parsed_answer = candidate_answer
                 break
-            except (json.JSONDecodeError, ValidationError, UnknownCitationError, InvalidExcerptError) as exc:
+            except (
+                json.JSONDecodeError,
+                ValidationError,
+                UnknownCitationError,
+                InvalidExcerptError,
+                InvalidClaimTextError,
+            ) as exc:
                 last_error = exc
         except GenerationCallFailed as exc:
             total_attempts += exc.attempts

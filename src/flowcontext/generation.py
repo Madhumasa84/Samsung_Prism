@@ -50,15 +50,22 @@ Return one JSON object only with this shape:
 {
   "answer_text": "answer or clear uncertainty response",
   "factual_claims": [
-    {"claim_id": "stable-in-response-id", "claim_text": "claim", "supporting_chunk_ids": ["supplied-id"]}
+    {
+      "claim_id": "stable-in-response-id",
+      "claim_text": "an exact excerpt from one supplied passage",
+      "supporting_chunk_ids": ["supplied-id"],
+      "supporting_excerpts": ["the same exact excerpt"]
+    }
   ],
   "uncertainty": "explicit limitations or uncertainty",
   "answer_version": 1
 }
 
 Every supporting_chunk_ids value must exactly match a chunk_id supplied in the
-retrieved_passages array. Citation IDs are checked by the application, but an
-ID match alone does not establish semantic support.
+retrieved_passages array. Every supporting_excerpt must be an exact substring
+of its cited passage, and claim_text must be an exact excerpt from a cited
+passage. The application discards answer_text and renders only validated
+claims, so do not place unsupported facts there.
 """
 
 GROUNDING_CAVEAT = (
@@ -252,6 +259,8 @@ def generation_config_for_settings(settings: Settings) -> GenerationConfig:
         retry_backoff_s=settings.generation_retry_backoff_s,
         max_repair_attempts=settings.generation_max_repair_attempts,
         max_output_tokens=settings.generation_max_output_tokens,
+        max_request_bytes=settings.generation_max_request_bytes,
+        max_response_bytes=settings.generation_max_response_bytes,
         input_price_per_million=settings.generation_input_price_per_million,
         output_price_per_million=settings.generation_output_price_per_million,
     )
@@ -595,6 +604,11 @@ class OpenAICompatibleGenerationProvider:
             "response_format": {"type": "json_object"},
         }
         request_body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        if len(request_body) > self._config.max_request_bytes:
+            raise GenerationProviderError(
+                "generation provider request exceeded the configured byte limit",
+                retryable=False,
+            )
         http_request = UrlRequest(
             f"{self._config.base_url.rstrip('/')}/chat/completions",
             data=request_body,
@@ -607,7 +621,26 @@ class OpenAICompatibleGenerationProvider:
         )
         try:
             with urlopen(http_request, timeout=self._config.timeout_s) as response:
-                response_body = response.read()
+                content_length = response.headers.get("Content-Length")
+                if content_length is not None:
+                    try:
+                        declared_length = int(content_length)
+                    except ValueError as exc:
+                        raise GenerationProviderError(
+                            "generation provider returned an invalid Content-Length",
+                            retryable=False,
+                        ) from exc
+                    if declared_length > self._config.max_response_bytes:
+                        raise GenerationProviderError(
+                            "generation provider response exceeded the configured byte limit",
+                            retryable=False,
+                        )
+                response_body = response.read(self._config.max_response_bytes + 1)
+                if len(response_body) > self._config.max_response_bytes:
+                    raise GenerationProviderError(
+                        "generation provider response exceeded the configured byte limit",
+                        retryable=False,
+                    )
                 status = getattr(response, "status", 200)
         except HTTPError as exc:
             retryable = exc.code in {408, 429, 500, 502, 503, 504}
@@ -712,6 +745,41 @@ def _passages_from_hits(hits: Sequence[RetrievalHit], corpus: CorpusIndex) -> li
             )
         )
     return passages
+
+
+def _validate_baseline_answer(answer: Answer, passages: Sequence[EvidencePassage]) -> Answer:
+    """Require extractive claims before the single-intent path can publish.
+
+    The Phase 1 path has no semantic verifier or intent decomposition.  A
+    citation ID alone therefore cannot distinguish a grounded answer from a
+    model-authored hallucination.  Keep this boundary fail-closed: every
+    factual claim must carry an exact supporting excerpt and its displayed
+    claim text must itself occur in a cited passage.  The provider's free-form
+    answer_text is intentionally ignored because it can contain uncited text.
+    """
+
+    from .synthesis import validate_citations_and_excerpts, validate_claim_texts
+
+    supplied = {passage.chunk_id: passage for passage in passages}
+    validate_citations_and_excerpts(answer.factual_claims, supplied)
+    for claim in answer.factual_claims:
+        if not claim.supporting_excerpts:
+            raise GenerationOutputError(
+                "baseline factual claims must include exact supporting excerpts"
+            )
+    validate_claim_texts(answer.factual_claims, supplied)
+
+    if not answer.factual_claims:
+        return answer
+    rendered_claims = "\n".join(
+        f"- [{', '.join(claim.supporting_chunk_ids)}] {claim.claim_text}"
+        for claim in answer.factual_claims
+    )
+    return answer.model_copy(
+        update={
+            "answer_text": "Answer based only on validated corpus excerpts:\n" + rendered_claims,
+        }
+    )
 
 
 def _parse_answer(raw_text: str) -> Answer:
@@ -841,6 +909,19 @@ async def generate_grounded_answer(
 ) -> GenerationOutcome:
     """Generate from supplied corpus hits, repairing or abstaining on failure."""
 
+    if not query.strip():
+        return GenerationOutcome(
+            answer=_abstention("The request was empty; no answer was generated."),
+            status="skipped",
+            usage=Usage(),
+            cost="unavailable",
+            attempts=0,
+            repair_attempts=0,
+            generation_usage=Usage(),
+            repair_usage=Usage(),
+            verification_usage=Usage(),
+        )
+
     if decomposition is not None:
         from .synthesis import StaleGenerationError, synthesize_unified_answer
 
@@ -954,6 +1035,7 @@ async def generate_grounded_answer(
             try:
                 answer = _parse_answer(result.raw_text)
                 _validate_citations(answer, {passage.chunk_id for passage in passages})
+                answer = _validate_baseline_answer(answer, passages)
             except GenerationOutputError as exc:
                 last_error = exc
             else:

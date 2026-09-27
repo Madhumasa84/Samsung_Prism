@@ -16,6 +16,7 @@ Requirements covered:
 
 from __future__ import annotations
 
+import json
 import unittest
 
 from flowcontext.contracts import (
@@ -26,6 +27,8 @@ from flowcontext.contracts import (
     EvidencePassage,
     FactualClaim,
     GenerationConfig,
+    GenerationRequest,
+    GenerationResult,
     RetrievalHit,
     TextSpan,
     TranscriptEvent,
@@ -304,6 +307,48 @@ class Phase3SynthesisTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(verdict.verdict, "unsupported")
         self.assertIn("lacks proposition support", verdict.reason)
         self.assertIn("does not guarantee ground truth", report.limitations)
+
+    async def test_unified_synthesis_rejects_false_claim_with_valid_citation(self) -> None:
+        """A high-overlap false claim must not pass the heuristic verifier."""
+
+        query = "Which Pune Grand Hall venues can host 30 attendees?"
+        intent = _make_intent("intent-false", 1, query)
+        decomposition = _make_decomposition(query, [intent])
+        hits = [_make_hit_for_chunk(self.chunk_venue, intent_ids=[intent.intent_id])]
+
+        class FalseUnifiedProvider(MockGenerationProvider):
+            async def generate(self, request: GenerationRequest) -> GenerationResult:
+                passage = request.passages[0]
+                return GenerationResult(
+                    raw_text=json.dumps(
+                        {
+                            "answer_text": "Pune Grand Hall can accommodate 300 attendees.",
+                            "factual_claims": [
+                                {
+                                    "claim_id": "false-unified-capacity",
+                                    "claim_text": "Pune Grand Hall can accommodate 300 attendees.",
+                                    "intent_ids": [intent.intent_id],
+                                    "supporting_chunk_ids": [passage.chunk_id],
+                                    "supporting_excerpts": [passage.text[:20]],
+                                }
+                            ],
+                            "uncertainty": "none",
+                            "answer_version": 1,
+                        }
+                    )
+                )
+
+        outcome = await generate_grounded_answer(
+            query,
+            hits,
+            self.corpus,
+            FalseUnifiedProvider(config=self.mock_config),
+            decomposition=decomposition,
+        )
+        self.assertEqual(outcome.status, "abstained")
+        self.assertEqual(outcome.error_type, "InvalidClaimTextError")
+        self.assertFalse(outcome.answer.factual_claims)
+        self.assertNotIn("300 attendees", outcome.answer.answer_text)
 
     async def test_weak_intent_citation_is_not_answer_evidence(self) -> None:
         intent = _make_intent(

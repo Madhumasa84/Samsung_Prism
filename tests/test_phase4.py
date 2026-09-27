@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import unittest
+import tempfile
+from pathlib import Path
 
 from flowcontext.contracts import Answer, EvidencePassage, FactualClaim, Phase4ClaimDependency
 from flowcontext.multi_intent import MockDecompositionProvider, StructuredMultiIntentDecomposer, decompose_query
@@ -29,6 +31,44 @@ class Phase4SessionTests(unittest.TestCase):
             index_id="index-v1",
         )
         return store, state
+
+    def test_durable_session_store_round_trips_committed_state(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            snapshot = Path(directory) / "phase4-sessions.json"
+            store = Phase4SessionStore(
+                max_sessions=8,
+                max_records_per_session=32,
+                storage_path=snapshot,
+            )
+            state = store.create_session(
+                "durable-session",
+                initial_plan=decompose_query("Which Hall Alpha in Pune can host an event?"),
+                utterance_id="utterance-1",
+                initial_turn=1,
+                corpus_id="corpus-v1",
+                index_id="index-v1",
+            )
+            patch = store.propose_follow_up(
+                "durable-session",
+                "Also require a projector.",
+                utterance_id="utterance-2",
+                turn_index=2,
+            )
+            committed = store.apply_patch(patch)
+            self.assertGreater(committed.state_revision, state.state_revision)
+            self.assertTrue(snapshot.is_file())
+
+            restarted = Phase4SessionStore(
+                max_sessions=8,
+                max_records_per_session=32,
+                storage_path=snapshot,
+            )
+            restored = restarted.get("durable-session")
+            self.assertEqual(restored.state_revision, committed.state_revision)
+            self.assertEqual(
+                [item.record_id for item in restored.current_constraints],
+                [item.record_id for item in committed.current_constraints],
+            )
 
     def test_add_replace_remove_preserves_typed_values_and_user_origin(self) -> None:
         store, state = self.make_one_intent_session()

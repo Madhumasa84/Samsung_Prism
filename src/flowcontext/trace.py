@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Literal, Sequence
 
 from .contracts import ExecutionTrace, TraceError, Usage
+from .storage import atomic_write_text
 
 
 class TraceCollector:
@@ -88,8 +89,7 @@ def write_trace_jsonl(path: Path, events: Sequence[ExecutionTrace]) -> None:
 
     if not events:
         raise ValueError("cannot write an empty trace file")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
+    atomic_write_text(
+        path,
         "".join(event.model_dump_json() + "\n" for event in events),
-        encoding="utf-8",
     )

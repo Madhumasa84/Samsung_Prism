@@ -131,14 +131,13 @@ The machine-readable and Markdown results are in
 
 ### Dense/Hybrid RAG Verification
 
-Integrated dense/hybrid RAG has been verified with a successful evaluation run:
+The repository contains historical dense-retrieval evaluation artifacts:
 - Built dense index using sentence-transformers/all-MiniLM-L6-v2 (384 dimensions)
 - Dense index: `artifacts/phase4-dense-index.json` (13 chunks from 12 documents)
 - Dense evaluation: `reports/phase4_evaluation_dense_test.json`, `reports/phase4_evaluation_dense_test.md`
 - Real-backend dense trace: `reports/phase4_real_e2e_dense_test.json`
-- All engineering capabilities passed with dense retrieval backend
 - Dense retrieval produces semantic similarity scores (cosine similarity)
-- Integration verified with both mock generation and real Ollama generation
+- The current audit treats integrated dense/hybrid RAG and real Ollama generation as `NOT VERIFIED` unless those runs are reproduced with the current code and environment; local dense smoke is not semantic-quality evidence.
 [`../reports/phase4_evaluation.json`](../reports/phase4_evaluation.json) and
 [`../reports/phase4_evaluation.md`](../reports/phase4_evaluation.md). The
 claim sheet is intentionally pending human semantic review. The real-backend

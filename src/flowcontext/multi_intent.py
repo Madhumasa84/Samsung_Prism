@@ -406,13 +406,18 @@ _EVIDENCE_ALIGNMENT_STOP_WORDS = frozenset(
         "a",
         "about",
         "after",
+        "actually",
         "am",
         "an",
         "and",
         "are",
         "as",
         "at",
+        "answer",
+        "answers",
         "be",
+        "bullet",
+        "bullets",
         "can",
         "could",
         "does",
@@ -421,6 +426,8 @@ _EVIDENCE_ALIGNMENT_STOP_WORDS = frozenset(
         "explain",
         "find",
         "for",
+        "format",
+        "formatting",
         "from",
         "give",
         "has",
@@ -440,6 +447,8 @@ _EVIDENCE_ALIGNMENT_STOP_WORDS = frozenset(
         "on",
         "or",
         "please",
+        "point",
+        "points",
         "provides",
         "provided",
         "qualifies",
@@ -456,6 +465,7 @@ _EVIDENCE_ALIGNMENT_STOP_WORDS = frozenset(
         "this",
         "those",
         "to",
+        "two",
         "what",
         "when",
         "where",
@@ -499,7 +509,14 @@ def _evidence_alignment_token(value: str) -> str:
     if token.endswith("ing") and len(token) > 5:
         return token[:-3]
     if token.endswith("ed") and len(token) > 4:
+        stem = token[:-2]
+        if len(stem) > 3 and stem[-1] == stem[-2]:
+            stem = stem[:-1]
+        return stem
+    if token.endswith("ates") and len(token) > 5:
         return token[:-2]
+    if token.endswith("ate") and len(token) > 4:
+        return token[:-1]
     if token.endswith("es") and len(token) > 4:
         return token[:-2]
     if token.endswith("s") and len(token) > 3 and not token.endswith("ss"):
@@ -646,11 +663,28 @@ def filter_single_query_evidence(
         # The legacy Phase 1/2 path intentionally assembles the parent query
         # as a collective context.  It retains its existing recall bridge;
         # decomposed Phase 3/4 branches use the stricter per-intent gate above.
+        # A non-coordinated query must carry its high-information answer term
+        # into the evidence candidate.  Without this guard, a query such as
+        # ``Which venue in Pune has free parking?`` can admit any Pune venue
+        # chunk and publish unrelated capacity facts.  Coordinated queries
+        # retain the collective recall bridge below because each passage may
+        # cover a different clause.
         alignment = intent_evidence_alignment(
             intent,
             hit.snippet_text,
-            require_high_information_terms=False,
+            require_high_information_terms=not bool(re.search(r"\band\b", query, re.IGNORECASE)),
         )
+        if not re.search(r"\band\b", query, re.IGNORECASE):
+            query_terms = set(alignment["query_terms"])
+            distinctive_terms = query_terms - _GENERIC_EVIDENCE_ALIGNMENT_TERMS
+            matched_terms = set(alignment["matched_terms"])
+            minimum_distinctive_matches = 1 if len(distinctive_terms) <= 1 else 2
+            if distinctive_terms and len(distinctive_terms & matched_terms) < minimum_distinctive_matches:
+                alignment = {
+                    **alignment,
+                    "aligned": False,
+                    "reason": "passage lacks enough distinctive single-query concepts",
+                }
         alignments.append(alignment)
         decisions.append(
             {
@@ -1375,9 +1409,15 @@ class OpenAICompatibleDecompositionProvider:
             "max_tokens": self._config.max_output_tokens,
             "response_format": {"type": "json_object"},
         }
+        request_body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        if len(request_body) > self._config.max_request_bytes:
+            raise DecompositionProviderError(
+                "decomposition provider request exceeded the configured byte limit",
+                retryable=False,
+            )
         http_request = UrlRequest(
             f"{self._config.base_url.rstrip('/')}/chat/completions",
-            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            data=request_body,
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
@@ -1387,7 +1427,26 @@ class OpenAICompatibleDecompositionProvider:
         )
         try:
             with urlopen(http_request, timeout=self._config.timeout_s) as response:
-                body = response.read()
+                content_length = response.headers.get("Content-Length")
+                if content_length is not None:
+                    try:
+                        declared_length = int(content_length)
+                    except ValueError as exc:
+                        raise DecompositionProviderError(
+                            "decomposition provider returned an invalid Content-Length",
+                            retryable=False,
+                        ) from exc
+                    if declared_length > self._config.max_response_bytes:
+                        raise DecompositionProviderError(
+                            "decomposition provider response exceeded the configured byte limit",
+                            retryable=False,
+                        )
+                body = response.read(self._config.max_response_bytes + 1)
+                if len(body) > self._config.max_response_bytes:
+                    raise DecompositionProviderError(
+                        "decomposition provider response exceeded the configured byte limit",
+                        retryable=False,
+                    )
                 status = getattr(response, "status", 200)
         except HTTPError as exc:
             retryable = exc.code in {408, 429, 500, 502, 503, 504}

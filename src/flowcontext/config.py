@@ -31,6 +31,9 @@ class Settings(BaseModel):
     retrieval_top_k: int = Field(default=5, ge=1, le=100)
     chunk_max_chars: int = Field(default=1200, ge=1, le=100_000)
     chunk_overlap_chars: int = Field(default=0, ge=0, le=99_999)
+    corpus_max_bytes: int = Field(default=50 * 1024 * 1024, ge=1, le=1024 * 1024 * 1024)
+    corpus_max_documents: int = Field(default=100_000, ge=1, le=1_000_000)
+    corpus_max_line_bytes: int = Field(default=2 * 1024 * 1024, ge=1, le=100 * 1024 * 1024)
     model_identity: str = "baseline.extractive.v1"
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     embedding_revision: str = "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
@@ -49,6 +52,8 @@ class Settings(BaseModel):
     generation_retry_backoff_s: float = Field(default=0.5, ge=0.0, le=10.0, allow_inf_nan=False)
     generation_max_repair_attempts: int = Field(default=1, ge=0, le=2)
     generation_max_output_tokens: int = Field(default=600, ge=1, le=4096)
+    generation_max_request_bytes: int = Field(default=1 * 1024 * 1024, ge=1, le=32 * 1024 * 1024)
+    generation_max_response_bytes: int = Field(default=4 * 1024 * 1024, ge=1, le=32 * 1024 * 1024)
     generation_input_price_per_million: float | None = Field(default=None, ge=0.0, allow_inf_nan=False)
     generation_output_price_per_million: float | None = Field(default=None, ge=0.0, allow_inf_nan=False)
     # Phase 3 retrieval settings are opt-in at the caller boundary.  The
@@ -104,6 +109,9 @@ _ENV_TO_FIELD = {
     "FLOWCONTEXT_RETRIEVAL_TOP_K": "retrieval_top_k",
     "FLOWCONTEXT_CHUNK_MAX_CHARS": "chunk_max_chars",
     "FLOWCONTEXT_CHUNK_OVERLAP_CHARS": "chunk_overlap_chars",
+    "FLOWCONTEXT_CORPUS_MAX_BYTES": "corpus_max_bytes",
+    "FLOWCONTEXT_CORPUS_MAX_DOCUMENTS": "corpus_max_documents",
+    "FLOWCONTEXT_CORPUS_MAX_LINE_BYTES": "corpus_max_line_bytes",
     "FLOWCONTEXT_MODEL_IDENTITY": "model_identity",
     "FLOWCONTEXT_EMBEDDING_MODEL": "embedding_model",
     "FLOWCONTEXT_EMBEDDING_REVISION": "embedding_revision",
@@ -122,6 +130,8 @@ _ENV_TO_FIELD = {
     "FLOWCONTEXT_GENERATION_RETRY_BACKOFF_S": "generation_retry_backoff_s",
     "FLOWCONTEXT_GENERATION_MAX_REPAIR_ATTEMPTS": "generation_max_repair_attempts",
     "FLOWCONTEXT_GENERATION_MAX_OUTPUT_TOKENS": "generation_max_output_tokens",
+    "FLOWCONTEXT_GENERATION_MAX_REQUEST_BYTES": "generation_max_request_bytes",
+    "FLOWCONTEXT_GENERATION_MAX_RESPONSE_BYTES": "generation_max_response_bytes",
     "FLOWCONTEXT_GENERATION_INPUT_PRICE_PER_MILLION": "generation_input_price_per_million",
     "FLOWCONTEXT_GENERATION_OUTPUT_PRICE_PER_MILLION": "generation_output_price_per_million",
     "FLOWCONTEXT_MULTI_INTENT_RETRIEVAL_MODE": "multi_intent_retrieval_mode",
@@ -208,6 +218,9 @@ def config_asset_status(settings: Settings) -> dict[str, object]:
         "index_path": str(settings.index_path),
         "corpus_status": settings.corpus_status,
         "retrieval_backend": settings.retrieval_backend,
+        "corpus_max_bytes": settings.corpus_max_bytes,
+        "corpus_max_documents": settings.corpus_max_documents,
+        "corpus_max_line_bytes": settings.corpus_max_line_bytes,
         "multi_intent_retrieval_mode": settings.multi_intent_retrieval_mode,
         "multi_intent_context_budget_tokens": settings.multi_intent_context_budget_tokens,
         "multi_intent_max_workers": settings.multi_intent_max_workers,
@@ -224,6 +237,8 @@ def config_asset_status(settings: Settings) -> dict[str, object]:
         "generation_timeout_s": settings.generation_timeout_s,
         "generation_max_retries": settings.generation_max_retries,
         "generation_max_repair_attempts": settings.generation_max_repair_attempts,
+        "generation_max_request_bytes": settings.generation_max_request_bytes,
+        "generation_max_response_bytes": settings.generation_max_response_bytes,
         "generation_input_price_per_million": settings.generation_input_price_per_million,
         "generation_output_price_per_million": settings.generation_output_price_per_million,
         "streaming_debounce_source_s": settings.streaming_debounce_source_s,

@@ -52,6 +52,7 @@ from .multi_intent import (
     make_multi_intent_retriever,
 )
 from .trace import TraceCollector
+from .storage import atomic_write_text
 
 
 ReplayExecutionMode = Literal["realtime", "accelerated"]
@@ -1093,8 +1094,7 @@ async def replay_transcript(
 
 
 def write_replay(path: Path, result: ReplayResult) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(result.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    atomic_write_text(path, result.model_dump_json(indent=2) + "\n")
 
 
 def load_replay(path: Path) -> ReplayResult:
@@ -1247,5 +1247,4 @@ def build_run_manifest(
 
 
 def write_run_manifest(path: Path, manifest: ReplayRunManifest) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(manifest.model_dump_json(indent=2) + "\n", encoding="utf-8")
+    atomic_write_text(path, manifest.model_dump_json(indent=2) + "\n")
