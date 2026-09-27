@@ -1,11 +1,12 @@
 # FlowContext: Offline Streaming-Transcript RAG Prototype
 
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)
-[![Tests Passing](https://img.shields.io/badge/tests-158%20passed-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-155%2F158%20passing-yellow.svg)](tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Dense Embeddings](https://img.shields.io/badge/embeddings-all--MiniLM--L6--v2-blueviolet.svg)](src/flowcontext/embeddings.py)
 [![Samsung PRISM](https://img.shields.io/badge/Samsung%20PRISM-Theme%204%3A%20Live%20RAG-orange.svg)](#)
 [![System Status](https://img.shields.io/badge/status-scoped--prototype-blue.svg)](#)
+[![Generation Backend](https://img.shields.io/badge/generation-mock%20by%20default-lightgrey.svg)](#real-llm--provider-integration-optional)
 
 > ### Concept Summary: What FlowContext Does
 > When speaking to a conventional AI assistant, the system waits until the user completely stops talking before initiating document retrieval and response generation—causing noticeable turn-taking latency. Furthermore, when the user provides a follow-up constraint or requests a reformat (*"summarize that as bullet points"*), typical systems discard previous computation and re-retrieve the entire corpus from scratch.
@@ -28,6 +29,8 @@
   - [3. Dynamic Session State & Dependency Invalidation DAG](#3-dynamic-session-state--dependency-invalidation-dag)
   - [4. Grounded Synthesis & Provable Citation Verification](#4-grounded-synthesis--provable-citation-verification)
 - [Quick Start & Setup](#quick-start--setup)
+  - [Known Flaky Tests](#known-flaky-tests)
+- [Real LLM / Provider Integration (Optional)](#real-llm--provider-integration-optional)
 - [End-to-End Operational Workflows](#end-to-end-operational-workflows)
 - [Conversational Replay Scenarios](#conversational-replay-scenarios)
 - [CLI Reference](#cli-reference)
@@ -121,10 +124,10 @@ flowchart TD
 | **Zero-Retrieval Formatting Suppression** | `PASS` | Presentation-only changes retain verified factual claims with 0 retrieval calls | [`examples/replay/phase4-formatting.jsonl`](examples/replay/phase4-formatting.jsonl) |
 | **Provenance-Grounded Synthesis** | `PASS` | Factual claim construction with strict chunk citation mapping and contradiction detection | [`src/flowcontext/synthesis.py`](src/flowcontext/synthesis.py) |
 | **Explicit Uncertainty Quantification** | `PASS` | Targeted abstention and partial-support detection for incomplete evidence | [`src/flowcontext/synthesis.py`](src/flowcontext/synthesis.py) |
-| **Real LLM & Provider Integration** | `NOT VERIFIED` | Provider adapter exists; live credentials/provider compatibility and integrated generation require an external run | [`src/flowcontext/generation.py`](src/flowcontext/generation.py) |
-| **Automated Test Coverage** | `PASS` | **158 passed tests** across unit, integration, and end-to-end regression suites | [`tests/`](tests/) |
+| **Real LLM & Provider Integration** | `NOT VERIFIED` | Generic OpenAI-compatible provider adapter exists; ships **disabled by default** (mock backend). Live credentials, provider compatibility, and integrated real-model generation require an external run — see [Real LLM / Provider Integration](#real-llm--provider-integration-optional) | [`src/flowcontext/generation.py`](src/flowcontext/generation.py) |
+| **Automated Test Coverage** | `PASS***` | **155/158 tests pass deterministically**; 3 streaming-controller tests assert an async worker starts within a single event-loop tick and are timing-sensitive under host/filesystem load | [`tests/`](tests/) |
 
-`*` Engineering-contract result on local replay fixtures. `**` Local measurement, not an official benchmark or semantic-quality claim.
+`*` Engineering-contract result on local replay fixtures. `**` Local measurement, not an official benchmark or semantic-quality claim. `***` See [Known Flaky Tests](#known-flaky-tests) for reproduction notes.
 
 ---
 
@@ -172,7 +175,7 @@ FlowContext enforces strict factual grounding to eliminate conversational halluc
 
 ### 1. Installation
 
-FlowContext targets **Python 3.11** and is managed with [`uv`](https://docs.astral.sh/uv/):
+FlowContext targets **Python 3.11** (3.12 also satisfies `requires-python`) and is managed with [`uv`](https://docs.astral.sh/uv/):
 
 ```bash
 # Clone the repository
@@ -183,6 +186,16 @@ cd Samsung_Prism
 uv sync --locked --python 3.11 --extra dense
 ```
 
+**Alternative (no `uv`):** if `uv` is unavailable, a plain `venv` + `pip` install works identically:
+
+```bash
+python3.11 -m venv .venv
+# Windows: .venv\Scripts\python.exe -m pip install -e ".[dense]" pytest
+.venv/bin/python -m pip install -e ".[dense]" pytest
+```
+
+Replace `uv run flowcontext ...` / `uv run pytest` below with `.venv/bin/flowcontext ...` / `.venv/bin/python -m pytest` (or the `.venv\Scripts\` equivalents on Windows).
+
 ### 2. Environment & Pipeline Verification
 
 Run the automated validation and test suite:
@@ -191,15 +204,79 @@ Run the automated validation and test suite:
 # 1. Environment configuration check
 uv run flowcontext config-check
 
-# 2. Offline core pipeline smoke check
+# 2. Offline core pipeline smoke check (mock generation backend)
 uv run flowcontext smoke
 
 # 3. Dense vector embedding offline verification
+# First run must omit --local-files-only so the pinned model can be
+# downloaded once from Hugging Face and cached; subsequent runs can add
+# --local-files-only to prove no network access is required.
+uv run flowcontext dense-smoke
 uv run flowcontext dense-smoke --local-files-only
 
 # 4. Full pytest test suite (158 tests)
 uv run pytest
 ```
+
+#### Known Flaky Tests
+
+Three tests in `tests/test_phase2.py` and `tests/test_streaming_evaluation.py` assert that the
+async retrieval scheduler's background worker has observably *started* within a single
+`asyncio.sleep(0)` event-loop tick (see `_wait_for_source_timing` in
+[`src/flowcontext/replay.py`](src/flowcontext/replay.py) and the scheduler handoff in
+[`src/flowcontext/streaming.py`](src/flowcontext/streaming.py)). Under a slow or heavily loaded
+host (e.g. network filesystems, virtualized/WSL mounts, CI contention) that single tick is not
+always enough time for the OS thread scheduler to run the worker, so these three tests can
+intermittently fail (observed: 155/158 passing, with the 3 failures non-deterministic across
+reruns). This is a test-timing limitation, not a functional defect in the retrieval or
+correctness logic. Re-running just the affected tests in isolation is a reasonable local
+workaround; a durable fix would replace the fixed one-tick yield with a bounded poll/wait for an
+explicit "worker started" signal.
+
+---
+
+## Real LLM / Provider Integration (Optional)
+
+**By default, FlowContext ships fully offline with a deterministic mock generation backend**
+(`generation_provider: flowcontext.mock`). `flowcontext config-check` reports
+`generation_api_key_configured: false` and `flowcontext smoke` reports `"backend": "mock"`
+until this section is followed. No vendor-specific provider (Sarvam or otherwise) is
+hard-coded anywhere in this repository — there is exactly one generation adapter, and it is a
+generic **OpenAI-compatible** `/v1/chat/completions` client (see
+[`src/flowcontext/generation.py`](src/flowcontext/generation.py)). Any provider that exposes
+an OpenAI-compatible chat-completions endpoint (Sarvam included) can be wired in through that
+same adapter — there is no separate Sarvam SDK or Sarvam-specific code path.
+
+To point the generic adapter at a real provider, set the following environment variables
+before invoking the CLI. **The API key variable name is configurable** — the app reads the key
+from whichever environment variable `FLOWCONTEXT_GENERATION_API_KEY_ENV` names; it does not
+hard-code `FLOWCONTEXT_GENERATION_API_KEY`, but that is the conventional default used below:
+
+```bash
+export FLOWCONTEXT_GENERATION_BACKEND=openai_compatible
+export FLOWCONTEXT_GENERATION_PROVIDER=<provider-name>          # e.g. sarvam
+export FLOWCONTEXT_GENERATION_MODEL=<model-name>                # e.g. sarvam-m
+export FLOWCONTEXT_GENERATION_BASE_URL=https://<provider-endpoint>/v1
+export FLOWCONTEXT_GENERATION_API_KEY_ENV=FLOWCONTEXT_GENERATION_API_KEY
+export FLOWCONTEXT_GENERATION_API_KEY=<secret-in-process-environment-only>
+
+uv run flowcontext evaluate-suite \
+  --cases data/evaluation/development.jsonl \
+  --split development \
+  --corpus artifacts/fixture-lexical-index.json \
+  --backend lexical \
+  --execution-mode accelerated
+```
+
+The secret is read only from that process environment variable; it is never logged, persisted,
+or included in trace/error output — only the *name* of the configured env var appears in
+diagnostics. See [`docs/evaluation.md`](docs/evaluation.md#real-provider-verification) for the
+full real-provider verification walkthrough and interpretation of `audit_status` /
+`verification_status` / `release_status`. **No run in this repository's committed reports has
+actually executed against a live provider** — the `Real LLM & Provider Integration` row in the
+[Verification Matrix](#system-capabilities--verification-matrix) is intentionally marked
+`NOT VERIFIED` until someone runs the steps above with real credentials and commits the
+resulting report.
 
 ---
 
