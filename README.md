@@ -20,7 +20,10 @@
 
 - **Source and setup:** [Quick Start](#quick-start--setup), [requirements.txt](requirements.txt), [locked dependencies](uv.lock), and [Dockerfile](Dockerfile).
 - **Presentation:** [Google Slides deck](https://docs.google.com/presentation/d/1PSvYBQvsSGxgY4FFoeGJI2WgPqcR8IE2/edit?usp=sharing&ouid=100983024253913236100&rtpof=true&sd=true).
-- **Demo video:** [Watch the recorded demo](assets/flowcontext-demo.mp4) (MP4, approximately 1:02).
+- **Demo video:** 1:02 MP4. The full-quality recording is available in [`assets/flowcontext-demo.mp4`](assets/flowcontext-demo.mp4); inline playback is below.
+
+https://github.com/user-attachments/assets/34861dc3-67d9-4df3-981d-60a7a8eb6465
+
 - **AI disclosure:** [Google Doc](https://docs.google.com/document/d/12r-Jz7LeSJZfbUQVh9a0dyUP-vKS0yl9/edit?usp=sharing&ouid=100983024253913236100&rtpof=true&sd=true) · [Repository AI assistance log](AI_ASSISTANCE_LOG.md).
 - **Mobile package:** Not applicable; this submission runs as a Python and Streamlit application.
 - **Required final submission tag:** `PRISM_GENAI_HACKATHON_Y2026`.
