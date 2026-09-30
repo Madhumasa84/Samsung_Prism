@@ -19,11 +19,12 @@ The included demo uses synthetic fixtures. Microphone capture, speech recognitio
 ## Submission materials
 
 - **Source and setup:** [Quick Start](#quick-start--setup), [requirements.txt](requirements.txt), [locked dependencies](uv.lock), and [Dockerfile](Dockerfile).
-- **Presentation:** [Google Slides deck](https://docs.google.com/presentation/d/1PSvYBQvsSGxgY4FFoeGJI2WgPqcR8IE2/edit?usp=sharing&ouid=100983024253913236100&rtpof=true&sd=true).
+- **Presentation:** [Final submission PPTX](docs/submission/VITVellore_TeamMakar_Submission.pptx) · [Google Slides authoring version](https://docs.google.com/presentation/d/1PSvYBQvsSGxgY4FFoeGJI2WgPqcR8IE2/edit?usp=sharing&ouid=100983024253913236100&rtpof=true&sd=true). Use the committed PPTX for submission; it contains corrected backend terminology and current results.
 - **Demo video:** [Full-quality recording](assets/flowcontext-demo.mp4) (1:02 MP4); inline playback is below.
-- **AI disclosure:** [Google Doc](https://docs.google.com/document/d/12r-Jz7LeSJZfbUQVh9a0dyUP-vKS0yl9/edit?usp=sharing&ouid=100983024253913236100&rtpof=true&sd=true) · [Repository AI assistance log](AI_ASSISTANCE_LOG.md).
+- **AI disclosure:** [Team-provided disclosure DOCX](docs/submission/AI_Usage_Disclosure.docx) and [current disclosure addendum](docs/submission/AI_Disclosure_Addendum.md) · [Google Doc](https://docs.google.com/document/d/12r-Jz7LeSJZfbUQVh9a0dyUP-vKS0yl9/edit?usp=sharing&ouid=100983024253913236100&rtpof=true&sd=true) · [Repository AI assistance log](AI_ASSISTANCE_LOG.md).
+- **Verification:** [Final runtime check summary](docs/submission/verification.json). The default pipeline passes its automated tests; local Ollama generation has documented coverage limitations.
 - **Mobile package:** Not applicable; this submission runs as a Python and Streamlit application.
-- **Required final submission tag:** `PRISM_GENAI_HACKATHON_Y2026`.
+- **Final submission tag:** [PRISM_GENAI_HACKATHON_Y2026](https://github.com/Madhumasa84/Samsung_Prism/tree/PRISM_GENAI_HACKATHON_Y2026). This tag fixes the exact version for judging, including code, setup files, presentation, disclosure, documentation, and the MP4 recording. Later changes to `main` do not change the tagged version.
 
 ### Recorded demo
 
@@ -82,7 +83,13 @@ git clone https://github.com/Madhumasa84/Samsung_Prism.git
 cd Samsung_Prism
 ```
 
-These instructions use `main`. The clone includes the application, example data, documentation, and full-quality demo recording. Local indexes are created in the next steps.
+The clone includes the application, example data, documentation, and full-quality demo recording. To reproduce the judged submission, select its tag before continuing:
+
+```bash
+git switch --detach PRISM_GENAI_HACKATHON_Y2026
+```
+
+This selects a fixed snapshot. To return to ongoing development later, run `git switch main`. Local indexes are created in the next steps.
 
 ### 3. Install the application and demo dependencies
 

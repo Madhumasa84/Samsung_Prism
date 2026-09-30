@@ -1,5 +1,11 @@
 # AI assistance log
 
+## Final submission update — 2026-09-30
+
+AI assistance contributed to frontend design and wording, Ollama compatibility, README setup instructions, video attachment integration, runtime verification, and submission packaging. The final verification passed 169 automated tests; Streamlit startup, Docker CLI execution, CPU MiniLM loading, and video decoding passed. Real Ollama Qwen2.5:3b generation remains limited by incomplete intent coverage and an initial timeout. These observations are local synthetic-fixture checks, not official benchmark validation.
+
+The final package includes a corrected presentation, an unchanged export of the team-provided disclosure, and a factual disclosure addendum. Historical entries below retain their original test counts and scope. See [the addendum](docs/submission/AI_Disclosure_Addendum.md) and [verification summary](docs/submission/verification.json).
+
 ## Available prompt records
 
 - Two user requests were available in this session on 2026-09-15. The first

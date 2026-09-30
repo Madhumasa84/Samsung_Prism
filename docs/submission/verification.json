@@ -1,0 +1,142 @@
+{
+  "checked_at_utc": "2026-09-30T15:18:47.003917+00:00",
+  "commit": "a6e4238c8dc4d1987bf190785c596a6828ddab64",
+  "automated_tests": {
+    "passed": 169,
+    "seconds": 42.37
+  },
+  "streamlit": {
+    "current_checkout_exceptions": 0,
+    "current_checkout_errors": 0,
+    "server_health": "passed",
+    "controls": [
+      "Play",
+      "Pause",
+      "Reset"
+    ]
+  },
+  "docker": {
+    "build": "passed",
+    "index_creation": "passed",
+    "retrieval_hits": 5,
+    "scope": "core CLI image"
+  },
+  "dense_model": {
+    "load_from_local_cache": "passed",
+    "cpu": true,
+    "dimensions": 384,
+    "vector_norm": 1.0
+  },
+  "video": {
+    "full_decode": "passed",
+    "github_readme_video_element": true,
+    "attachment_http_status": 206
+  },
+  "scope": "Runtime checks on the recorded commit; later changes only package documentation and submission assets.",
+  "ollama": {
+    "model": "qwen2.5:3b",
+    "retrieval_backend": "lexical",
+    "initial_scenarios": [
+      {
+        "scenario": "A",
+        "run_status": "failed",
+        "replay_wall_clock_s": 120.935,
+        "passed": false,
+        "checks": {
+          "has_grounded_claims": false,
+          "citation_ids_in_corpus": true,
+          "claims_are_cited_excerpts": true,
+          "supporting_excerpts_in_cited_passages": true,
+          "real_generation_success": false,
+          "early_evidence_reused": true,
+          "all_supported_intents_answered": false
+        }
+      },
+      {
+        "scenario": "B",
+        "run_status": "partial",
+        "replay_wall_clock_s": 95.075,
+        "passed": false,
+        "checks": {
+          "has_grounded_claims": true,
+          "citation_ids_in_corpus": true,
+          "claims_are_cited_excerpts": true,
+          "supporting_excerpts_in_cited_passages": true,
+          "real_provider_reported": true,
+          "answer_published": true,
+          "all_supported_intents_answered": false
+        }
+      },
+      {
+        "scenario": "C",
+        "run_status": "completed",
+        "replay_wall_clock_s": 64.718,
+        "passed": true,
+        "checks": {
+          "has_grounded_claims": true,
+          "citation_ids_in_corpus": true,
+          "claims_are_cited_excerpts": true,
+          "supporting_excerpts_in_cited_passages": true,
+          "real_provider_reported": true,
+          "answer_published": true,
+          "all_supported_intents_answered": true
+        }
+      },
+      {
+        "scenario": "D",
+        "run_status": "completed",
+        "replay_wall_clock_s": 26.82,
+        "passed": false,
+        "checks": {
+          "has_grounded_claims": true,
+          "citation_ids_in_corpus": true,
+          "claims_are_cited_excerpts": true,
+          "supporting_excerpts_in_cited_passages": true,
+          "real_provider_reported": true,
+          "answer_published": true,
+          "all_supported_intents_answered": false,
+          "presentation_has_no_retrieval_or_generation": true
+        }
+      },
+      {
+        "scenario": "E",
+        "run_status": "partial",
+        "replay_wall_clock_s": 71.121,
+        "passed": true,
+        "checks": {
+          "has_grounded_claims": true,
+          "citation_ids_in_corpus": true,
+          "claims_are_cited_excerpts": true,
+          "supporting_excerpts_in_cited_passages": true,
+          "real_provider_reported": true,
+          "answer_published": true,
+          "unsupported_constraint_is_partial": true,
+          "supported_intent_preserved": true
+        }
+      },
+      {
+        "scenario": "F",
+        "run_status": "partial",
+        "replay_wall_clock_s": 101.929,
+        "passed": true,
+        "checks": {
+          "has_grounded_claims": true,
+          "citation_ids_in_corpus": true,
+          "claims_are_cited_excerpts": true,
+          "supporting_excerpts_in_cited_passages": true,
+          "real_provider_reported": true,
+          "answer_published": true,
+          "superseded_request_recorded": true,
+          "stale_publication_rejected": true
+        }
+      }
+    ],
+    "scenario_A_retry": "Real generation completed in 26.148 seconds, but all_supported_intents_answered remained false."
+  },
+  "final_packaging_test_rerun": {
+    "checked_at_utc": "2026-09-30T15:51:23.558865+00:00",
+    "passed": 169,
+    "seconds": 34.65,
+    "source_changes_since_runtime_checks": false
+  }
+}
