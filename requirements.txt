@@ -1,0 +1,2 @@
+# Install the core application and Streamlit demo from the repository root.
+-e .[demo]

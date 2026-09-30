@@ -64,12 +64,12 @@ os.chdir(ROOT)  # FlowContext resolves relative paths (.env, artifacts/, data/) 
 # ---------------------------------------------------------------------------
 SCENARIOS: dict[str, dict[str, Any]] = {
     "A": {
-        "title": "A — Incremental multi-intent utterance / early retrieval",
+        "title": "A · Streaming retrieval",
         "kind": "streaming",
         "default_query": "Which venue in Pune hosts 30 people and what catering options exist?",
     },
     "B": {
-        "title": "B — Late constraint addition",
+        "title": "B · Constraint update",
         "kind": "phase4",
         "artifact": "artifacts/my-late-constraint.json",
         "session_id": "phase4-late-constraint",
@@ -79,7 +79,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
         ],
     },
     "C": {
-        "title": "C — Entity correction",
+        "title": "C · Entity correction",
         "kind": "phase4",
         "artifact": "artifacts/my-entity-correction.json",
         "session_id": "phase4-entity-correction",
@@ -89,7 +89,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
         ],
     },
     "D": {
-        "title": "D — Zero-retrieval formatting",
+        "title": "D · Answer formatting",
         "kind": "phase4",
         "artifact": "artifacts/my-formatting.json",
         "session_id": "phase4-formatting",
@@ -99,7 +99,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
         ],
     },
     "E": {
-        "title": "E — Partial / unsupported constraint",
+        "title": "E · Unsupported constraint",
         "kind": "phase4",
         "artifact": "artifacts/my-partial-unsupported.json",
         "session_id": "phase4-partial-unsupported",
@@ -109,7 +109,7 @@ SCENARIOS: dict[str, dict[str, Any]] = {
         ],
     },
     "F": {
-        "title": "F (optional) — Correction during generation / stale publication",
+        "title": "F · Concurrent correction",
         "kind": "phase4",
         "race": True,
         "artifact": "artifacts/my-race.json",
@@ -133,20 +133,27 @@ STAGE_LABELS_A = [
 # ---------------------------------------------------------------------------
 # Page + light styling
 # ---------------------------------------------------------------------------
-st.set_page_config(page_title="FlowContext — Streaming Live RAG", page_icon="🎙️", layout="wide")
+st.set_page_config(page_title="FlowContext | Retrieval workspace", layout="wide")
 st.markdown(
     """
 <style>
-.fc-stage {border-left: 4px solid #1428A0; padding: .45rem .8rem; margin: .35rem 0;
-           background: rgba(20,40,160,.05); border-radius: 0 6px 6px 0;}
-.fc-stage.done {border-left-color: #0a8f5a; background: rgba(10,143,90,.06);}
-.fc-stage.warn {border-left-color: #c77700; background: rgba(199,119,0,.07);}
-.fc-stage.pending {opacity: .35;}
-.fc-badge {display:inline-block; padding: 2px 10px; border-radius: 12px; font-size: .78rem;
+.stMainBlockContainer {max-width: 1320px; padding-top: 2.5rem;}
+[data-testid="stSidebar"] {border-right: 1px solid #dce3ec;}
+h1 {font-size: 2.3rem !important; font-weight: 650 !important; letter-spacing: -.04em;}
+h2 {font-size: 1.4rem !important; font-weight: 600 !important;}
+h3 {font-size: 1.05rem !important; font-weight: 600 !important;}
+[data-testid="stMetricLabel"] {font-size: .8rem;}
+[data-testid="stMetricValue"] {font-size: 1.65rem;}
+.fc-stage {border-left: 3px solid #243b64; padding: .65rem .9rem; margin: .45rem 0;
+           background: rgba(36,59,100,.04); border-radius: 0 4px 4px 0;}
+.fc-stage.done {border-left-color: #35715c; background: rgba(53,113,92,.05);}
+.fc-stage.warn {border-left-color: #966b2d; background: rgba(150,107,45,.05);}
+.fc-stage.pending {opacity: .55;}
+.fc-badge {display:inline-block; padding: 4px 10px; border-radius: 4px; font-size: .78rem;
            font-weight: 600; margin-right: 6px;}
-.fc-mock {background:#fff3cd; color:#7a5a00;}
-.fc-real {background:#d1f2e1; color:#0a5c38;}
-.fc-muted {color: #6b7280; font-size: .85rem;}
+.fc-mock {background:#edf1f7; color:#36475f;}
+.fc-real {background:#e6f0eb; color:#2a5a46;}
+.fc-muted {color: #64748b; font-size: .85rem;}
 </style>
 """,
     unsafe_allow_html=True,
@@ -497,7 +504,7 @@ def render_provenance(answer: dict[str, Any], chunk_map: dict[str, Any], claim_r
                 "Support": c.get("semantic_support", "—"),
             })
     st.dataframe(rows, width="stretch", hide_index=True)
-    st.caption("FlowContext cites by chunk ID; there is no separate citation-ID namespace, so none is invented here.")
+    st.caption("Citations reference the supporting corpus chunks.")
     for c in claims:
         for cid in c.get("supporting_chunk_ids", []):
             chunk = chunk_map.get(cid)
@@ -516,8 +523,7 @@ def render_uncertainty(answer: dict[str, Any], version: Any | None = None) -> No
     unresolved = list(getattr(version, "unresolved_questions", []) or []) if version is not None else []
     if unsupported or unresolved:
         st.warning(
-            "The requested information could not be verified from the available corpus evidence for "
-            "the item(s) below. No unsupported claim was generated."
+            "The available evidence does not resolve the following requests."
         )
         if unsupported:
             st.dataframe(
@@ -571,17 +577,18 @@ def render_streaming(run: dict[str, Any], upto: int, chunk_map: dict[str, Any]) 
         heard = [e for e in events if e.source_timestamp_s <= latest_src]
         text = heard[-1].text if heard else ""
         is_final = bool(heard and heard[-1].is_final)
-        st.markdown(f"### {'✅' if is_final else '🎙️'} {text or '…'}")
+        st.write(text or "Waiting for transcript events.")
+        st.caption("Final transcript" if is_final else "Interim transcript")
         st.caption(f"{len(heard)}/{len(events)} transcript events delivered (source time {max(latest_src, 0):.2f}s)")
 
-        st.subheader("Pipeline stages reached")
+        st.subheader("Processing stages")
         reached = {s["label"] for s in shown}
         for label in STAGE_LABELS_A:
             css = "done" if label in reached else "pending"
             stage_box(label, css=css)
 
     with right:
-        st.subheader("Event log (FlowContext traces)")
+        st.subheader("Execution trace")
         rows = []
         for s in shown[-25:]:
             t = s["trace"]
@@ -608,7 +615,7 @@ def render_streaming(run: dict[str, Any], upto: int, chunk_map: dict[str, Any]) 
             f"First speculative retrieval started at {first_early.monotonic_execution_time_s*1000:.1f} ms "
             f"(source t={first_early.source_timestamp_s}s); final utterance delivered at "
             f"{final_trace.monotonic_execution_time_s*1000:.1f} ms (source t={final_trace.source_timestamp_s}s). "
-            "Both timestamps are read from the backend trace."
+            "Timestamps are reported by the backend."
         )
 
     st.subheader("Controller decisions")
@@ -753,7 +760,7 @@ def render_phase4(key: str, run: dict[str, Any], upto: int, chunk_map: dict[str,
                     width="stretch", hide_index=True,
                 )
                 if found == 0:
-                    st.warning("No supporting evidence found for the targeted intent — nothing was fabricated.")
+                    st.warning("No supporting evidence was found for this request.")
         elif label == "Older generation result arrives late":
             pub = step.get("publication") or {}
             stage_box(label, f"Publication: **{pub.get('status')}** · published: `{pub.get('published')}` · "
@@ -821,7 +828,7 @@ gen = generation_mode(settings)
 
 # ---- Sidebar -------------------------------------------------------------
 with st.sidebar:
-    st.header("Demo controls")
+    st.header("Configuration")
     key = st.radio("Scenario", list(SCENARIOS), format_func=lambda k: SCENARIOS[k]["title"], key="scenario")
     spec = SCENARIOS[key]
 
@@ -858,10 +865,9 @@ with st.sidebar:
         transcripts = discover_files(["examples/**/*.jsonl", "data/**/transcript*.jsonl"])
         cfg["transcript_source"] = st.selectbox(
             "Transcript", ["scripted"] + transcripts,
-            format_func=lambda v: "Scripted utterance (below)" if v == "scripted" else v,
+            format_func=lambda v: "Editable utterance" if v == "scripted" else v,
         )
         if cfg["transcript_source"] == "scripted":
-            cfg["query"] = st.text_area("Utterance", spec["default_query"])
             cfg["word_interval_s"] = st.slider("Source time per word (s)", 0.1, 1.0, 0.35, 0.05)
             cfg["end_pause_s"] = st.slider("End-of-speech pause before final marker (s)", 0.0, 2.0, 0.8, 0.1)
         cfg["multi_intent"] = st.checkbox("Multi-intent decomposition", True)
@@ -869,7 +875,7 @@ with st.sidebar:
         cfg["retrieval_mode"] = st.selectbox(
             "Multi-intent retrieval mode", mode_opts,
             index=mode_opts.index(settings.multi_intent_retrieval_mode) if settings.multi_intent_retrieval_mode in mode_opts else 0,
-            help="hybrid = dense + lexical fused with RRF (k from FLOWCONTEXT_MULTI_INTENT_RRF_K).",
+            help="Hybrid combines dense and lexical results using reciprocal rank fusion.",
         )
         cfg["execution_mode"] = st.radio(
             "Execution", ["realtime", "accelerated"], horizontal=True,
@@ -878,7 +884,7 @@ with st.sidebar:
     else:
         turn_files = discover_files(["examples/**/*.jsonl", "data/**/phase4*.jsonl"])
         tf = st.selectbox("Turns source", ["auto"] + turn_files,
-                          format_func=lambda v: "auto (artifact inputs → defaults)" if v == "auto" else v)
+                          format_func=lambda v: "Scenario inputs" if v == "auto" else v)
         cfg["turns_file"] = None if tf == "auto" else tf
 
     st.subheader("Playback")
@@ -891,34 +897,48 @@ with st.sidebar:
         st.error(f"Generation settings are invalid: {exc}")
         st.stop()
     badge = "fc-real" if gen["is_real"] else "fc-mock"
-    label = "REAL LLM" if gen["is_real"] else "MOCK GENERATION"
+    label = "Model generation" if gen["is_real"] else "Mock generation"
     st.markdown(f"<span class='fc-badge {badge}'>{label}</span>", unsafe_allow_html=True)
     st.caption(f"backend `{gen['backend']}` · provider `{gen['provider']}` · model `{gen['model']}`")
     if gen["provider"] == "ollama":
-        st.caption("Local Ollama · no API key required · answers still undergo grounding validation.")
+        st.caption("Local inference via Ollama.")
     elif gen["is_real"]:
         st.caption(f"API key env `{gen['api_key_env']}`: {'configured' if gen['api_key_configured'] else 'NOT set'}")
     else:
-        st.caption("Answers come from FlowContext's deterministic mock provider — not a real LLM.")
+        st.caption("Deterministic generation for repeatable demonstrations.")
+
+# ---- Header ----------------------------------------------------------------
+st.caption("SAMSUNG PRISM · THEME 4")
+st.title("FlowContext")
+st.write("Streaming retrieval and conversational updates")
+st.caption("Play executes the backend once. Playback reveals the resulting trace in stages.")
+st.divider()
+st.subheader(spec["title"])
+if spec["kind"] == "streaming" and cfg["transcript_source"] == "scripted":
+    cfg["query"] = st.text_area(
+        "Utterance", spec["default_query"], height=100,
+        help="Edit the request before selecting Play. Words are replayed as timed transcript events.",
+    )
 
 run_key = json.dumps({"scenario": key, **cfg}, sort_keys=True, default=str)
 if ss.run_key is not None and ss.run_key != run_key:
     reset_state()  # any scenario/config change → no state leakage
 
-# ---- Header ----------------------------------------------------------------
-st.title("FlowContext — Streaming Live RAG")
-st.caption("Samsung PRISM Theme 4 · every value below is produced by the FlowContext backend at run time")
-st.markdown(f"## {spec['title']}")
-
 try:
     index_obj, freshness = get_index(index_path)
     chunk_map = index_chunk_map(index_obj)
     emb = index_obj.manifest.embedding
+    generation_label = gen["model"] if gen["is_real"] else "Mock"
     st.caption(
-        f"Index `{index_obj.manifest.index_id}` · corpus `{index_obj.corpus_id}` ({index_obj.source_kind}) · "
-        f"{len(index_obj.chunks)} chunks · embeddings: `{emb.backend}` "
-        f"{emb.model_name or ''} {('· ' + str(emb.dimensions) + ' dims') if emb.dimensions else ''} · {freshness}"
+        f"Data: {index_obj.source_kind.replace('_', ' ')} · "
+        f"Retrieval: {base_backend} · Generation: {generation_label}"
     )
+    with st.expander("Corpus details"):
+        st.caption(
+            f"Index `{index_obj.manifest.index_id}` · corpus `{index_obj.corpus_id}` ({index_obj.source_kind}) · "
+            f"{len(index_obj.chunks)} chunks · embeddings: `{emb.backend}` "
+            f"{emb.model_name or ''} {('· ' + str(emb.dimensions) + ' dims') if emb.dimensions else ''} · {freshness}"
+        )
 except Exception as exc:
     st.error(f"Index could not be loaded: {exc}")
     if not (ROOT / index_path).is_file():
@@ -933,9 +953,9 @@ except Exception as exc:
     st.stop()
 
 b1, b2, b3, _ = st.columns([1, 1, 1, 5])
-play = b1.button("▶ Play", type="primary", width="stretch")
-pause = b2.button("⏸ Pause", width="stretch")
-reset = b3.button("↺ Reset", width="stretch")
+play = b1.button("Play", type="primary", width="stretch")
+pause = b2.button("Pause", width="stretch")
+reset = b3.button("Reset", width="stretch")
 
 if reset:
     reset_state()
@@ -959,7 +979,7 @@ if play:
         ss.playing = True
 
 if ss.error:
-    st.error(f"Backend run failed — nothing is displayed instead of real output.\n\n`{ss.error}`")
+    st.error(f"Backend execution failed.\n\n`{ss.error}`")
     if "dense" in ss.error.lower() or "sentence" in ss.error.lower() or "embedding" in ss.error.lower():
         st.info("Dense retrieval needs `uv sync --extra dense` and the embedding model available locally "
                 "(or network access). Choose the lexical backend explicitly if that is intended.")

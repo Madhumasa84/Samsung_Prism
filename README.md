@@ -1,7 +1,7 @@
 # FlowContext: Offline Streaming-Transcript RAG Prototype
 
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)
-[![Tests](https://img.shields.io/badge/tests-155%2F158%20passing-yellow.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-automated-blue.svg)](tests/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Dense Embeddings](https://img.shields.io/badge/embeddings-all--MiniLM--L6--v2-blueviolet.svg)](src/flowcontext/embeddings.py)
 [![Samsung PRISM](https://img.shields.io/badge/Samsung%20PRISM-Theme%204%3A%20Live%20RAG-orange.svg)](#)
@@ -16,10 +16,20 @@
 > 2. **Tracks follow-up state**: Uses bounded process-local session state to update affected factual claims and handle presentation-only turns.
 > 3. **Fails closed on weak evidence**: Preserves provenance, rejects unsupported provider claims, and abstains when the available evidence is insufficient. Semantic entailment still requires governed review.
 
+## Submission materials
+
+- **Source and setup:** [Quick Start](#quick-start--setup), [requirements.txt](requirements.txt), [locked dependencies](uv.lock), and [Dockerfile](Dockerfile).
+- **Presentation:** [Google Slides deck](https://docs.google.com/presentation/d/1PSvYBQvsSGxgY4FFoeGJI2WgPqcR8IE2/edit?usp=sharing&ouid=100983024253913236100&rtpof=true&sd=true).
+- **Demo video:** [Watch the recorded demo](assets/flowcontext-demo.mp4) (MP4, approximately 1:02).
+- **AI disclosure:** [Google Doc](https://docs.google.com/document/d/12r-Jz7LeSJZfbUQVh9a0dyUP-vKS0yl9/edit?usp=sharing&ouid=100983024253913236100&rtpof=true&sd=true) · [Repository AI assistance log](AI_ASSISTANCE_LOG.md).
+- **Mobile package:** Not applicable; this submission runs as a Python and Streamlit application.
+- **Required final submission tag:** `PRISM_GENAI_HACKATHON_Y2026`.
+
 ---
 
 ## Table of Contents
 
+- [Submission materials](#submission-materials)
 - [System Overview](#system-overview)
 - [End-to-End System Architecture](#end-to-end-system-architecture)
 - [System Capabilities & Verification Matrix](#system-capabilities--verification-matrix)
@@ -44,7 +54,7 @@
 
 Standard Retrieval-Augmented Generation (RAG) pipelines operate on a rigid sequential cycle: speech completes, full query parsing begins, corpus retrieval executes, and answer generation runs from zero. In conversational voice and live transcript applications, this sequential bottleneck introduces high latency, excessive token consumption, and context fragmentation.
 
-**FlowContext** is an engineering prototype for the **Samsung PRISM Theme 4 (Live RAG)** concept. The repository implements the transcript replay, retrieval, generation, and session-state layers; audio capture, ASR, HTTP serving, UI, and production persistence are outside this codebase:
+**FlowContext** is an engineering prototype for the **Samsung PRISM Theme 4 (Live RAG)** concept. The repository implements transcript replay, retrieval, generation, session state, and a Streamlit demonstration interface. Audio capture, speech recognition, and production persistence are outside the current scope:
 
 - **Speculative Latency Hiding**: Consumes incremental transcript events and issues bounded early retrieval queries on stable partial hypotheses.
 - **Dense and lexical retrieval**: Supports pinned local dense embeddings plus a deterministic lexical-overlap diagnostic backend; the lexical backend is not BM25.
