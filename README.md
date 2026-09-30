@@ -8,31 +8,38 @@
 [![System Status](https://img.shields.io/badge/status-scoped--prototype-blue.svg)](#)
 [![Generation Backend](https://img.shields.io/badge/generation-mock%20by%20default-lightgrey.svg)](#real-llm--provider-integration-optional)
 
-> ### Concept Summary: What FlowContext Does
-> When speaking to a conventional AI assistant, the system waits until the user completely stops talking before initiating document retrieval and response generation—causing noticeable turn-taking latency. Furthermore, when the user provides a follow-up constraint or requests a reformat (*"summarize that as bullet points"*), typical systems discard previous computation and re-retrieve the entire corpus from scratch.
->
-> **FlowContext is a bounded replay engine, not a complete voice product**:
-> 1. **Processes transcript events**: Consumes pre-transcribed incremental or final JSONL events and can schedule speculative retrieval before an utterance finishes.
-> 2. **Tracks follow-up state**: Uses bounded process-local session state to update affected factual claims and handle presentation-only turns.
-> 3. **Fails closed on weak evidence**: Preserves provenance, rejects unsupported provider claims, and abstains when the available evidence is insufficient. Semantic entailment still requires governed review.
+FlowContext is a Python prototype for **Samsung PRISM Theme 4: Live RAG**. Its Streamlit interface replays transcript events and shows retrieval, conversational updates, evidence, and versioned answers from the backend.
+
+- Starts speculative retrieval from stable partial transcripts before the final event.
+- Tracks claim and evidence dependencies when a user changes a constraint, corrects an entity, or requests new formatting.
+- Validates citations and returns partial answers when evidence is insufficient.
+
+The included demo uses synthetic fixtures. Microphone capture, speech recognition, and production persistence are outside the prototype's scope; semantic support still requires review.
 
 ## Submission materials
 
 - **Source and setup:** [Quick Start](#quick-start--setup), [requirements.txt](requirements.txt), [locked dependencies](uv.lock), and [Dockerfile](Dockerfile).
 - **Presentation:** [Google Slides deck](https://docs.google.com/presentation/d/1PSvYBQvsSGxgY4FFoeGJI2WgPqcR8IE2/edit?usp=sharing&ouid=100983024253913236100&rtpof=true&sd=true).
-- **Demo video:** 1:02 MP4. The full-quality recording is available in [`assets/flowcontext-demo.mp4`](assets/flowcontext-demo.mp4); inline playback is below.
-
-https://github.com/user-attachments/assets/34861dc3-67d9-4df3-981d-60a7a8eb6465
-
+- **Demo video:** [Full-quality recording](assets/flowcontext-demo.mp4) (1:02 MP4); inline playback is below.
 - **AI disclosure:** [Google Doc](https://docs.google.com/document/d/12r-Jz7LeSJZfbUQVh9a0dyUP-vKS0yl9/edit?usp=sharing&ouid=100983024253913236100&rtpof=true&sd=true) · [Repository AI assistance log](AI_ASSISTANCE_LOG.md).
 - **Mobile package:** Not applicable; this submission runs as a Python and Streamlit application.
 - **Required final submission tag:** `PRISM_GENAI_HACKATHON_Y2026`.
+
+### Recorded demo
+
+https://github.com/user-attachments/assets/34861dc3-67d9-4df3-981d-60a7a8eb6465
 
 ---
 
 ## Table of Contents
 
 - [Submission materials](#submission-materials)
+- [Quick Start & Setup](#quick-start--setup)
+  - [Use the demo](#6-use-the-demo)
+  - [Ollama](#optional-use-an-installed-ollama-model)
+  - [CPU dense retrieval](#optional-cpu-dense-retrieval)
+  - [Docker](#docker-run-the-core-cli)
+  - [Troubleshooting](#troubleshooting)
 - [System Overview](#system-overview)
 - [End-to-End System Architecture](#end-to-end-system-architecture)
 - [System Capabilities & Verification Matrix](#system-capabilities--verification-matrix)
@@ -41,8 +48,6 @@ https://github.com/user-attachments/assets/34861dc3-67d9-4df3-981d-60a7a8eb6465
   - [2. Multi-Intent Decomposition & Hybrid RRF Search](#2-multi-intent-decomposition--hybrid-rrf-search)
   - [3. Dynamic Session State & Dependency Invalidation DAG](#3-dynamic-session-state--dependency-invalidation-dag)
   - [4. Grounded Synthesis & Provable Citation Verification](#4-grounded-synthesis--provable-citation-verification)
-- [Quick Start & Setup](#quick-start--setup)
-  - [Known Flaky Tests](#known-flaky-tests)
 - [Real LLM / Provider Integration (Optional)](#real-llm--provider-integration-optional)
 - [End-to-End Operational Workflows](#end-to-end-operational-workflows)
 - [Conversational Replay Scenarios](#conversational-replay-scenarios)
@@ -50,6 +55,206 @@ https://github.com/user-attachments/assets/34861dc3-67d9-4df3-981d-60a7a8eb6465
 - [Repository Layout](#repository-layout)
 - [Engineering Standards & Scientific Rigor](#engineering-standards--scientific-rigor)
 - [License](#license)
+
+---
+
+## Quick Start & Setup
+
+The default demo uses **lexical retrieval and Mock generation**. It runs on CPU and requires no CUDA, API key, Ollama service, or embedding-model download. Run all commands from the repository root.
+
+### 1. Install the prerequisites
+
+Install [Git](https://git-scm.com/downloads) and [uv](https://docs.astral.sh/uv/getting-started/installation/). The project uses Python 3.11; uv downloads it if a compatible interpreter is not installed.
+
+Verify the tools in a terminal:
+
+```bash
+git --version
+uv --version
+```
+
+Internet access is needed for the initial dependency installation. Once installed, the default demo runs locally with the included synthetic data. Ollama and Docker are optional.
+
+### 2. Clone the repository
+
+```bash
+git clone https://github.com/Madhumasa84/Samsung_Prism.git
+cd Samsung_Prism
+```
+
+These instructions use `main`. The clone includes the application, example data, documentation, and full-quality demo recording. Local indexes are created in the next steps.
+
+### 3. Install the application and demo dependencies
+
+```bash
+uv sync --locked --python 3.11 --extra demo
+```
+
+This creates `.venv` and installs the locked dependencies, Streamlit, and development tools. You do not need to activate the virtual environment. The commands below use `uv run --no-sync` to run this installed environment without changing its optional packages.
+
+### 4. Build the demo index
+
+Run this command on Linux, macOS, WSL, or Windows PowerShell:
+
+```bash
+uv run --no-sync flowcontext build-index --input data/synthetic/phase4_documents.jsonl --output artifacts/corpus-index.json --backend lexical --source-kind synthetic_fixture
+```
+
+The command creates `artifacts/corpus-index.json`. The demo uses synthetic venue and catering documents; outputs describe these fixtures. You can skip this step on subsequent launches while the corpus remains unchanged.
+
+### 5. Start the frontend
+
+**Linux, macOS, or WSL:**
+
+```bash
+export FLOWCONTEXT_INDEX_PATH=artifacts/corpus-index.json
+export FLOWCONTEXT_RETRIEVAL_BACKEND=lexical
+export FLOWCONTEXT_MULTI_INTENT_RETRIEVAL_MODE=lexical
+export FLOWCONTEXT_GENERATION_BACKEND=mock
+export FLOWCONTEXT_GENERATION_PROVIDER=flowcontext.mock
+uv run --no-sync streamlit run app.py
+```
+
+**Windows PowerShell:**
+
+```powershell
+$env:FLOWCONTEXT_INDEX_PATH = "artifacts/corpus-index.json"
+$env:FLOWCONTEXT_RETRIEVAL_BACKEND = "lexical"
+$env:FLOWCONTEXT_MULTI_INTENT_RETRIEVAL_MODE = "lexical"
+$env:FLOWCONTEXT_GENERATION_BACKEND = "mock"
+$env:FLOWCONTEXT_GENERATION_PROVIDER = "flowcontext.mock"
+uv run --no-sync streamlit run app.py
+```
+
+Open **http://localhost:8501** in your browser. Keep the terminal running; press **Ctrl+C** there to stop the server. Run the same launch commands to start it again.
+
+A `.env` file is optional for this setup. If you create one from `.env.example`, note that its retrieval default is dense; the launch settings above explicitly select lexical retrieval. Export provider API keys in your shell, rather than storing them in `.env`.
+
+### 6. Use the demo
+
+1. In the sidebar, choose **A · Streaming retrieval** and **Generation → Mock**.
+2. Under **Corpus & retrieval**, select `artifacts/corpus-index.json` and **lexical**. For scenario A, also select **lexical** as the multi-intent retrieval mode.
+3. Keep **Transcript → Editable utterance**. Edit the request text on the main page, or use the supplied request.
+4. Keep the end-of-speech pause at **0.8 seconds** and select **realtime** execution to observe retrieval during the simulated transcript. **accelerated** skips source-time waits.
+5. Click **Play**. The backend computes the result, and the interface reveals its trace and answer in stages.
+6. Use **Pause** to stop the reveal, change **Playback → Speed** to control the reveal rate, or click **Reset** to clear the result. Changing a scenario or request setting also clears the previous run.
+
+The input is a text/transcript replay; microphone capture and speech recognition are not included. Playback speed controls how an already computed trace is shown, rather than model inference speed.
+
+| Sidebar scenario | What to inspect |
+|:---|:---|
+| **A · Streaming retrieval** | Retrieval timing, decomposed intents, evidence, and the final answer. |
+| **B · Constraint update** | A follow-up changes the attendee count; inspect which claims and evidence change. |
+| **C · Entity correction** | Switching venues invalidates dependent claims and admits replacement evidence. |
+| **D · Answer formatting** | The formatting version preserves claims with zero retrieval calls and zero generation attempts. |
+| **E · Unsupported constraint** | A 50-attendee request has insufficient supporting evidence and produces a partial answer. |
+| **F · Concurrent correction** | A newer request supersedes an older one; inspect the rejected stale publication. |
+
+Scenario A accepts an editable utterance. B–F use their scenario turn inputs. Outputs are recomputed by the backend, including partial or failed outcomes. The local `evaluation_evidence/` archive is not required.
+
+### Optional: use an installed Ollama model
+
+Complete the setup above first. Install [Ollama](https://docs.ollama.com/quickstart) and open its desktop application, or run the server in a separate terminal if it is not already running:
+
+```bash
+ollama serve
+```
+
+In another terminal, list the installed models:
+
+```bash
+ollama list
+```
+
+Use the exact name from that list in the Streamlit sidebar. To install the model used in the recorded local checks, run this once if it is not already available:
+
+```bash
+ollama pull qwen2.5:3b
+```
+
+In the sidebar, select **Generation → Local Ollama**, enter the installed model name, leave **Local Ollama server** at `http://127.0.0.1:11434/v1`, and set **Model request timeout** to **120 seconds**. Click **Play** to recompute the scenario using the model. Keep both Streamlit and Ollama running.
+
+Local Ollama requires no API key and can run on CPU. CPU responses may be slow. Qwen2.5:3b connected successfully in the local checks, but A, B, and D did not consistently answer all supported intents. Use Mock for repeatable fixture demonstrations and inspect Ollama's actual partial answers when showing local inference. See [provider integration](#real-llm--provider-integration-optional) for CLI configuration and the recorded results.
+
+### Optional: CPU dense retrieval
+
+Dense retrieval uses the pinned MiniLM embedding model. This setup downloads CPU PyTorch and the embedding weights without requiring CUDA:
+
+```bash
+uv sync --locked --python 3.11 --extra demo
+uv pip install --python .venv 'torch==2.14.0+cpu' --index https://download.pytorch.org/whl/cpu
+uv pip install --python .venv -e '.[dense,demo]'
+uv run --no-sync flowcontext build-index --input data/synthetic/phase4_documents.jsonl --output artifacts/corpus-dense-index.json --backend dense --source-kind synthetic_fixture
+uv run --no-sync streamlit run app.py
+```
+
+These commands work in Bash and PowerShell. In the sidebar, select `artifacts/corpus-dense-index.json`, **dense** retrieval, and **dense** or **hybrid** for scenario A's multi-intent retrieval mode. The initial index build downloads the pinned MiniLM weights if they are not cached. Continue using `--no-sync` to preserve the CPU PyTorch installation; a regular locked sync with the dense extra can select NVIDIA packages.
+
+### Verify the installation
+
+From the repository root, run:
+
+```bash
+uv run --no-sync flowcontext config-check
+uv run --no-sync flowcontext smoke
+uv run --no-sync python -m pytest -q
+```
+
+The latest verified full suite passed **169 tests**. The smoke command exercises the local fixture pipeline; its results are not an official benchmark. If you installed the dense extra and cached its model, also run:
+
+```bash
+uv run --no-sync flowcontext dense-smoke --local-files-only
+```
+
+#### Known Flaky Tests
+
+Some streaming-scheduler tests depend on background-worker timing and can intermittently fail on heavily loaded hosts. Rerun affected tests in isolation and inspect their traces when diagnosing a failure. The most recent full verification passed all 169 tests.
+
+### Docker: run the core CLI
+
+The supplied Dockerfile packages the core CLI and fixture data. The Streamlit frontend, dense extra, and Ollama server are installed separately using the instructions above.
+
+With Docker running, build and verify the image:
+
+```bash
+docker build -t flowcontext .
+docker run --rm flowcontext smoke
+```
+
+Pass a CLI command after the image name, for example `docker run --rm flowcontext config-check`. Files written inside a container are temporary unless you mount a host directory.
+
+### Alternative: install with pip
+
+If you prefer pip, install Python 3.11 and use a virtual environment. This installs the dependency ranges from `requirements.txt`; use uv for the locked setup above.
+
+**Linux, macOS, or WSL:**
+
+```bash
+python3.11 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt pytest
+```
+
+**Windows PowerShell:**
+
+```powershell
+py -3.11 -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt pytest
+```
+
+Use `.venv/bin/flowcontext` in place of `uv run --no-sync flowcontext`, and `.venv/bin/python -m streamlit run app.py` to launch the frontend. On Windows, use `.venv\Scripts\flowcontext.exe` and `.venv\Scripts\python.exe -m streamlit run app.py`. Apply the same shell environment settings from step 5.
+
+### Troubleshooting
+
+| Symptom | Action |
+|:---|:---|
+| `uv` or `git` is not found | Install the missing prerequisite and reopen the terminal. |
+| The demo says the index cannot be loaded | Run step 4 from the repository root, then reload the page. |
+| A dense/index backend mismatch appears | Match the sidebar backend to the selected index: lexical index with lexical, dense index with dense. |
+| Ollama cannot be reached | Start Ollama and run `ollama list` in the same environment as Streamlit. The configured loopback endpoint must be reachable there. |
+| Ollama reports an unknown model | Enter the exact installed name from `ollama list`, or download it with `ollama pull`. |
+| The model times out or returns a partial answer | Inspect the displayed error or unsupported intents. CPU inference can exceed the request timeout; Mock provides a repeatable fixture run. |
+| Port 8501 is already in use | Launch with `uv run --no-sync streamlit run app.py --server.port 8502` and open `http://localhost:8502`. |
+| The corpus changed after indexing | Rebuild the matching index with the build command and `--force`. |
 
 ---
 
@@ -138,7 +343,7 @@ flowchart TD
 | **Provenance-Grounded Synthesis** | `PASS` | Factual claim construction with strict chunk citation mapping and contradiction detection | [`src/flowcontext/synthesis.py`](src/flowcontext/synthesis.py) |
 | **Explicit Uncertainty Quantification** | `PASS` | Targeted abstention and partial-support detection for incomplete evidence | [`src/flowcontext/synthesis.py`](src/flowcontext/synthesis.py) |
 | **Real LLM & Provider Integration** | `PARTIAL` | Local Ollama inference exercised JSON, citation, formatting and stale-publication checks; Qwen2.5:3b left some fixture intents unanswered. Hosted providers remain unverified. Default generation is mock. | [`Local Qwen smoke results`](reports/ollama_qwen25_3b_smoke.json), [`generation.py`](src/flowcontext/generation.py) |
-| **Automated Test Coverage** | `PASS***` | **155/158 tests pass deterministically**; 3 streaming-controller tests assert an async worker starts within a single event-loop tick and are timing-sensitive under host/filesystem load | [`tests/`](tests/) |
+| **Automated Test Coverage** | `PASS***` | **169 tests passed** in the latest full verification; some streaming-scheduler tests are timing-sensitive under host load | [`tests/`](tests/) |
 
 `*` Engineering-contract result on local replay fixtures. `**` Local measurement, not an official benchmark or semantic-quality claim. `***` See [Known Flaky Tests](#known-flaky-tests) for reproduction notes.
 
@@ -184,120 +389,6 @@ FlowContext enforces strict factual grounding to eliminate conversational halluc
 
 ---
 
-## Quick Start & Setup
-
-### 1. Installation
-
-FlowContext targets **Python 3.11** (3.12 also satisfies `requires-python`) and is managed with [`uv`](https://docs.astral.sh/uv/):
-
-```bash
-# Clone the repository
-git clone https://github.com/Madhumasa84/Samsung_Prism.git
-cd Samsung_Prism
-
-# Install dependencies (Sentence Transformers + Core RAG)
-uv sync --locked --python 3.11 --extra dense
-```
-
-**Alternative (no `uv`):** if `uv` is unavailable, a plain `venv` + `pip` install works identically:
-
-```bash
-python3.11 -m venv .venv
-# Windows: .venv\Scripts\python.exe -m pip install -e ".[dense]" pytest
-.venv/bin/python -m pip install -e ".[dense]" pytest
-```
-
-Replace `uv run flowcontext ...` / `uv run pytest` below with `.venv/bin/flowcontext ...` / `.venv/bin/python -m pytest` (or the `.venv\Scripts\` equivalents on Windows).
-
-### Streamlit demo setup
-
-Build the index before launching the demo. Index files are local artifacts and are not committed.
-The following setup uses lexical retrieval and mock generation, so it needs neither CUDA nor model weights:
-
-```bash
-uv sync --locked --python 3.11 --extra demo
-uv run flowcontext build-index \
-  --input data/synthetic/phase4_documents.jsonl \
-  --output artifacts/corpus-index.json \
-  --backend lexical \
-  --source-kind synthetic_fixture
-FLOWCONTEXT_RETRIEVAL_BACKEND=lexical FLOWCONTEXT_MULTI_INTENT_RETRIEVAL_MODE=lexical \
-  uv run --extra demo streamlit run app.py
-```
-
-The environment assignments above use POSIX shell syntax. On Windows, set the same
-variables in your shell before running the final command. Generation follows your
-existing `FLOWCONTEXT_GENERATION_*` settings; the default is the labelled mock provider.
-
-Dense retrieval also runs on CPU. To avoid NVIDIA package downloads, install CPU PyTorch
-first, then the dense extra, and build a dense index under a separate filename:
-
-```bash
-uv sync --locked --python 3.11 --extra demo
-uv pip install --python .venv/bin/python 'torch==2.14.0+cpu' --index https://download.pytorch.org/whl/cpu
-uv pip install --python .venv/bin/python -e '.[dense,demo]'
-uv run --no-sync flowcontext build-index \
-  --input data/synthetic/phase4_documents.jsonl \
-  --output artifacts/corpus-dense-index.json \
-  --backend dense \
-  --source-kind synthetic_fixture
-uv run --no-sync streamlit run app.py
-```
-
-Select `artifacts/corpus-dense-index.json`, the dense backend, and dense or hybrid
-multi-intent retrieval in the sidebar. The first dense index build downloads the
-pinned MiniLM weights if they are not cached. This CPU installation uses `--no-sync`
-to preserve the locally selected PyTorch distribution; the default lockfile can select NVIDIA packages.
-
-Play computes the backend output once and reveals its trace or stages. Pause stops
-the reveal, Reset clears the run, and changing a scenario or backend setting starts
-a new run. A–F cover streaming, late constraints, entity correction, formatting,
-unsupported constraints, and stale publications. These use synthetic fixtures and
-do not constitute official benchmark results.
-
-The `evaluation_evidence/` archive is local-only and ignored by Git. The demo can use
-turn inputs in `artifacts/my-*.json` or its built-in defaults; it recomputes outputs
-and does not require the archive. Export API keys in your shell rather than `.env`.
-
-### 2. Environment & Pipeline Verification
-
-Run the automated validation and test suite:
-
-```bash
-# 1. Environment configuration check
-uv run flowcontext config-check
-
-# 2. Offline core pipeline smoke check (mock generation backend)
-uv run flowcontext smoke
-
-# 3. Dense vector embedding offline verification
-# First run must omit --local-files-only so the pinned model can be
-# downloaded once from Hugging Face and cached; subsequent runs can add
-# --local-files-only to prove no network access is required.
-uv run flowcontext dense-smoke
-uv run flowcontext dense-smoke --local-files-only
-
-# 4. Full pytest test suite (158 tests)
-uv run pytest
-```
-
-#### Known Flaky Tests
-
-Three tests in `tests/test_phase2.py` and `tests/test_streaming_evaluation.py` assert that the
-async retrieval scheduler's background worker has observably *started* within a single
-`asyncio.sleep(0)` event-loop tick (see `_wait_for_source_timing` in
-[`src/flowcontext/replay.py`](src/flowcontext/replay.py) and the scheduler handoff in
-[`src/flowcontext/streaming.py`](src/flowcontext/streaming.py)). Under a slow or heavily loaded
-host (e.g. network filesystems, virtualized/WSL mounts, CI contention) that single tick is not
-always enough time for the OS thread scheduler to run the worker, so these three tests can
-intermittently fail (observed: 155/158 passing, with the 3 failures non-deterministic across
-reruns). This is a test-timing limitation, not a functional defect in the retrieval or
-correctness logic. Re-running just the affected tests in isolation is a reasonable local
-workaround; a durable fix would replace the fixed one-tick yield with a bounded poll/wait for an
-explicit "worker started" signal.
-
----
-
 ## Real LLM / Provider Integration (Optional)
 
 ### Local Ollama generation
@@ -307,7 +398,7 @@ Ollama service, run `ollama list`, and choose an installed model. In the Streaml
 sidebar select **Generation → Local Ollama**, then enter the model name. The
 default is `qwen2.5:3b`. The local server defaults to `http://127.0.0.1:11434/v1`.
 This works on CPU and needs neither CUDA nor an API key. Changing the model or
-generation source clears the previous run. The **REAL LLM** badge identifies
+generation source clears the previous run. The **Model generation** badge identifies
 local model generation; **Mock** remains available for deterministic demonstrations.
 
 For CLI replay, use these environment settings (POSIX shell syntax):
@@ -333,11 +424,10 @@ smoke tool downloads models.
 Run the real-model checks for scenarios A–F with:
 
 ```bash
-uv run --extra demo python tools/ollama_smoke.py --model qwen2.5:3b
+uv run --no-sync python tools/ollama_smoke.py --model qwen2.5:3b
 ```
 
-If using the CPU PyTorch installation above, replace `uv run --extra demo` with
-`uv run --no-sync`. Detailed outputs go to the ignored local artifact
+Run this after installing the demo dependencies above. Detailed outputs go to the ignored local artifact
 `artifacts/ollama-smoke.json`; the tool exits unsuccessfully if a scenario check
 fails. Its wall-clock measurements describe the replay call on your machine,
 not official benchmark scores or backend Phase 4 update latency.
@@ -376,7 +466,7 @@ export FLOWCONTEXT_GENERATION_BASE_URL=https://<provider-endpoint>/v1
 export FLOWCONTEXT_GENERATION_API_KEY_ENV=FLOWCONTEXT_GENERATION_API_KEY
 export FLOWCONTEXT_GENERATION_API_KEY=<secret-in-process-environment-only>
 
-uv run flowcontext evaluate-suite \
+uv run --no-sync flowcontext evaluate-suite \
   --cases data/evaluation/development.jsonl \
   --split development \
   --corpus artifacts/fixture-lexical-index.json \
@@ -404,14 +494,14 @@ Construct deterministic lexical-overlap indices and optional dense vector embedd
 
 ```bash
 # Build lexical-overlap diagnostic index
-uv run flowcontext build-index \
+uv run --no-sync flowcontext build-index \
   --input data/synthetic/documents.jsonl \
   --output artifacts/corpus-lexical-index.json \
   --backend lexical \
   --source-kind synthetic_fixture
 
 # Query index directly
-uv run flowcontext retrieve \
+uv run --no-sync flowcontext retrieve \
   --index artifacts/corpus-lexical-index.json \
   --source data/synthetic/documents.jsonl \
   --backend lexical \
@@ -425,14 +515,14 @@ Replay incremental transcript events and compare baseline versus speculative exe
 
 ```bash
 # Baseline replay: waits for final utterance delivery
-uv run flowcontext replay --mode baseline \
+uv run --no-sync flowcontext replay --mode baseline \
   --transcript examples/streaming/early-retrieval.jsonl \
   --index artifacts/corpus-lexical-index.json \
   --backend lexical \
   --execution-mode realtime --output artifacts/baseline.json
 
 # Streaming speculative replay: triggers asynchronous early retrieval
-uv run flowcontext replay --mode streaming \
+uv run --no-sync flowcontext replay --mode streaming \
   --transcript examples/streaming/early-retrieval.jsonl \
   --index artifacts/corpus-lexical-index.json \
   --backend lexical \
@@ -445,19 +535,19 @@ Replay multi-turn conversational interactions with surgical selective updating:
 
 ```bash
 # Execute conversational replay with session state and selective invalidation
-uv run flowcontext phase4-replay \
+uv run --no-sync flowcontext phase4-replay \
   --turns examples/replay/phase4-entity-correction.jsonl \
   --index artifacts/corpus-lexical-index.json \
   --output artifacts/session-trace.json
 
 # Optional single-writer durable session snapshot
-uv run flowcontext phase4-replay \
+uv run --no-sync flowcontext phase4-replay \
   --turns examples/replay/phase4-entity-correction.jsonl \
   --index artifacts/corpus-lexical-index.json \
   --session-store artifacts/phase4-sessions.json
 
 # Resume that session in a later process with follow-up-only turns
-uv run flowcontext phase4-replay \
+uv run --no-sync flowcontext phase4-replay \
   --turns examples/replay/phase4-resume-follow-up.jsonl \
   --index artifacts/corpus-lexical-index.json \
   --session-store artifacts/phase4-sessions.json --resume
@@ -535,7 +625,7 @@ FlowContext provides a unified command-line interface:
 │   ├── phase4_evaluation_dense_test.json # Dense retrieval evaluation metrics
 │   ├── phase4_real_e2e.json     # Redacted real-backend attempt when configured
 │   └── phase4_real_e2e_dense_test.json # Execution trace for integrated dense RAG
-├── tests/                       # Complete unit, integration & regression test suite (158 tests)
+├── tests/                       # Complete unit, integration & regression test suite (169 tests)
 ├── docs/                        # Architecture deep-dives & subsystem specifications
 │   ├── architecture-phase1.md   # Ingestion design & retrieval contracts
 │   ├── architecture-phase3.md   # Multi-intent decomposition & RRF fusion
