@@ -18,6 +18,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import shlex
 import sys
 import time
 from pathlib import Path
@@ -880,6 +881,15 @@ try:
     )
 except Exception as exc:
     st.error(f"Index could not be loaded: {exc}")
+    if not (ROOT / index_path).is_file():
+        st.info("Build an index once from the repository root, then reload this page.")
+        st.code(shlex.join([
+            "uv", "run", "flowcontext", "build-index",
+            "--input", "data/synthetic/phase4_documents.jsonl",
+            "--output", index_path, "--backend", base_backend,
+            "--source-kind", "synthetic_fixture",
+        ]), language="bash")
+        st.caption("Choose lexical for setup without a model download. See the README for CPU dense setup.")
     st.stop()
 
 b1, b2, b3, _ = st.columns([1, 1, 1, 5])

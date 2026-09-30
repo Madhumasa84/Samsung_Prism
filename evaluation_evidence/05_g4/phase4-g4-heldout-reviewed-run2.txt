@@ -1,179 +1,0 @@
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 43885.95it/s]
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 12666.04it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 17706.19it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 11978.08it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 26738.46it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 10457.84it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 11778.22it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 23048.09it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 13285.36it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 20550.53it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 15780.73it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 20101.12it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 19240.78it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 14589.13it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 12272.41it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 24082.35it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 18266.18it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 18765.24it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 15483.79it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 12450.31it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 19419.82it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 31586.85it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 15010.36it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 15871.17it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 15638.49it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 13028.15it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 14847.86it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 22356.31it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 17595.13it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 16016.51it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 25339.51it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 15382.35it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 29201.93it/s]
-{
-  "capability_status": {
-    "answer_version_consistency": "PASS",
-    "dependency_invalidation": "PASS",
-    "follow_up_interpretation": "PASS",
-    "formatting_only_suppression": "PASS",
-    "integrated_dense_rag": "NOT VERIFIED",
-    "official_validation": "NOT VERIFIED",
-    "real_backend_execution": "NOT VERIFIED",
-    "real_embedding_probe": "PASS",
-    "real_generation_execution": "NOT VERIFIED",
-    "reproducibility": "PASS",
-    "selective_efficiency": "NOT VERIFIED",
-    "selective_retrieval": "PASS",
-    "semantic_support": "PASS",
-    "session_isolation": "PASS",
-    "uncertainty_handling": "PASS"
-  },
-  "case_count": 8,
-  "claim_review_sheet": "evaluation_evidence/05_g4/phase4-g4-heldout-reviewed_claim_review.csv",
-  "evaluation_completed": true,
-  "markdown_output": "evaluation_evidence/05_g4/phase4-g4-heldout-reviewed.md",
-  "output": "evaluation_evidence/05_g4/phase4-g4-heldout-reviewed.json",
-  "real_backend_status": {
-    "embedding": "PASS",
-    "generation": "NOT VERIFIED"
-  },
-  "real_output": "reports/phase4_real_e2e.json",
-  "review_status_output": "data/evaluation/phase4_label_review_status.json",
-  "status": "PASS",
-  "strategies": {
-    "full": {
-      "affected_claim_invalidation_precision": 1.0,
-      "affected_claim_invalidation_recall": 1.0,
-      "case_count": 8,
-      "citation_id_validity": 1.0,
-      "clarification_accuracy": 1.0,
-      "evidence_quality": {
-        "all_current_citations_rate": 1.0,
-        "mean_current_evidence_count": 0.6666666666666666,
-        "semantic_support": "PASS",
-        "source_locations_available_rate": 1.0
-      },
-      "final_status_counts": {
-        "current": 5,
-        "failed": 3
-      },
-      "follow_up_interpretation_accuracy": 1.0,
-      "follow_up_turn_count": 6,
-      "incorrect_preservation_of_obsolete_claims": 0,
-      "initial_answer_coverage": 1.0,
-      "matched_interpretation_rate": 1.0,
-      "resources": {
-        "accepted_stale_publication_count": 0,
-        "cost": "unavailable",
-        "final_event_to_updated_answer_latency_ms_p50": 9.1325,
-        "final_event_to_updated_answer_latency_ms_p95": 10.929,
-        "formatting_only_retrieval_calls": 0,
-        "generation_calls": 9,
-        "generation_tokens": 1978,
-        "rejected_stale_result_count": 0,
-        "retrieval_calls": 12,
-        "retrieval_tokens": 112,
-        "retrieved_chunks": 36,
-        "superseded_request_count": 0
-      },
-      "semantic_claim_support": {
-        "content_hash_bound": true,
-        "independent_human_review_verified": false,
-        "pending_claim_count": 0,
-        "reviewed_claim_count": 11,
-        "reviewer_ids": [
-          "karthikeya-local-review"
-        ],
-        "semantic_support_rate": 1.0,
-        "status": "PASS",
-        "support_rate": 1.0,
-        "supported_claim_count": 11,
-        "uncertain_claim_count": 0,
-        "unsupported_claim_count": 0
-      },
-      "trace_completeness": 1.0,
-      "unaffected_claim_preservation_rate": 0.5,
-      "uncertainty_targeting_rate": 1.0,
-      "updated_answer_coverage": 0.75,
-      "updated_answer_coverage_turn_count": 4
-    },
-    "selective": {
-      "affected_claim_invalidation_precision": 1.0,
-      "affected_claim_invalidation_recall": 1.0,
-      "case_count": 8,
-      "citation_id_validity": 1.0,
-      "clarification_accuracy": 1.0,
-      "evidence_quality": {
-        "all_current_citations_rate": 1.0,
-        "mean_current_evidence_count": 0.6666666666666666,
-        "semantic_support": "PASS",
-        "source_locations_available_rate": 1.0
-      },
-      "final_status_counts": {
-        "current": 5,
-        "failed": 3
-      },
-      "follow_up_interpretation_accuracy": 1.0,
-      "follow_up_turn_count": 6,
-      "incorrect_preservation_of_obsolete_claims": 0,
-      "initial_answer_coverage": 1.0,
-      "matched_interpretation_rate": 1.0,
-      "resources": {
-        "accepted_stale_publication_count": 0,
-        "cost": "unavailable",
-        "final_event_to_updated_answer_latency_ms_p50": 11.5245,
-        "final_event_to_updated_answer_latency_ms_p95": 13.723,
-        "formatting_only_retrieval_calls": 0,
-        "generation_calls": 9,
-        "generation_tokens": 1978,
-        "rejected_stale_result_count": 0,
-        "retrieval_calls": 12,
-        "retrieval_tokens": 103,
-        "retrieved_chunks": 36,
-        "superseded_request_count": 0
-      },
-      "semantic_claim_support": {
-        "content_hash_bound": true,
-        "independent_human_review_verified": false,
-        "pending_claim_count": 0,
-        "reviewed_claim_count": 11,
-        "reviewer_ids": [
-          "karthikeya-local-review"
-        ],
-        "semantic_support_rate": 1.0,
-        "status": "PASS",
-        "support_rate": 1.0,
-        "supported_claim_count": 11,
-        "uncertain_claim_count": 0,
-        "unsupported_claim_count": 0
-      },
-      "trace_completeness": 1.0,
-      "unaffected_claim_preservation_rate": 1.0,
-      "uncertainty_targeting_rate": 1.0,
-      "updated_answer_coverage": 0.75,
-      "updated_answer_coverage_turn_count": 4
-    }
-  }
-}

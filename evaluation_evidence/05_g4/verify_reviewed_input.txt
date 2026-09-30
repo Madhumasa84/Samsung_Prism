@@ -1,5 +1,0 @@
-rows: 22
-reviewed: 22
-pending: 0
-reviewers: ['karthikeya-local-review']
-unique_claims: 4

@@ -1,3 +1,0 @@
-updated_rows: 16
-unique_reviewed_claims: 3
-unreviewed_rows: 6

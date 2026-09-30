@@ -1,5 +1,0 @@
-Resolved 5 packages in 169ms
-Installed 3 packages in 4ms
- + iniconfig==2.3.0
- + pluggy==1.6.0
- + pytest==9.1.1

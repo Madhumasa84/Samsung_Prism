@@ -182,7 +182,7 @@ FlowContext targets **Python 3.11** (3.12 also satisfies `requires-python`) and 
 git clone https://github.com/Madhumasa84/Samsung_Prism.git
 cd Samsung_Prism
 
-# Install dependencies (CPU PyTorch + Sentence Transformers + Core RAG)
+# Install dependencies (Sentence Transformers + Core RAG)
 uv sync --locked --python 3.11 --extra dense
 ```
 
@@ -195,6 +195,56 @@ python3.11 -m venv .venv
 ```
 
 Replace `uv run flowcontext ...` / `uv run pytest` below with `.venv/bin/flowcontext ...` / `.venv/bin/python -m pytest` (or the `.venv\Scripts\` equivalents on Windows).
+
+### Streamlit demo setup
+
+Build the index before launching the demo. Index files are local artifacts and are not committed.
+The following setup uses lexical retrieval and mock generation, so it needs neither CUDA nor model weights:
+
+```bash
+uv sync --locked --python 3.11 --extra demo
+uv run flowcontext build-index \
+  --input data/synthetic/phase4_documents.jsonl \
+  --output artifacts/corpus-index.json \
+  --backend lexical \
+  --source-kind synthetic_fixture
+FLOWCONTEXT_RETRIEVAL_BACKEND=lexical FLOWCONTEXT_MULTI_INTENT_RETRIEVAL_MODE=lexical \
+  uv run --extra demo streamlit run app.py
+```
+
+The environment assignments above use POSIX shell syntax. On Windows, set the same
+variables in your shell before running the final command. Generation follows your
+existing `FLOWCONTEXT_GENERATION_*` settings; the default is the labelled mock provider.
+
+Dense retrieval also runs on CPU. To avoid NVIDIA package downloads, install CPU PyTorch
+first, then the dense extra, and build a dense index under a separate filename:
+
+```bash
+uv sync --locked --python 3.11 --extra demo
+uv pip install --python .venv/bin/python 'torch==2.14.0+cpu' --index https://download.pytorch.org/whl/cpu
+uv pip install --python .venv/bin/python -e '.[dense,demo]'
+uv run --no-sync flowcontext build-index \
+  --input data/synthetic/phase4_documents.jsonl \
+  --output artifacts/corpus-dense-index.json \
+  --backend dense \
+  --source-kind synthetic_fixture
+uv run --no-sync streamlit run app.py
+```
+
+Select `artifacts/corpus-dense-index.json`, the dense backend, and dense or hybrid
+multi-intent retrieval in the sidebar. The first dense index build downloads the
+pinned MiniLM weights if they are not cached. This CPU installation uses `--no-sync`
+to preserve the locally selected PyTorch distribution; the default lockfile can select NVIDIA packages.
+
+Play computes the backend output once and reveals its trace or stages. Pause stops
+the reveal, Reset clears the run, and changing a scenario or backend setting starts
+a new run. A–F cover streaming, late constraints, entity correction, formatting,
+unsupported constraints, and stale publications. These use synthetic fixtures and
+do not constitute official benchmark results.
+
+The `evaluation_evidence/` archive is local-only and ignored by Git. The demo can use
+turn inputs in `artifacts/my-*.json` or its built-in defaults; it recomputes outputs
+and does not require the archive. Export API keys in your shell rather than `.env`.
 
 ### 2. Environment & Pipeline Verification
 

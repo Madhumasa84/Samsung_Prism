@@ -1,4 +1,0 @@
-reviewed_rows: 21
-pending_rows: 0
-supported_rows: 21
-reviewer: karthikeya-local-review
