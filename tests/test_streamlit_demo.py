@@ -64,6 +64,11 @@ def test_formatting_and_controls_work_without_evaluation_archive(demo_checkout):
     assert version.generation_attempts == 0
     app.button[1].click().run()
     assert not app.session_state['playing']
+    generation = next(select for select in app.sidebar.selectbox if select.label == 'Generation')
+    generation.set_value('Local Ollama').run()
+    assert app.session_state['run'] is None
+    assert not app.error and not app.exception
+    assert next(field.value for field in app.sidebar.text_input if field.label == 'Ollama model') == 'qwen2.5:3b'
     app.button[2].click().run()
     assert app.session_state['run'] is None
     assert app.session_state['upto'] == 0

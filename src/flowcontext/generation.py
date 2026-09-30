@@ -16,6 +16,7 @@ import threading
 from dataclasses import dataclass
 from typing import Any, Callable, Literal, Protocol, Sequence
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlsplit
 from urllib.request import Request as UrlRequest
 from urllib.request import urlopen
 
@@ -275,6 +276,8 @@ def generation_provider_for_settings(settings: Settings) -> GenerationProvider:
     if config.backend == "mock":
         return MockGenerationProvider(config=config)
     if config.backend == "openai_compatible":
+        if config.provider == "ollama":
+            return OllamaGenerationProvider(config=config)
         return OpenAICompatibleGenerationProvider(config=config)
     raise GenerationUnavailable(f"unsupported generation backend {config.backend!r}")
 
@@ -568,14 +571,20 @@ class OpenAICompatibleGenerationProvider:
         except Exception as exc:  # Defensive boundary: do not expose provider internals or secrets.
             raise GenerationProviderError("generation provider call failed", retryable=False) from exc
 
-    def _generate_once(self, request: GenerationRequest) -> GenerationResult:
+    def _authorization_headers(self) -> dict[str, str]:
         api_key = os.environ.get(self._config.api_key_env or "")
         if not api_key:
             raise GenerationUnavailable(
                 f"generation credentials are unavailable; set the environment variable "
                 f"{self._config.api_key_env}"
             )
-        payload = {
+        return {"Authorization": f"Bearer {api_key}"}
+
+    def _response_format(self, request: GenerationRequest) -> dict[str, Any]:
+        return {"type": "json_object"}
+
+    def _request_payload(self, request: GenerationRequest) -> dict[str, Any]:
+        return {
             "model": self._config.model,
             "messages": [
                 {"role": "system", "content": GROUNDING_SYSTEM_PROMPT},
@@ -601,8 +610,12 @@ class OpenAICompatibleGenerationProvider:
             ],
             "temperature": 0,
             "max_tokens": self._config.max_output_tokens,
-            "response_format": {"type": "json_object"},
+            "response_format": self._response_format(request),
         }
+
+    def _generate_once(self, request: GenerationRequest) -> GenerationResult:
+        authorization = self._authorization_headers()
+        payload = self._request_payload(request)
         request_body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         if len(request_body) > self._config.max_request_bytes:
             raise GenerationProviderError(
@@ -613,7 +626,7 @@ class OpenAICompatibleGenerationProvider:
             f"{self._config.base_url.rstrip('/')}/chat/completions",
             data=request_body,
             headers={
-                "Authorization": f"Bearer {api_key}",
+                **authorization,
                 "Content-Type": "application/json",
                 "Accept": "application/json",
             },
@@ -655,6 +668,74 @@ class OpenAICompatibleGenerationProvider:
             raise GenerationProviderError("generation provider returned invalid JSON", retryable=False) from exc
         raw_text = _extract_chat_content(envelope)
         return GenerationResult(raw_text=raw_text, usage=_usage_from_provider_payload(envelope))
+
+
+class OllamaGenerationProvider(OpenAICompatibleGenerationProvider):
+    """Local Ollama chat completions with an answer schema and no API key."""
+
+    def __init__(self, *, config: GenerationConfig) -> None:
+        super().__init__(config=config)
+        endpoint = urlsplit(config.base_url or "")
+        if endpoint.hostname not in {"localhost", "127.0.0.1", "::1"} or endpoint.username or endpoint.password:
+            raise ValueError("the local Ollama provider requires a loopback server URL")
+
+    def _authorization_headers(self) -> dict[str, str]:
+        # Do not forward a configured hosted-provider key to a local server.
+        return {}
+
+    def _response_format(self, request: GenerationRequest) -> dict[str, Any]:
+        schema = Answer.model_json_schema()
+        fields = ("answer_text", "factual_claims", "uncertainty", "answer_version")
+        schema["properties"] = {key: schema["properties"][key] for key in fields}
+        schema["required"] = list(fields)
+        claim = schema["$defs"]["FactualClaim"]
+        claim_fields = ("claim_id", "claim_text", "supporting_chunk_ids", "supporting_excerpts", "intent_ids")
+        claim["properties"] = {key: claim["properties"][key] for key in claim_fields}
+        claim["required"] = list(claim_fields)
+        intent_ids = list(dict.fromkeys(
+            [item["intent_id"] for item in request.decomposed_intents if item.get("intent_id")]
+            + list(request.intent_evidence)
+        ))
+        if intent_ids:
+            claim["properties"]["intent_ids"]["minItems"] = 1
+            claim["properties"]["intent_ids"]["items"] = {"type": "string", "enum": intent_ids}
+        cited_ids = list(dict.fromkeys(
+            [p.chunk_id for p in request.passages]
+            + [p.chunk_id for items in request.intent_evidence.values() for p in items]
+        ))
+        claim["properties"]["supporting_chunk_ids"]["items"] = {"type": "string", "enum": cited_ids}
+        return {"type": "json_schema", "json_schema": {"name": "grounded_answer", "schema": schema}}
+
+    def _request_payload(self, request: GenerationRequest) -> dict[str, Any]:
+        payload = super()._request_payload(request)
+        # Keep every passage and intent binding, but quote each passage once.
+        # Ranking scores, trace metadata and duplicate text are not needed by
+        # the generator and can exhaust a small local model's context window.
+        passages: dict[str, dict[str, str]] = {}
+        for passage in [*request.passages, *[p for items in request.intent_evidence.values() for p in items]]:
+            item = {"chunk_id": passage.chunk_id, "text": passage.text}
+            if passage.chunk_id in passages and passages[passage.chunk_id] != item:
+                raise GenerationProviderError("conflicting passage text for one citation ID", retryable=False)
+            passages[passage.chunk_id] = item
+        content = {
+            "question": request.query, "shared_constraints": request.shared_constraints,
+            "intents": [{key: intent[key] for key in ("intent_id", "query", "constraints", "relationship")
+                         if key in intent} for intent in request.decomposed_intents],
+            "intent_queries": request.intent_queries,
+            "unsupported_intent_queries": request.unsupported_intent_queries,
+            "evidence_by_intent": {key: list(dict.fromkeys(p.chunk_id for p in items))
+                                   for key, items in request.intent_evidence.items()},
+            "retrieved_passages": list(passages.values()), "repair_feedback": request.repair_feedback,
+        }
+        payload["messages"][0]["content"] += (
+            "\nKeep the response concise: use one factual claim per supported intent when possible. "
+            "Use short exact excerpts. Keep answer_text and uncertainty brief; do not repeat all quoted claims. "
+            "evidence_by_intent lists chunk IDs referring to retrieved_passages. "
+            "Set each claim's intent_ids to the provided intent IDs supported by its cited evidence. "
+            "Copy claim_text and supporting_excerpts character-for-character from the cited text; never paraphrase them."
+        )
+        payload["messages"][1]["content"] = json.dumps(content, ensure_ascii=False, separators=(",", ":"))
+        return payload
 
 
 def _extract_chat_content(envelope: Any) -> str:

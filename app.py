@@ -31,6 +31,7 @@ if str(ROOT / "src") not in sys.path:  # works even if the project is not instal
     sys.path.insert(0, str(ROOT / "src"))
 
 from flowcontext.config import load_settings  # noqa: E402
+from flowcontext.config import Settings  # noqa: E402
 from flowcontext.contracts import Phase4ReplayTurn, TranscriptEvent  # noqa: E402
 from flowcontext.generation import (  # noqa: E402
     MockGenerationProvider,
@@ -210,6 +211,23 @@ def generation_mode(settings) -> dict[str, Any]:
     }
 
 
+def demo_generation_settings(cfg: dict[str, Any]) -> Settings:
+    settings = get_settings()
+    source = cfg.get("generation_source", "Configured")
+    overrides: dict[str, Any] = {}
+    if source == "Mock":
+        overrides = {"generation_backend": "mock", "generation_provider": "flowcontext.mock",
+                     "generation_model": "mock-grounded-v1"}
+    elif source == "Local Ollama":
+        overrides = {
+            "generation_backend": "openai_compatible", "generation_provider": "ollama",
+            "generation_model": cfg["ollama_model"], "generation_base_url": cfg["ollama_url"],
+            "generation_timeout_s": cfg["ollama_timeout_s"], "generation_max_retries": 0,
+            "generation_max_output_tokens": 1200,
+        }
+    return Settings.model_validate({**settings.model_dump(), **overrides})
+
+
 def discover_indexes() -> list[str]:
     found = sorted(str(p.relative_to(ROOT)) for p in (ROOT / "artifacts").glob("*index*.json"))
     return found or ["artifacts/corpus-index.json"]
@@ -312,7 +330,7 @@ def phase4_turns_for(key: str, turns_file: str | None) -> tuple[list[Phase4Repla
 
 
 def run_scenario_a(cfg: dict[str, Any]) -> dict[str, Any]:
-    settings = get_settings()
+    settings = demo_generation_settings(cfg)
     index, _ = get_index(cfg["index_path"])
     if cfg["transcript_source"] == "scripted":
         events = scripted_transcript(cfg["query"], cfg["word_interval_s"], cfg["end_pause_s"], "demo-a")
@@ -347,7 +365,7 @@ def run_scenario_a(cfg: dict[str, Any]) -> dict[str, Any]:
 
 
 def run_phase4(key: str, cfg: dict[str, Any]) -> dict[str, Any]:
-    settings = get_settings()
+    settings = demo_generation_settings(cfg)
     index, _ = get_index(cfg["index_path"])
     retriever = get_retriever(cfg["index_path"], cfg["base_backend"], cfg["top_k"])
     turns, turn_source = phase4_turns_for(key, cfg.get("turns_file"))
@@ -807,6 +825,20 @@ with st.sidebar:
     key = st.radio("Scenario", list(SCENARIOS), format_func=lambda k: SCENARIOS[k]["title"], key="scenario")
     spec = SCENARIOS[key]
 
+    st.subheader("Answer generation")
+    generation_sources = ["Configured", "Mock", "Local Ollama"]
+    generation_source = st.selectbox("Generation", generation_sources,
+                                    index=2 if settings.generation_provider == "ollama" else 0)
+    generation_cfg: dict[str, Any] = {"generation_source": generation_source}
+    if generation_source == "Local Ollama":
+        generation_cfg["ollama_model"] = st.text_input(
+            "Ollama model", settings.generation_model if settings.generation_provider == "ollama" else "qwen2.5:3b")
+        generation_cfg["ollama_url"] = st.text_input(
+            "Local Ollama server", settings.generation_base_url if settings.generation_provider == "ollama"
+            else "http://127.0.0.1:11434/v1")
+        generation_cfg["ollama_timeout_s"] = st.slider("Model request timeout (seconds)", 30, 120, 120, 10)
+        st.caption("Start Ollama and install the selected model. Local generation does not require an API key.")
+
     st.subheader("Corpus & retrieval")
     indexes = discover_indexes()
     default_idx = indexes.index(str(settings.index_path)) if str(settings.index_path) in indexes else 0
@@ -819,7 +851,8 @@ with st.sidebar:
     )
     top_k = st.number_input("top-k", 1, 20, settings.retrieval_top_k)
 
-    cfg: dict[str, Any] = {"index_path": index_path, "base_backend": base_backend, "top_k": int(top_k)}
+    cfg: dict[str, Any] = {**generation_cfg, "index_path": index_path,
+                           "base_backend": base_backend, "top_k": int(top_k)}
     if spec["kind"] == "streaming":
         st.subheader("Scenario A input")
         transcripts = discover_files(["examples/**/*.jsonl", "data/**/transcript*.jsonl"])
@@ -852,11 +885,18 @@ with st.sidebar:
     speed = st.select_slider("Speed", [0.25, 0.5, 1.0, 2.0, 4.0], value=1.0)
 
     st.divider()
+    try:
+        gen = generation_mode(demo_generation_settings(cfg))
+    except ValueError as exc:
+        st.error(f"Generation settings are invalid: {exc}")
+        st.stop()
     badge = "fc-real" if gen["is_real"] else "fc-mock"
     label = "REAL LLM" if gen["is_real"] else "MOCK GENERATION"
     st.markdown(f"<span class='fc-badge {badge}'>{label}</span>", unsafe_allow_html=True)
     st.caption(f"backend `{gen['backend']}` · provider `{gen['provider']}` · model `{gen['model']}`")
-    if gen["is_real"]:
+    if gen["provider"] == "ollama":
+        st.caption("Local Ollama · no API key required · answers still undergo grounding validation.")
+    elif gen["is_real"]:
         st.caption(f"API key env `{gen['api_key_env']}`: {'configured' if gen['api_key_configured'] else 'NOT set'}")
     else:
         st.caption("Answers come from FlowContext's deterministic mock provider — not a real LLM.")

@@ -124,7 +124,7 @@ flowchart TD
 | **Zero-Retrieval Formatting Suppression** | `PASS` | Presentation-only changes retain verified factual claims with 0 retrieval calls | [`examples/replay/phase4-formatting.jsonl`](examples/replay/phase4-formatting.jsonl) |
 | **Provenance-Grounded Synthesis** | `PASS` | Factual claim construction with strict chunk citation mapping and contradiction detection | [`src/flowcontext/synthesis.py`](src/flowcontext/synthesis.py) |
 | **Explicit Uncertainty Quantification** | `PASS` | Targeted abstention and partial-support detection for incomplete evidence | [`src/flowcontext/synthesis.py`](src/flowcontext/synthesis.py) |
-| **Real LLM & Provider Integration** | `NOT VERIFIED` | Generic OpenAI-compatible provider adapter exists; ships **disabled by default** (mock backend). Live credentials, provider compatibility, and integrated real-model generation require an external run — see [Real LLM / Provider Integration](#real-llm--provider-integration-optional) | [`src/flowcontext/generation.py`](src/flowcontext/generation.py) |
+| **Real LLM & Provider Integration** | `PARTIAL` | Local Ollama inference exercised JSON, citation, formatting and stale-publication checks; Qwen2.5:3b left some fixture intents unanswered. Hosted providers remain unverified. Default generation is mock. | [`Local Qwen smoke results`](reports/ollama_qwen25_3b_smoke.json), [`generation.py`](src/flowcontext/generation.py) |
 | **Automated Test Coverage** | `PASS***` | **155/158 tests pass deterministically**; 3 streaming-controller tests assert an async worker starts within a single event-loop tick and are timing-sensitive under host/filesystem load | [`tests/`](tests/) |
 
 `*` Engineering-contract result on local replay fixtures. `**` Local measurement, not an official benchmark or semantic-quality claim. `***` See [Known Flaky Tests](#known-flaky-tests) for reproduction notes.
@@ -287,12 +287,65 @@ explicit "worker started" signal.
 
 ## Real LLM / Provider Integration (Optional)
 
+### Local Ollama generation
+
+Ollama can generate answers through the same replay workflows. Start your local
+Ollama service, run `ollama list`, and choose an installed model. In the Streamlit
+sidebar select **Generation → Local Ollama**, then enter the model name. The
+default is `qwen2.5:3b`. The local server defaults to `http://127.0.0.1:11434/v1`.
+This works on CPU and needs neither CUDA nor an API key. Changing the model or
+generation source clears the previous run. The **REAL LLM** badge identifies
+local model generation; **Mock** remains available for deterministic demonstrations.
+
+For CLI replay, use these environment settings (POSIX shell syntax):
+
+```bash
+export FLOWCONTEXT_GENERATION_BACKEND=openai_compatible
+export FLOWCONTEXT_GENERATION_PROVIDER=ollama
+export FLOWCONTEXT_GENERATION_MODEL=qwen2.5:3b
+export FLOWCONTEXT_GENERATION_BASE_URL=http://127.0.0.1:11434/v1
+export FLOWCONTEXT_GENERATION_TIMEOUT_S=120
+export FLOWCONTEXT_GENERATION_MAX_RETRIES=0
+export FLOWCONTEXT_GENERATION_MAX_OUTPUT_TOKENS=1200
+```
+
+The `ollama` provider uses the local chat-completions API with a JSON answer schema.
+It never forwards a hosted-provider API key. Loopback URLs are required for this
+local mode; authenticated remote servers can use the generic configured provider.
+All existing citation, excerpt, intent-alignment, and stale-publication checks
+remain active. An invalid or unsupported model answer is rejected, not replaced
+with a mock answer. The model must already be installed; neither the demo nor the
+smoke tool downloads models.
+
+Run the real-model checks for scenarios A–F with:
+
+```bash
+uv run --extra demo python tools/ollama_smoke.py --model qwen2.5:3b
+```
+
+If using the CPU PyTorch installation above, replace `uv run --extra demo` with
+`uv run --no-sync`. Detailed outputs go to the ignored local artifact
+`artifacts/ollama-smoke.json`; the tool exits unsuccessfully if a scenario check
+fails. Its wall-clock measurements describe the replay call on your machine,
+not official benchmark scores or backend Phase 4 update latency.
+
+The recorded [Qwen2.5:3b CPU smoke run](reports/ollama_qwen25_3b_smoke.json)
+exercised all six scenarios. C, E and F passed their fixture checks; A, B and D
+left the catering intent unanswered. F also returned a partial answer, although
+its supersession and stale-publication checks passed. The Ollama path therefore
+works, but this small model is not a reliable substitute for the mock demo's
+complete fixture coverage. Schema-guided JSON does not guarantee a grounded,
+complete answer. Use Mock for a repeatable presentation and Ollama to inspect
+actual local-model behavior. These observations are from one warm-model run.
+
+### Hosted or other compatible providers
+
 **By default, FlowContext ships fully offline with a deterministic mock generation backend**
 (`generation_provider: flowcontext.mock`). `flowcontext config-check` reports
 `generation_api_key_configured: false` and `flowcontext smoke` reports `"backend": "mock"`
 until this section is followed. No vendor-specific provider (Sarvam or otherwise) is
-hard-coded anywhere in this repository — there is exactly one generation adapter, and it is a
-generic **OpenAI-compatible** `/v1/chat/completions` client (see
+hard-coded anywhere in this repository. The generic generation adapter is an
+**OpenAI-compatible** `/v1/chat/completions` client (see
 [`src/flowcontext/generation.py`](src/flowcontext/generation.py)). Any provider that exposes
 an OpenAI-compatible chat-completions endpoint (Sarvam included) can be wired in through that
 same adapter — there is no separate Sarvam SDK or Sarvam-specific code path.
@@ -322,11 +375,11 @@ The secret is read only from that process environment variable; it is never logg
 or included in trace/error output — only the *name* of the configured env var appears in
 diagnostics. See [`docs/evaluation.md`](docs/evaluation.md#real-provider-verification) for the
 full real-provider verification walkthrough and interpretation of `audit_status` /
-`verification_status` / `release_status`. **No run in this repository's committed reports has
-actually executed against a live provider** — the `Real LLM & Provider Integration` row in the
-[Verification Matrix](#system-capabilities--verification-matrix) is intentionally marked
-`NOT VERIFIED` until someone runs the steps above with real credentials and commits the
-resulting report.
+`verification_status` / `release_status`. The committed Ollama smoke report uses a
+real local model with synthetic fixtures and records incomplete intent coverage.
+Hosted-provider runs and official benchmark performance remain unverified; the
+[Verification Matrix](#system-capabilities--verification-matrix) marks real-provider
+integration `PARTIAL` for that reason.
 
 ---
 
