@@ -48,7 +48,7 @@ def test_missing_index_instructions_build_a_working_index(demo_checkout):
     build_displayed_index(app, demo_checkout)
     app.run()
     assert not app.error and not app.exception
-    assert any(button.label == '▶ Play' for button in app.button)
+    assert any(button.label == 'Play' for button in app.button)
 
 
 def test_formatting_and_controls_work_without_evaluation_archive(demo_checkout):
@@ -72,3 +72,19 @@ def test_formatting_and_controls_work_without_evaluation_archive(demo_checkout):
     app.button[2].click().run()
     assert app.session_state['run'] is None
     assert app.session_state['upto'] == 0
+
+
+def test_editable_request_runs_and_changes_clear_previous_result(demo_checkout):
+    app = AppTest.from_file(str(demo_checkout / 'app.py'), default_timeout=30).run()
+    build_displayed_index(app, demo_checkout)
+    app.run()
+    query = 'Which venue in Pune hosts 40 people and what catering options exist?'
+    app.text_area[0].set_value(query)
+    next(control for control in app.sidebar.radio if control.label == 'Execution').set_value('accelerated')
+    app.run()
+    app.button[0].click().run()
+    assert not app.error and not app.exception
+    assert app.session_state['run']['events'][-1].text == query
+    app.text_area[0].set_value(query.replace('40', '30')).run()
+    assert app.session_state['run'] is None
+    assert not app.session_state['playing']
