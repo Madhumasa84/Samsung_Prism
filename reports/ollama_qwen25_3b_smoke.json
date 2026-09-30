@@ -1,0 +1,228 @@
+{
+  "model": "qwen2.5:3b",
+  "provider": "ollama",
+  "retrieval_backend": "lexical",
+  "generation_execution_mode": "real_provider",
+  "corpus_source_kind": "synthetic_fixture",
+  "official_benchmark": false,
+  "started_at_utc": "2026-09-30T12:25:11.562155+00:00",
+  "schema_version": "flowcontext.ollama-smoke.v1",
+  "model_id": "357c53fb659c",
+  "hardware": {
+    "processor": "CPU",
+    "logical_cpus": 12,
+    "system_memory_gib": 7.6
+  },
+  "model_warm_state": "Previously used for health and formatting probes; these are not cold-start measurements.",
+  "generation_adapter_sha256": "0e648290be66f179838f2c985feac2e923eda16168333f9f3f1fff950ea97df9",
+  "overall_passed": false,
+  "scope_notes": [
+    "Synthetic fixture smoke checks, not an official benchmark or statistical accuracy measurement.",
+    "A-D require all supported fixture intents to be answered. E requires partial status and preservation of a supported intent.",
+    "F checks valid published claims, supersession and rejected stale publications; its partial answer is not full intent coverage.",
+    "The model omitted catering coverage in A, B, D and F. Existing grounding checks remain active.",
+    "Detailed traces and answer versions are retained locally in artifacts/ollama-smoke.json."
+  ],
+  "scenarios": [
+    {
+      "scenario": "A",
+      "run_status": "completed",
+      "replay_wall_clock_s": 61.569,
+      "generation_attempts": 1,
+      "checks": {
+        "has_grounded_claims": true,
+        "citation_ids_in_corpus": true,
+        "claims_are_cited_excerpts": true,
+        "supporting_excerpts_in_cited_passages": true,
+        "real_generation_success": true,
+        "early_evidence_reused": true,
+        "all_supported_intents_answered": false
+      },
+      "passed": false,
+      "intent_statuses": [
+        {
+          "schema_version": "flowcontext.phase3.v1",
+          "intent_id": "intent-d0f74e537b",
+          "status": "answered",
+          "reason": "Supported by retrieved evidence.",
+          "addressed_by_claim_ids": [
+            "claim-venue-b-hosts-40"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase3.v1",
+          "intent_id": "intent-dc6921e583",
+          "status": "insufficient_evidence",
+          "reason": "No verified evidence or supported claims for this sub-question.",
+          "addressed_by_claim_ids": []
+        }
+      ]
+    },
+    {
+      "scenario": "B",
+      "run_status": "partial",
+      "replay_wall_clock_s": 66.072,
+      "generation_attempts": 2,
+      "checks": {
+        "has_grounded_claims": true,
+        "citation_ids_in_corpus": true,
+        "claims_are_cited_excerpts": true,
+        "supporting_excerpts_in_cited_passages": true,
+        "real_provider_reported": true,
+        "answer_published": true,
+        "all_supported_intents_answered": false
+      },
+      "passed": false,
+      "intent_statuses": [
+        {
+          "schema_version": "flowcontext.phase3.v1",
+          "intent_id": "intent-dc6921e583",
+          "status": "insufficient_evidence",
+          "reason": "No verified evidence or supported claims for this sub-question.",
+          "addressed_by_claim_ids": []
+        },
+        {
+          "schema_version": "flowcontext.phase3.v1",
+          "intent_id": "intent-0a5c8091c4",
+          "status": "answered",
+          "reason": "Supported by retrieved evidence.",
+          "addressed_by_claim_ids": [
+            "claim-12345"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "C",
+      "run_status": "completed",
+      "replay_wall_clock_s": 59.835,
+      "generation_attempts": 2,
+      "checks": {
+        "has_grounded_claims": true,
+        "citation_ids_in_corpus": true,
+        "claims_are_cited_excerpts": true,
+        "supporting_excerpts_in_cited_passages": true,
+        "real_provider_reported": true,
+        "answer_published": true,
+        "all_supported_intents_answered": true
+      },
+      "passed": true,
+      "intent_statuses": [
+        {
+          "schema_version": "flowcontext.phase3.v1",
+          "intent_id": "intent-6ee557d604",
+          "status": "answered",
+          "reason": "Supported by retrieved evidence.",
+          "addressed_by_claim_ids": [
+            "claim-6ee557d604"
+          ]
+        }
+      ]
+    },
+    {
+      "scenario": "D",
+      "run_status": "completed",
+      "replay_wall_clock_s": 20.789,
+      "generation_attempts": 1,
+      "checks": {
+        "has_grounded_claims": true,
+        "citation_ids_in_corpus": true,
+        "claims_are_cited_excerpts": true,
+        "supporting_excerpts_in_cited_passages": true,
+        "real_provider_reported": true,
+        "answer_published": true,
+        "all_supported_intents_answered": false,
+        "presentation_has_no_retrieval_or_generation": true
+      },
+      "passed": false,
+      "intent_statuses": [
+        {
+          "schema_version": "flowcontext.phase3.v1",
+          "intent_id": "intent-d0f74e537b",
+          "status": "answered",
+          "reason": "Supported by retrieved evidence.",
+          "addressed_by_claim_ids": [
+            "claim-venue-b-hosting"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase3.v1",
+          "intent_id": "intent-dc6921e583",
+          "status": "insufficient_evidence",
+          "reason": "No verified evidence or supported claims for this sub-question.",
+          "addressed_by_claim_ids": []
+        }
+      ]
+    },
+    {
+      "scenario": "E",
+      "run_status": "partial",
+      "replay_wall_clock_s": 59.105,
+      "generation_attempts": 2,
+      "checks": {
+        "has_grounded_claims": true,
+        "citation_ids_in_corpus": true,
+        "claims_are_cited_excerpts": true,
+        "supporting_excerpts_in_cited_passages": true,
+        "real_provider_reported": true,
+        "answer_published": true,
+        "unsupported_constraint_is_partial": true,
+        "supported_intent_preserved": true
+      },
+      "passed": true,
+      "intent_statuses": [
+        {
+          "schema_version": "flowcontext.phase3.v1",
+          "intent_id": "intent-dc6921e583",
+          "status": "answered",
+          "reason": "Supported by retrieved evidence.",
+          "addressed_by_claim_ids": [
+            "claim-1234567890"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase3.v1",
+          "intent_id": "intent-78a26a4671",
+          "status": "insufficient_evidence",
+          "reason": "No verified evidence or supported claims for this sub-question.",
+          "addressed_by_claim_ids": []
+        }
+      ]
+    },
+    {
+      "scenario": "F",
+      "run_status": "partial",
+      "replay_wall_clock_s": 86.449,
+      "generation_attempts": 2,
+      "checks": {
+        "has_grounded_claims": true,
+        "citation_ids_in_corpus": true,
+        "claims_are_cited_excerpts": true,
+        "supporting_excerpts_in_cited_passages": true,
+        "real_provider_reported": true,
+        "answer_published": true,
+        "superseded_request_recorded": true,
+        "stale_publication_rejected": true
+      },
+      "passed": true,
+      "intent_statuses": [
+        {
+          "schema_version": "flowcontext.phase3.v1",
+          "intent_id": "intent-dc6921e583",
+          "status": "insufficient_evidence",
+          "reason": "No verified evidence or supported claims for this sub-question.",
+          "addressed_by_claim_ids": []
+        },
+        {
+          "schema_version": "flowcontext.phase3.v1",
+          "intent_id": "intent-0a5c8091c4",
+          "status": "answered",
+          "reason": "Supported by retrieved evidence.",
+          "addressed_by_claim_ids": [
+            "claim-12345"
+          ]
+        }
+      ]
+    }
+  ]
+}

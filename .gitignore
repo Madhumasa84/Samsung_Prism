@@ -12,3 +12,4 @@ __pycache__/
 artifacts/*
 !artifacts/.gitkeep
 *:Zone.Identifier
+evaluation_evidence/

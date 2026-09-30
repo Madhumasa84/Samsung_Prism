@@ -17,7 +17,13 @@ dependencies = [
 dense = [
     "sentence-transformers>=3,<6",
 ]
-
+demo = [
+    "streamlit>=1.50,<2",
+]
+[dependency-groups]
+dev = [
+    "pytest>=8,<9",
+]
 [project.scripts]
 flowcontext = "flowcontext.cli:main"
 
