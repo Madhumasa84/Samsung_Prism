@@ -1,0 +1,26 @@
+14371-      "status": "PASS",
+14372-      "development": null,
+14373-      "held_out": 0.75,
+14374-      "interpretation": "Measured separately from citation support; denominators and provisional-label status are visible above."
+14375-    },
+14376:    "citation_support_85_percent": {
+14377-      "target": 0.85,
+14378-      "status": "NOT VERIFIED",
+14379-      "reason": "semantic claim support remains unreviewed; citation-ID validity is not a substitute"
+14380-    }
+14381-  },
+14382-  "environment": {
+14383-    "python_version": "3.11.16",
+14384-    "python_implementation": "CPython",
+14385-    "platform": "macOS-27.0-arm64-arm-64bit",
+14386-    "os_name": "posix",
+14387-    "executable": "/Users/karthikeya/Desktop/Samsung_Prism/.venv/bin/python"
+14388-  },
+14389-  "hardware": {
+14390-    "machine": "arm64",
+14391-    "cpu_count": "10",
+14392-    "gpu": "not_detected_by_phase1"
+14393-  },
+14394-  "capability_status": {
+14395-    "single_questions_not_decomposed": {
+14396-      "status": "PASS",

@@ -1,0 +1,41 @@
+# FlowContext evaluation evidence — command history
+
+## Environment / setup
+uv sync --locked --python 3.11 --extra dense
+uv run flowcontext config-check
+uv run flowcontext smoke
+uv run flowcontext dense-smoke
+uv run python -m pytest
+
+## Baseline evaluations
+uv run flowcontext evaluate-suite --split development --corpus artifacts/corpus-index.json --backend dense --top-k 5 --execution-mode accelerated
+uv run flowcontext evaluate-suite --split held_out --corpus artifacts/corpus-index.json --backend dense --top-k 5 --execution-mode accelerated
+
+## Streaming evaluations
+uv run flowcontext evaluate-streaming --split development --corpus artifacts/corpus-index.json --backend dense --top-k 5 --execution-mode realtime --compare-disabled-scheduling
+uv run flowcontext evaluate-streaming --split held_out --corpus artifacts/corpus-index.json --backend dense --top-k 5 --execution-mode realtime
+
+## Phase 3 corpus/index
+uv run flowcontext inspect-corpus
+uv run flowcontext build-index --input data/synthetic/phase3_documents.jsonl --output artifacts/phase3-corpus-index.json --backend dense --source-kind synthetic_fixture --force
+
+## Phase 3 evaluations
+uv run flowcontext evaluate-phase3 --split development --corpus artifacts/phase3-corpus-index.json --backend dense --top-k 3 --execution-mode accelerated --retrieval-mode dense
+uv run flowcontext evaluate-phase3 --split held_out --corpus artifacts/phase3-corpus-index.json --backend dense --top-k 3 --execution-mode accelerated --retrieval-mode dense
+
+## Phase 4 manual replay evidence
+uv run flowcontext phase4-replay --turns examples/replay/phase4-late-constraint.jsonl --index artifacts/corpus-index.json --output artifacts/my-late-constraint.json
+uv run flowcontext phase4-replay --turns examples/replay/phase4-entity-correction.jsonl --index artifacts/corpus-index.json --output artifacts/my-entity-correction.json
+uv run flowcontext phase4-replay --turns examples/replay/phase4-formatting.jsonl --index artifacts/corpus-index.json --output artifacts/my-formatting.json
+uv run flowcontext phase4-replay --turns examples/replay/phase4-partial-unsupported.jsonl --index artifacts/corpus-index.json --output artifacts/my-partial-unsupported.json
+uv run flowcontext phase4-replay --turns examples/replay/phase4-race.jsonl --index artifacts/corpus-index.json --output artifacts/my-race.json
+
+## Streaming replay evidence
+uv run flowcontext replay --mode streaming --transcript examples/streaming/early-retrieval.jsonl --index artifacts/corpus-index.json --backend dense --execution-mode realtime --output artifacts/my-streaming-replay.json
+uv run flowcontext replay --mode streaming --transcript examples/streaming/rapid-corrections.jsonl --index artifacts/corpus-index.json --backend dense --execution-mode realtime --output artifacts/my-rapid-corrections.json
+uv run flowcontext replay --mode streaming --transcript examples/streaming/final-fallback.jsonl --index artifacts/corpus-index.json --backend dense --execution-mode realtime --output artifacts/my-final-fallback.json
+uv run flowcontext replay --mode streaming --transcript examples/streaming/cumulative-correction.jsonl --index artifacts/corpus-index.json --backend dense --execution-mode realtime --output artifacts/my-cumulative-correction.json
+
+## Note
+The commands above are the historical commands run during this work.
+Some early terminal outputs were not redirected to files; generated evaluation artifacts were preserved where the CLI produced them.

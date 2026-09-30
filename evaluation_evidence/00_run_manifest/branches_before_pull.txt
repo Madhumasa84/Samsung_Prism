@@ -1,0 +1,4 @@
+* main
+  remotes/origin/HEAD -> origin/main
+  remotes/origin/fix-all-issues-20260922
+  remotes/origin/main

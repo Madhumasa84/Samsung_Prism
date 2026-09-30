@@ -1,0 +1,22 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.16, pytest-9.1.1, pluggy-1.6.0
+rootdir: /Users/karthikeya/Desktop/Samsung_Prism
+configfile: pyproject.toml
+plugins: anyio-4.15.1
+collected 158 items
+
+tests/test_cli.py .                                                      [  0%]
+tests/test_hardening.py ........                                         [  5%]
+tests/test_phase1.py ............................                        [ 23%]
+tests/test_phase2.py ...............                                     [ 32%]
+tests/test_phase2_scheduler.py ............                              [ 40%]
+tests/test_phase3.py ...................................                 [ 62%]
+tests/test_phase3_audit.py ...                                           [ 64%]
+tests/test_phase3_synthesis.py ...............                           [ 74%]
+tests/test_phase4.py ..............                                      [ 82%]
+tests/test_phase4_evaluation.py .......                                  [ 87%]
+tests/test_phase4_publication.py ........                                [ 92%]
+tests/test_phase4_selective.py ........                                  [ 97%]
+tests/test_streaming_evaluation.py ....                                  [100%]
+
+============================= 158 passed in 1.84s ==============================

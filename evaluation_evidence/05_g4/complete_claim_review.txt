@@ -1,0 +1,6 @@
+newly_updated_rows: 6
+total_rows: 22
+reviewed_rows: 22
+pending_rows: 0
+unique_reviewed_claims: 4
+unique_claims: 4

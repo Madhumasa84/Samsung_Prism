@@ -1,0 +1,121 @@
+    "dense_only_vs_hybrid": {
+      "status": "NOT VERIFIED",
+      "dense_only": "NOT VERIFIED",
+      "hybrid": "NOT VERIFIED",
+      "reason": "no completed real dense-only and hybrid paired run was recorded",
+      "mock_comparison_run": false
+    }
+  },
+  "targets": {
+    "multi_intent_identification_70_percent": {
+      "target": 0.7,
+      "status": "PASS",
+      "development": null,
+      "held_out": 0.75,
+      "interpretation": "Measured separately from citation support; denominators and provisional-label status are visible above."
+    },
+    "citation_support_85_percent": {
+      "target": 0.85,
+      "status": "NOT VERIFIED",
+      "reason": "semantic claim support remains unreviewed; citation-ID validity is not a substitute"
+    }
+  },
+  "environment": {
+    "python_version": "3.11.16",
+    "python_implementation": "CPython",
+    "platform": "macOS-27.0-arm64-arm-64bit",
+    "os_name": "posix",
+    "executable": "/Users/karthikeya/Desktop/Samsung_Prism/.venv/bin/python"
+  },
+  "hardware": {
+    "machine": "arm64",
+    "cpu_count": "10",
+    "gpu": "not_detected_by_phase1"
+  },
+  "capability_status": {
+    "single_questions_not_decomposed": {
+      "status": "PASS",
+      "local_case_numerator": 2,
+      "local_case_denominator": 2,
+      "evidence_basis": "synthetic_fixture_provisional_labels"
+    },
+    "compound_independent_questions": {
+      "status": "PASS",
+      "local_case_numerator": 1,
+      "local_case_denominator": 1,
+      "evidence_basis": "synthetic_fixture_provisional_labels"
+    },
+    "dependent_questions": {
+      "status": "PASS",
+      "local_case_numerator": 1,
+      "local_case_denominator": 1,
+      "evidence_basis": "synthetic_fixture_provisional_labels"
+    },
+    "shared_constraints": {
+      "status": "NOT VERIFIED",
+      "local_case_numerator": 0,
+      "local_case_denominator": 0,
+      "evidence_basis": "synthetic_fixture_provisional_labels"
+    },
+    "negation": {
+      "status": "NOT VERIFIED",
+      "local_case_numerator": 0,
+      "local_case_denominator": 0,
+      "evidence_basis": "synthetic_fixture_provisional_labels"
+    },
+    "comparisons": {
+      "status": "PASS",
+      "local_case_numerator": 1,
+      "local_case_denominator": 1,
+      "evidence_basis": "synthetic_fixture_provisional_labels"
+    },
+    "partial_answerability": {
+      "status": "NOT VERIFIED",
+      "local_case_numerator": 0,
+      "local_case_denominator": 0,
+      "evidence_basis": "synthetic_fixture_provisional_labels"
+    },
+    "entity_confusion": {
+      "status": "NOT VERIFIED",
+      "local_case_numerator": 0,
+      "local_case_denominator": 0,
+      "evidence_basis": "synthetic_fixture_provisional_labels"
+    },
+    "uncertainty_on_partial_requests": {
+      "status": "NOT VERIFIED",
+      "case_denominator": 0,
+      "passing_case_count": 0,
+      "scope": "Phase 3 C answer uncertainty behavior; semantic fabrication remains unreviewed"
+    },
+    "uncertainty_on_unanswerable_requests": {
+      "status": "PASS",
+      "case_denominator": 1,
+      "passing_case_count": 1,
+      "scope": "Phase 3 C answer uncertainty behavior; semantic fabrication remains unreviewed"
+    },
+    "conflicting_evidence_handling": {
+      "status": "PASS",
+      "case_denominator": 1,
+      "scope": "structured conflict/precedence status and provenance; semantic claim support is NOT VERIFIED"
+    },
+    "corrections_and_stale_protection": {
+      "status": "NOT VERIFIED",
+      "correction_case_count": 0,
+      "stale_result_accepted_count": 0,
+      "engineering_regression_status": "covered separately by Phase 2 tests"
+    },
+    "provider_and_retrieval_failures": {
+      "status": "PASS",
+      "fault_case_count": 2,
+      "silent_substitution_observed": false
+    },
+    "citation_id_validity": {
+      "status": "PASS",
+      "invalid_id_count": 0,
+      "case_validity_rate": 1.0,
+      "scope": "deterministic provenance only"
+    },
+    "semantic_claim_support": {
+      "status": "NOT VERIFIED",
+      "reason": "no human or governed semantic judge review was run; existing citation IDs do not establish support"
+    },

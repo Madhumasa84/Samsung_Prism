@@ -1,0 +1,17 @@
+src/flowcontext/phase3_audit.py:567:            "semantic_claim_support": "not_evaluated",
+src/flowcontext/phase3_audit.py:759:        "semantic_claim_support": "not_evaluated",
+src/flowcontext/phase3_audit.py:1876:    capability["semantic_claim_support"] = {
+src/flowcontext/phase3_audit.py:2166:        "semantic_claim_support": {
+src/flowcontext/phase3_evaluation.py:588:        "semantic_claim_support": "not_evaluated",
+src/flowcontext/phase3_evaluation.py:739:            "semantic_claim_support": "not_evaluated",
+src/flowcontext/phase4_evaluation.py:1290:        "semantic_claim_support": Counter(case.label_review_status.semantic_claim_support for case in cases),
+src/flowcontext/phase4_evaluation.py:1423:        "semantic_claim_support": {
+src/flowcontext/phase4_evaluation.py:1987:        report["strategies"][strategy_name]["semantic_claim_support"] = summary
+tests/test_phase4_evaluation.py:92:        self.assertEqual(report["strategies"]["selective"]["semantic_claim_support"]["status"], "NOT VERIFIED")
+tests/test_phase4_evaluation.py:177:            self.assertEqual(updated["strategies"]["selective"]["semantic_claim_support"]["status"], "PASS")
+tests/test_phase4_evaluation.py:178:            self.assertEqual(updated["strategies"]["selective"]["semantic_claim_support"]["support_rate"], 1.0)
+tests/test_phase4_evaluation.py:249:            self.assertEqual(updated["strategies"]["full"]["semantic_claim_support"]["status"], "PASS")
+tests/test_phase4_evaluation.py:250:            self.assertEqual(updated["strategies"]["selective"]["semantic_claim_support"]["status"], "FAIL")
+tests/test_phase4_evaluation.py:251:            self.assertEqual(updated["strategies"]["full"]["semantic_claim_support"]["reviewed_claim_count"], 1)
+tests/test_phase4_evaluation.py:252:            self.assertEqual(updated["strategies"]["selective"]["semantic_claim_support"]["reviewed_claim_count"], 1)
+tests/test_phase3_audit.py:43:            review_status["review_policy"]["semantic_claim_support"],

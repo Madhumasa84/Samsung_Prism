@@ -1,0 +1,100 @@
+  "ablations": {
+    "single_query_vs_decomposed": {
+      "status": "measured",
+      "asset_status": "synthetic_fixture",
+      "label_status": "provisional_generated",
+      "backend": "dense",
+      "top_k": 3,
+      "case_denominator": 4,
+      "single_query_recall_at_5_macro_mean": 0.75,
+      "decomposed_recall_at_5_macro_mean": 0.75,
+      "single_query_vs_decomposed_delta": 0.0,
+      "complete_decomposed_evidence_case_count": 3,
+      "case_results": [
+        {
+          "case_id": "p3-heldout-single-catering-001",
+          "expected_ids": [
+            "synthetic.catering-options#chunk-0000"
+          ],
+          "single_query_ids": [
+            "synthetic.catering-options#chunk-0000",
+            "synthetic.catering-restrictions#chunk-0000",
+            "synthetic.venue-options#chunk-0000"
+          ],
+          "decomposed_ids": [
+            "synthetic.catering-options#chunk-0000",
+            "synthetic.catering-restrictions#chunk-0000"
+          ],
+          "single_query_recall_at_5": 1.0,
+          "decomposed_recall_at_5": 1.0,
+          "decomposed_intent_count": 1,
+          "decomposed_missing_intent_ids": [],
+          "decomposed_complete_evidence": true
+        },
+        {
+          "case_id": "p3-heldout-independent-002",
+          "expected_ids": [
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.catering-options#chunk-0000"
+          ],
+          "single_query_ids": [
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.venue-options#chunk-0001",
+            "synthetic.venue-mumbai#chunk-0000"
+          ],
+          "decomposed_ids": [
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.catering-options#chunk-0000"
+          ],
+          "single_query_recall_at_5": 0.5,
+          "decomposed_recall_at_5": 1.0,
+          "decomposed_intent_count": 2,
+          "decomposed_missing_intent_ids": [],
+          "decomposed_complete_evidence": true
+        },
+        {
+          "case_id": "p3-heldout-dependent-003",
+          "expected_ids": [
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.catering-options#chunk-0000"
+          ],
+          "single_query_ids": [
+            "synthetic.venue-options#chunk-0000",
+            "synthetic.venue-options#chunk-0001",
+            "synthetic.catering-restrictions#chunk-0000"
+          ],
+          "decomposed_ids": [
+            "synthetic.venue-options#chunk-0000"
+          ],
+          "single_query_recall_at_5": 0.5,
+          "decomposed_recall_at_5": 0.5,
+          "decomposed_intent_count": 2,
+          "decomposed_missing_intent_ids": [
+            "intent-c2cfe1f36e"
+          ],
+          "decomposed_complete_evidence": false
+        },
+        {
+          "case_id": "p3-heldout-conflict-004",
+          "expected_ids": [
+            "synthetic.cancellation-policy#chunk-0000",
+            "synthetic.cancellation-draft#chunk-0000"
+          ],
+          "single_query_ids": [
+            "synthetic.cancellation-draft#chunk-0000",
+            "synthetic.cancellation-policy#chunk-0000",
+            "synthetic.schedule-note#chunk-0000"
+          ],
+          "decomposed_ids": [
+            "synthetic.cancellation-draft#chunk-0000"
+          ],
+          "single_query_recall_at_5": 1.0,
+          "decomposed_recall_at_5": 0.5,
+          "decomposed_intent_count": 2,
+          "decomposed_missing_intent_ids": [],
+          "decomposed_complete_evidence": true
+        }
+      ],
+      "interpretation": "Measured lexical retrieval behavior only; no mock/model-quality finding is claimed."
+    },
+    "dense_only_vs_hybrid": {

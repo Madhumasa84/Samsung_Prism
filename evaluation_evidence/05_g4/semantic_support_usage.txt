@@ -1,0 +1,186 @@
+571-        "all_citations_current": cited_chunk_ids <= current_chunk_ids,
+572-        "source_locations_available": all(
+573-            bool(record.passage.source_location.strip()) for record in current
+574-        ),
+575-        "corpus_chunk_count": len(corpus.chunks),
+576:        "semantic_support": "not_evaluated",
+577-    }
+578-
+579-
+580-def _metric_fraction(numerator: int, denominator: int) -> float | None:
+581-    return numerator / denominator if denominator else None
+582-
+583-
+584-def _citation_audit(state: Phase4SessionState, corpus: CorpusIndex) -> dict[str, Any]:
+585-    chunks = {chunk.chunk_id: chunk for chunk in corpus.chunks}
+586-    ids: list[str] = []
+587-    unknown: list[str] = []
+588-    invalid_excerpts: list[str] = []
+589-    for version in state.answer_versions:
+590-        for claim in version.answer.factual_claims:
+591-            for chunk_id in claim.supporting_chunk_ids:
+--
+1041-                len(covered_supported_keys), len(expected_supported_keys)
+1042-            ),
+1043-            "unsupported_intent_keys_with_claims": sorted(
+1044-                current_claim_keys & expected_unsupported_keys
+1045-            ),
+1046:            "semantic_support": "not_evaluated",
+1047-        }
+1048-        version = after.current_answer
+1049-        turn_rows = {
+1050-            "turn_index": turn.turn_index,
+1051-            "utterance_id": turn.utterance_id,
+1052-            "text": turn.text,
+1053-            "classification": patch.classification,
+1054-            "expected_classification": expected.classification,
+1055-            "interpretation_correct": patch.classification == expected.classification,
+1056-            "interpretation_match_across_modes": interpretation_match,
+1057-            "actual_affected_intent_keys": actual_affected_keys,
+1058-            "actual_propagated_intent_keys": actual_propagated_keys,
+1059-            "expected_affected_intent_keys": expected.affected_intent_keys,
+1060-            "actual_preserved_intent_keys": actual_preserved_keys,
+1061-            "expected_preserved_intent_keys": expected.preserved_intent_keys,
+--
+1100-                "formatting_only_calls": 0 if patch.classification == "reformat_answer" else None,
+1101-                "broad_retrieval_expected": expected.broad_retrieval_expected,
+1102-            },
+1103-            "citation": citation,
+1104-            "evidence_quality": _evidence_quality(after, corpus),
+1105:            "semantic_support": _semantic_review_status(after),
+1106-            "latency_ms": round((time.perf_counter() - turn_started) * 1000, 3),
+1107-            "updated_answer_coverage": updated_coverage,
+1108-            "current_claim_keys": sorted(current_claim_keys),
+1109-            "version": after.current_answer_version,
+1110-            "claim_changes": [
+1111-                item.model_dump(mode="json")
+1112-                for item in version.claim_changes
+1113-            ] if version is not None else [],
+1114-            "superseded_request_count": len(after.superseded_requests),
+1115-            "rejected_stale_result_count": rejected_stale_results - stale_rejections_before_turn,
+1116-            "accepted_stale_publication_count": accepted_stale_publications - accepted_stale_before_turn,
+1117-            "trace_complete": bool(after.trace_ids and after.revision_history),
+1118-        }
+1119-        rows.append(turn_rows)
+1120-        state = after
+--
+1161-                ),
+1162-                "coverage": _metric_fraction(
+1163-                    len(initial_claim_keys & initial_expected_supported_keys),
+1164-                    len(initial_expected_supported_keys),
+1165-                ),
+1166:                "semantic_support": "not_evaluated",
+1167-            },
+1168-            "citation": _citation_audit(initial_snapshot, corpus),
+1169-        },
+1170-        "turns": rows,
+1171-        "final": {
+1172-            "answer_status": final.answer_status,
+1173-            "current_answer_version": final.current_answer_version,
+1174-            "current_claim_ids": [record.claim_id for record in final.current_claims],
+1175-            "current_claim_count": len(final.current_claims),
+1176-            "uncertainty": current_version.answer.uncertainty if current_version else None,
+1177-        },
+1178-        "resources": {
+1179-            "retrieval_calls": retrieval_calls,
+1180-            "retrieved_chunks": retrieved_chunks,
+1181-            "retrieval_tokens": retrieval_tokens,
+--
+1410-            ),
+1411-            "mean_current_evidence_count": (
+1412-                sum(item["current_evidence_count"] for item in quality_rows) / len(quality_rows)
+1413-                if quality_rows else None
+1414-            ),
+1415:            "semantic_support": "NOT VERIFIED",
+1416-        },
+1417-        "citation_id_validity": _metric_fraction(
+1418-            sum(record["final"]["current_answer_version"] is not None and all(
+1419-                turn["citation"]["citation_ids_valid"] for turn in record["turns"]
+1420-            ) for record in records),
+1421-            len(records),
+1422-        ),
+1423-        "semantic_claim_support": {
+1424-            "status": "NOT VERIFIED",
+1425-            "reviewed_claim_count": sum(
+1426:                turn["semantic_support"]["reviewed_claim_count"] for turn in turns
+1427-            ),
+1428-        },
+1429-        "uncertainty_targeting_rate": _metric_fraction(
+1430-            sum(turn["uncertainty"]["targeted"] for turn in turns if turn["uncertainty"]["expected"]),
+1431-            sum(turn["uncertainty"]["expected"] for turn in turns),
+1432-        ),
+1433-        "clarification_accuracy": _metric_fraction(
+1434-            sum(turn["clarification"]["expected"] == turn["clarification"]["actual"] for turn in turns),
+1435-            len(turns),
+1436-        ),
+1437-        "resources": {
+1438-            "retrieval_calls": sum(item["retrieval_calls"] for item in resources),
+1439-            "retrieved_chunks": sum(item["retrieved_chunks"] for item in resources),
+1440-            "retrieval_tokens": sum(item["retrieval_tokens"] for item in resources),
+1441-            "generation_calls": sum(item["generation_calls"] for item in resources),
+--
+1795-                turn["uncertainty"]["targeted"]
+1796-                for row in case_rows
+1797-                for turn in row["strategies"]["selective"]["turns"]
+1798-                if turn["uncertainty"]["expected"]
+1799-            ) else "FAIL",
+1800:            "semantic_support": "NOT VERIFIED",
+1801-            "session_isolation": "PASS" if _session_isolation_passed(case_rows) else "FAIL",
+1802-            "reproducibility": "NOT VERIFIED",
+1803-            "official_validation": "NOT VERIFIED",
+1804-        },
+1805-    }
+1806-    report["reproducibility"] = {
+1807-        "status": "NOT VERIFIED",
+1808-        "run_count": 1,
+1809-        "stable_signature": stable_phase4_evaluation_signature(report),
+1810-        "method": "A second identical execution is required; timestamps and measured latency are excluded from the signature.",
+1811-    }
+1812-    return report
+1813-
+1814-
+1815-def write_phase4_evaluation_report(
+--
+1981-            [row for row in review_rows if row["strategy"] == strategy_name]
+1982-        )
+1983-        for strategy_name in ("full", "selective")
+1984-    }
+1985-    for strategy_name, summary in review_by_strategy.items():
+1986:        report["strategies"][strategy_name]["evidence_quality"]["semantic_support"] = summary["status"]
+1987-        report["strategies"][strategy_name]["semantic_claim_support"] = summary
+1988-    reviewed_rows = [
+1989-        row
+1990-        for row in review_rows
+1991-        if row.get("semantic_support_verdict") in _CLAIM_REVIEW_VERDICTS
+1992-        and _reviewer_identity_is_explicit(row.get("reviewer"))
+1993-    ]
+1994-    supported_rows = [row for row in reviewed_rows if row.get("semantic_support_verdict") == "supported"]
+1995-    review_pending = sum(summary["pending_claim_count"] for summary in review_by_strategy.values())
+1996-    overall_support_rate = len(supported_rows) / len(reviewed_rows) if reviewed_rows else None
+1997-    overall_review_status = (
+1998-        "NOT VERIFIED"
+1999-        if review_pending or not reviewed_rows
+2000-        else "PASS"
+2001-        if all(summary["status"] == "PASS" for summary in review_by_strategy.values())
+--
+2016-            }
+2017-        ),
+2018-        "independent_human_review_verified": False,
+2019-        "by_strategy": review_by_strategy,
+2020-    }
+2021:    report["capability_status"]["semantic_support"] = overall_review_status
+2022-
+2023-    real_exec = report.get("real_backend_execution")
+2024-    if isinstance(real_exec, dict):
+2025-        embedding_passed = real_exec.get("embedding_probe", {}).get("status") == "PASS"
+2026-        generation_passed = real_exec.get("generation_probe", {}).get("status") == "PASS"
+2027-        integrated_passed = real_exec.get("retrieval_validation", {}).get("status") == "PASS"
+2028-        report["capability_status"]["real_embedding_probe"] = "PASS" if embedding_passed else "NOT VERIFIED"
+2029-        report["capability_status"]["real_generation_execution"] = "PASS" if generation_passed else "NOT VERIFIED"
+2030-        report["capability_status"]["integrated_dense_rag"] = "PASS" if integrated_passed else "NOT VERIFIED"
+2031-        report["capability_status"]["real_backend_execution"] = (
+2032-            "PASS"
+2033-            if embedding_passed and generation_passed and integrated_passed
+2034-            else "PARTIAL"
+2035-            if generation_passed
+2036-            else "NOT VERIFIED"

@@ -1,0 +1,1 @@
+/Users/karthikeya/Desktop/Samsung_Prism/.venv/bin/python: No module named pytest

@@ -1,0 +1,10 @@
+6d8c11c (origin/main, origin/HEAD) Merge pull request #1 from Madhumasa84/ Harden input validation, durable session persistence, adversarial audit coverage and setup documentation
+8159873 (origin/fix-all-issues-20260922) Update README with known test timing notes, real provider setup, and setup alternatives
+03725dc Harden input validation, durable session persistence, and adversarial test coverage
+0190d6c (HEAD -> main) Remove phase checklists and expand top-to-bottom architecture diagram in README
+09854c2 Unify system architecture in README and remove internal review documents for Samsung PRISM submission
+3a0969b Complete Phase 4 comprehensive evaluation, dense RAG verification, and documentation
+0c4013f Enhance README with professional structure, architecture diagram, and capability matrix
+338b6c7 Implement Phase 4 session state, selective updates, and verify semantic support and real-backend execution
+904d8aa Implement Phase 3 unified answer synthesis with verification and conflict handling
+b7deabd Add MIT License

@@ -1,0 +1,58 @@
+    )
+    review_path = review_path or path.with_name(path.stem + "_claim_review.csv")
+    existing_reviews: dict[tuple[str, str, int, str, str, str, str], dict[str, str]] = {}
+    if review_path.is_file():
+        try:
+            with review_path.open(encoding="utf-8", newline="") as handle:
+                reader = csv.DictReader(handle)
+                for r in reader:
+                    verdict = r.get("semantic_support_verdict", "").strip()
+                    if (
+                        verdict in _CLAIM_REVIEW_VERDICTS
+                        and _reviewer_identity_is_explicit(r.get("reviewer"))
+                        and all(
+                            r.get(field)
+                            for field in (
+                                "claim_text_sha256",
+                                "supporting_passages_sha256",
+                                "review_content_sha256",
+                            )
+                        )
+                    ):
+                        key = (
+                            r["case_id"],
+                            r["strategy"],
+                            int(r["answer_version"]),
+                            r["claim_id"],
+                            r["claim_text_sha256"],
+                            r["supporting_passages_sha256"],
+                            r["review_content_sha256"],
+                        )
+                        existing_reviews.setdefault(key, r)
+        except Exception:
+            pass
+
+    review_rows = _review_rows(report["case_results"], review_lookup=existing_reviews)
+    with review_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=[
+                "case_id", "strategy", "answer_version", "claim_id", "claim_text",
+                "supporting_chunk_ids", "supporting_passages", "source_locations",
+                "structural_citation_valid", "claim_text_sha256", "supporting_passages_sha256",
+                "review_content_sha256", "semantic_support_verdict", "reviewer", "review_notes",
+            ],
+            lineterminator="\n",
+        )
+        writer.writeheader()
+        for row in review_rows:
+            writer.writerow(row)
+    report["claim_review_sheet"] = str(review_path)
+
+    review_by_strategy = {
+        strategy_name: _review_summary(
+            [row for row in review_rows if row["strategy"] == strategy_name]
+        )
+        for strategy_name in ("full", "selective")
+    }
+    for strategy_name, summary in review_by_strategy.items():

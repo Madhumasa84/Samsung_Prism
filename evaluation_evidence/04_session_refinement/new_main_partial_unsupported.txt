@@ -1,0 +1,295 @@
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 10389.43it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+{
+  "answer_status": "partial",
+  "corpus_id": "corpus-3762c90f2912589e",
+  "current_answer_version": 2,
+  "generation_attempt_count": 2,
+  "generation_call_count": 2,
+  "generation_execution_mode": "mock_provider",
+  "generation_model": "mock-grounded-v1",
+  "generation_provider": "flowcontext.mock",
+  "index_id": "index-fa8362c61a50335b",
+  "notes": [
+    "candidate synthetic.venue-options#chunk-0000 was not intent-aligned and was not admitted",
+    "candidate synthetic.cancellation-policy#chunk-0000 was not intent-aligned and was not admitted"
+  ],
+  "output": "evaluation_evidence/04_session_refinement/new_main_partial_unsupported.json",
+  "retrieval_attempt_count": 2,
+  "retrieval_backend": "dense",
+  "retrieval_call_count": 2,
+  "session_id": "phase4-partial-unsupported",
+  "status": "partial",
+  "steps": [
+    {
+      "answer_status": "current",
+      "classification": "initial",
+      "current_answer_version": 1,
+      "current_claim_ids": [
+        "mock-claim-intent-d0f74e537b",
+        "mock-claim-intent-dc6921e583"
+      ],
+      "patch": null,
+      "plan": null,
+      "publication": {
+        "published": true,
+        "reason": null,
+        "request_id": "generation-0bbda0f17baf",
+        "status": "current"
+      },
+      "state_revision": 3,
+      "text": "Which Venue B in Pune can host 40 attendees? What are the catering options?",
+      "turn_index": 0,
+      "utterance_id": "u-0"
+    },
+    {
+      "answer_status": "partial",
+      "classification": "replace_constraint",
+      "current_answer_version": 2,
+      "current_claim_ids": [
+        "mock-claim-intent-dc6921e583"
+      ],
+      "patch": {
+        "added_constraints": [],
+        "base_revision": 3,
+        "clarification": null,
+        "classification": "replace_constraint",
+        "decision_trace": [
+          {
+            "detail": "Context resolved the reference without choosing between multiple entities.",
+            "matched_text": "it",
+            "rule": "single_entity_context",
+            "schema_version": "flowcontext.phase4.v1",
+            "stage": "reference_resolution",
+            "target_ids": [
+              "entity-d10b7e63be"
+            ]
+          },
+          {
+            "detail": "Selected the existing intent(s) that the proposed change addresses.",
+            "matched_text": null,
+            "rule": "follow_up_target_selection",
+            "schema_version": "flowcontext.phase4.v1",
+            "stage": "target_selection",
+            "target_ids": [
+              "intent-d0f74e537b"
+            ]
+          },
+          {
+            "detail": "The new value replaces the matched constraint; the old record remains historical.",
+            "matched_text": "Actually, make it 50 attendees and keep the catering question.",
+            "rule": "replace_constraint",
+            "schema_version": "flowcontext.phase4.v1",
+            "stage": "classification",
+            "target_ids": [
+              "constraint-record-1d8664eac4a6"
+            ]
+          }
+        ],
+        "execution_mode": "rule_based",
+        "format_instruction": null,
+        "intent_replacements": {
+          "intent-d0f74e537b": "intent-78a26a4671"
+        },
+        "new_intents": [
+          {
+            "intent": {
+              "constraints": [
+                {
+                  "constraint_id": "constraint-2316a229a9",
+                  "kind": "entity",
+                  "normalized_value": "venue b",
+                  "operator": null,
+                  "source_span": {
+                    "end": 13,
+                    "start": 6,
+                    "text": "Venue B"
+                  },
+                  "value": "Venue B"
+                },
+                {
+                  "constraint_id": "constraint-f1698e653e",
+                  "kind": "location",
+                  "normalized_value": "in pune",
+                  "operator": null,
+                  "source_span": {
+                    "end": 21,
+                    "start": 14,
+                    "text": "in Pune"
+                  },
+                  "value": "in Pune"
+                },
+                {
+                  "constraint_id": "constraint-eb885b2d888e",
+                  "kind": "quantity",
+                  "normalized_value": "50 attendees",
+                  "operator": "equals",
+                  "source_span": {
+                    "end": 30,
+                    "start": 18,
+                    "text": "50 attendees"
+                  },
+                  "value": "50 attendees"
+                }
+              ],
+              "intent_id": "intent-78a26a4671",
+              "ordinal": 1,
+              "query": "Which Venue B in Pune can host 50 attendees",
+              "relationship": "independent",
+              "source_span": {
+                "end": 43,
+                "start": 0,
+                "text": "Which Venue B in Pune can host 40 attendees"
+              },
+              "source_text": "Which Venue B in Pune can host 40 attendees"
+            },
+            "origin_revision": 1,
+            "origin_turn": 1,
+            "origin_utterance_id": "u-1",
+            "schema_version": "flowcontext.phase4.v1",
+            "status": "active",
+            "topic_key": "venue b pune host 40 attendees catering options"
+          }
+        ],
+        "patch_id": "patch-584727f75585",
+        "proposed_revision": 4,
+        "provider_identity": "flowcontext.rule_based",
+        "provider_model": "offline-follow-up-v1",
+        "reference_resolutions": [
+          {
+            "entity_id": "entity-d10b7e63be",
+            "entity_text": "Venue B",
+            "rationale": "Exactly one active entity candidate is available in this session.",
+            "reference_text": "it",
+            "schema_version": "flowcontext.phase4.v1",
+            "source_intent_id": "intent-d0f74e537b"
+          }
+        ],
+        "removed_constraint_ids": [],
+        "replacement_constraints": {
+          "constraint-record-1d8664eac4a6": {
+            "constraint": {
+              "constraint_id": "constraint-eb885b2d888e",
+              "kind": "quantity",
+              "normalized_value": "50 attendees",
+              "operator": "equals",
+              "source_span": {
+                "end": 30,
+                "start": 18,
+                "text": "50 attendees"
+              },
+              "value": "50 attendees"
+            },
+            "constraint_id": "constraint-eb885b2d888e",
+            "corpus_fact": false,
+            "intent_id": "intent-d0f74e537b",
+            "origin": "user_follow_up",
+            "origin_revision": 1,
+            "origin_turn": 1,
+            "origin_utterance_id": "u-1",
+            "record_id": "constraint-record-f920592ce903",
+            "resolution_source": null,
+            "schema_version": "flowcontext.phase4.v1",
+            "scope": "intent",
+            "status": "active"
+          }
+        },
+        "retrieval_revision": 2,
+        "schema_version": "flowcontext.phase4.v1",
+        "session_id": "phase4-partial-unsupported",
+        "source_text": "Actually, make it 50 attendees and keep the catering question.",
+        "target_intent_ids": [
+          "intent-d0f74e537b"
+        ],
+        "topic_key": null,
+        "transcript_revision": 1,
+        "turn_index": 1,
+        "utterance_id": "u-1"
+      },
+      "plan": {
+        "affected_entity_ids": [],
+        "base_revision": 3,
+        "candidate_revision": 4,
+        "created_at_utc": "2026-09-29T10:28:07.319698+00:00",
+        "dependency_uncertain": false,
+        "dependency_uncertainty_reasons": [],
+        "directly_affected_intent_ids": [
+          "intent-d0f74e537b"
+        ],
+        "discarded_result_ids": [],
+        "invalidated_claim_ids": [
+          "mock-claim-intent-d0f74e537b@v1"
+        ],
+        "invalidated_evidence_ids": [
+          "evidence-2ec3d69ebf2c"
+        ],
+        "invalidated_intent_ids": [
+          "intent-d0f74e537b"
+        ],
+        "invalidation_reasons": {
+          "mock-claim-intent-d0f74e537b@v1": "claim belongs to a directly changed intent without sufficient evidence"
+        },
+        "new_intent_ids": [
+          "intent-78a26a4671"
+        ],
+        "patch_id": "patch-584727f75585",
+        "plan_id": "plan-6c149aeba1a6",
+        "preserved_claim_ids": [
+          "mock-claim-intent-dc6921e583@v1"
+        ],
+        "retrieval_attempt_count": 1,
+        "retrieval_call_count": 1,
+        "retrieval_intent_ids": [
+          "intent-78a26a4671"
+        ],
+        "retrieval_reasons": {
+          "intent-78a26a4671": "changed constraint is not structurally covered by current evidence"
+        },
+        "retrieval_revision": 2,
+        "retrieval_tasks": [
+          {
+            "attempts": 1,
+            "candidate_retrieval_revision": 2,
+            "candidate_state_revision": 4,
+            "candidate_transcript_revision": 1,
+            "discarded_result_ids": [],
+            "error": null,
+            "evidence_ids": [],
+            "intent_id": "intent-78a26a4671",
+            "patch_id": "patch-584727f75585",
+            "query": "Which Venue B in Pune can host 50 attendees",
+            "reason": "changed constraint is not structurally covered by current evidence",
+            "scheduler_request_id": "phase4-retrieval-5cc99ae35009",
+            "schema_version": "flowcontext.phase4.v1",
+            "session_id": "phase4-partial-unsupported",
+            "status": "completed",
+            "task_id": "task-e909ef9626fc"
+          }
+        ],
+        "retrieval_usage": {
+          "estimated": true,
+          "input_tokens": 9,
+          "output_tokens": 0,
+          "total_tokens": 9
+        },
+        "reused_evidence_ids": [
+          "evidence-ab9ecb4e25d0"
+        ],
+        "schema_version": "flowcontext.phase4.v1",
+        "session_id": "phase4-partial-unsupported",
+        "status": "completed",
+        "transcript_revision": 1
+      },
+      "publication": {
+        "published": true,
+        "reason": null,
+        "request_id": "generation-1d8319e4672a",
+        "status": "partial"
+      },
+      "state_revision": 5,
+      "text": "Actually, make it 50 attendees and keep the catering question.",
+      "turn_index": 1,
+      "utterance_id": "u-1"
+    }
+  ]
+}

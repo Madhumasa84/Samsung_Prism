@@ -1,0 +1,29 @@
+Binary file src/flowcontext/__pycache__/phase4_evaluation.cpython-311.pyc matches
+src/flowcontext/phase4_evaluation.py:63:_CLAIM_REVIEW_VERDICTS = {"supported", "unsupported", "uncertain"}
+src/flowcontext/phase4_evaluation.py:636:def _reviewer_identity_is_explicit(value: str | None) -> bool:
+src/flowcontext/phase4_evaluation.py:707:        if row.get("semantic_support_verdict") in _CLAIM_REVIEW_VERDICTS
+src/flowcontext/phase4_evaluation.py:708:        and _reviewer_identity_is_explicit(row.get("reviewer"))
+src/flowcontext/phase4_evaluation.py:711:    supported = [row for row in reviewed if row.get("semantic_support_verdict") == "supported"]
+src/flowcontext/phase4_evaluation.py:732:            row.get("semantic_support_verdict") == "unsupported" for row in reviewed
+src/flowcontext/phase4_evaluation.py:735:            row.get("semantic_support_verdict") == "uncertain" for row in reviewed
+src/flowcontext/phase4_evaluation.py:1466:def _review_rows(
+src/flowcontext/phase4_evaluation.py:1543:                        verdict = existing_entry.get("semantic_support_verdict", "pending_human_review")
+src/flowcontext/phase4_evaluation.py:1562:                            "semantic_support_verdict": verdict,
+src/flowcontext/phase4_evaluation.py:1936:                    verdict = r.get("semantic_support_verdict", "").strip()
+src/flowcontext/phase4_evaluation.py:1938:                        verdict in _CLAIM_REVIEW_VERDICTS
+src/flowcontext/phase4_evaluation.py:1939:                        and _reviewer_identity_is_explicit(r.get("reviewer"))
+src/flowcontext/phase4_evaluation.py:1962:    review_rows = _review_rows(report["case_results"], review_lookup=existing_reviews)
+src/flowcontext/phase4_evaluation.py:1970:                "review_content_sha256", "semantic_support_verdict", "reviewer", "review_notes",
+src/flowcontext/phase4_evaluation.py:1975:        for row in review_rows:
+src/flowcontext/phase4_evaluation.py:1981:            [row for row in review_rows if row["strategy"] == strategy_name]
+src/flowcontext/phase4_evaluation.py:1990:        for row in review_rows
+src/flowcontext/phase4_evaluation.py:1991:        if row.get("semantic_support_verdict") in _CLAIM_REVIEW_VERDICTS
+src/flowcontext/phase4_evaluation.py:1992:        and _reviewer_identity_is_explicit(row.get("reviewer"))
+src/flowcontext/phase4_evaluation.py:1994:    supported_rows = [row for row in reviewed_rows if row.get("semantic_support_verdict") == "supported"]
+src/flowcontext/phase4_evaluation.py:2061:            "`semantic_support_verdict=pending_human_review` (or lacks an explicit reviewer identity) and does not turn valid IDs or retrieval scores into a quality pass.",
+tests/test_phase4_evaluation.py:126:            self.assertTrue(all(row["semantic_support_verdict"] == "pending_human_review" for row in rows))
+tests/test_phase4_evaluation.py:164:                row["semantic_support_verdict"] = "supported"
+tests/test_phase4_evaluation.py:202:                row["semantic_support_verdict"] = "supported"
+tests/test_phase4_evaluation.py:218:            self.assertEqual(updated_rows[0]["semantic_support_verdict"], "pending_human_review")
+tests/test_phase4_evaluation.py:238:                row["semantic_support_verdict"] = (
+Binary file tests/__pycache__/test_phase4_evaluation.cpython-311-pytest-9.1.1.pyc matches

@@ -1,0 +1,55 @@
+          "gold": {
+            "expected_intents": [
+              {
+                "intent_key": "failure_cancellation",
+                "expected_relationship": "independent",
+                "source_hint": "What is the cancellation policy?",
+                "answerable": true,
+                "relevant_chunk_ids": [
+                  "synthetic.cancellation-policy#chunk-0000"
+                ],
+                "relevance_labels": {
+                  "synthetic.cancellation-policy#chunk-0000": "relevant"
+                },
+                "expected_answer_substrings": [
+                  "7 calendar days"
+                ],
+                "expected_constraints": []
+              },
+              {
+                "intent_key": "failure_catering",
+                "expected_relationship": "independent",
+                "source_hint": "What are the catering options?",
+                "answerable": true,
+                "relevant_chunk_ids": [
+                  "synthetic.catering-options#chunk-0000"
+                ],
+                "relevance_labels": {
+                  "synthetic.catering-options#chunk-0000": "relevant"
+                },
+                "expected_answer_substrings": [
+                  "vegetarian and non-vegetarian"
+                ],
+                "expected_constraints": []
+              }
+            ],
+            "shared_constraints": [],
+            "expected_answer_substrings": [
+              "7 calendar days",
+              "vegetarian and non-vegetarian"
+            ],
+            "retrieval_behavior": "normal",
+            "provider_failure_stage": "decomposition"
+          },
+          "intent_matching": {
+            "status": "assessed",
+            "decomposition_status": "fallback",
+            "gold_intent_count": 2,
+            "predicted_intent_count": 1,
+            "matched_count": 1,
+            "intent_recall": 0.5,
+            "intent_precision": 1.0,
+            "missed_intent_keys": [
+              "failure_cancellation"
+            ],
+            "unnecessary_predicted_intent_ids": [],

@@ -1,0 +1,180 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 10673.58it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 20690.29it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 16904.57it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 20665.55it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 41886.11it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 22504.21it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 12676.82it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 12102.23it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 17422.70it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 12764.84it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 12863.66it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 16921.13it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 21961.94it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 11682.98it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 17239.16it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 11653.99it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 21219.77it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 15783.04it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 14968.76it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 18321.18it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 22400.36it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 15477.14it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 15865.34it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 13855.46it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 23048.09it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 12020.07it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 16443.87it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 19284.59it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 23649.93it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 25976.39it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 22459.75it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 17132.51it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 31941.83it/s]
+{
+  "audit_status": "PASS",
+  "capability_status": {
+    "answer_version_consistency": "PASS",
+    "dependency_invalidation": "PASS",
+    "follow_up_interpretation": "PASS",
+    "formatting_only_suppression": "PASS",
+    "integrated_dense_rag": "NOT VERIFIED",
+    "official_validation": "NOT VERIFIED",
+    "real_backend_execution": "NOT VERIFIED",
+    "real_embedding_probe": "PASS",
+    "real_generation_execution": "NOT VERIFIED",
+    "reproducibility": "PASS",
+    "selective_efficiency": "NOT VERIFIED",
+    "selective_retrieval": "PASS",
+    "semantic_support": "NOT VERIFIED",
+    "session_isolation": "PASS",
+    "uncertainty_handling": "PASS"
+  },
+  "case_count": 8,
+  "claim_review_sheet": "evaluation_evidence/05_g5/new_main_phase4_held_out_reviewed_claim_review.csv",
+  "evaluation_completed": true,
+  "markdown_output": "evaluation_evidence/05_g5/new_main_phase4_held_out_reviewed.md",
+  "output": "evaluation_evidence/05_g5/new_main_phase4_held_out_reviewed.json",
+  "real_backend_status": {
+    "embedding": "PASS",
+    "generation": "NOT VERIFIED"
+  },
+  "real_output": "evaluation_evidence/05_g5/new_main_phase4_reviewed_real_output.json",
+  "release_status": "PARTIAL",
+  "review_status_output": "evaluation_evidence/05_g5/new_main_phase4_reviewed_status.json",
+  "status": "PARTIAL",
+  "strategies": {
+    "full": {
+      "affected_claim_invalidation_precision": 1.0,
+      "affected_claim_invalidation_recall": 1.0,
+      "case_count": 8,
+      "citation_id_validity": 1.0,
+      "clarification_accuracy": 1.0,
+      "evidence_quality": {
+        "all_current_citations_rate": 1.0,
+        "mean_current_evidence_count": 0.6666666666666666,
+        "semantic_support": "NOT VERIFIED",
+        "source_locations_available_rate": 1.0
+      },
+      "final_status_counts": {
+        "current": 5,
+        "failed": 3
+      },
+      "follow_up_interpretation_accuracy": 1.0,
+      "follow_up_turn_count": 6,
+      "incorrect_preservation_of_obsolete_claims": 0,
+      "initial_answer_coverage": 1.0,
+      "matched_interpretation_rate": 1.0,
+      "resources": {
+        "accepted_stale_publication_count": 0,
+        "cost": "unavailable",
+        "final_event_to_updated_answer_latency_ms_p50": 8.961500000000001,
+        "final_event_to_updated_answer_latency_ms_p95": 13.801,
+        "formatting_only_retrieval_calls": 0,
+        "generation_calls": 9,
+        "generation_tokens": 1978,
+        "rejected_stale_result_count": 0,
+        "retrieval_calls": 12,
+        "retrieval_tokens": 112,
+        "retrieved_chunks": 36,
+        "superseded_request_count": 0
+      },
+      "semantic_claim_support": {
+        "content_hash_bound": true,
+        "independent_human_review_verified": false,
+        "pending_claim_count": 11,
+        "reviewed_claim_count": 0,
+        "reviewer_ids": [],
+        "semantic_support_rate": null,
+        "status": "NOT VERIFIED",
+        "support_rate": null,
+        "supported_claim_count": 0,
+        "uncertain_claim_count": 0,
+        "unsupported_claim_count": 0
+      },
+      "trace_completeness": 1.0,
+      "unaffected_claim_preservation_rate": 0.5,
+      "uncertainty_targeting_rate": 1.0,
+      "updated_answer_coverage": 0.75,
+      "updated_answer_coverage_turn_count": 4
+    },
+    "selective": {
+      "affected_claim_invalidation_precision": 1.0,
+      "affected_claim_invalidation_recall": 1.0,
+      "case_count": 8,
+      "citation_id_validity": 1.0,
+      "clarification_accuracy": 1.0,
+      "evidence_quality": {
+        "all_current_citations_rate": 1.0,
+        "mean_current_evidence_count": 0.5,
+        "semantic_support": "NOT VERIFIED",
+        "source_locations_available_rate": 1.0
+      },
+      "final_status_counts": {
+        "current": 4,
+        "failed": 3,
+        "partial": 1
+      },
+      "follow_up_interpretation_accuracy": 1.0,
+      "follow_up_turn_count": 6,
+      "incorrect_preservation_of_obsolete_claims": 0,
+      "initial_answer_coverage": 1.0,
+      "matched_interpretation_rate": 1.0,
+      "resources": {
+        "accepted_stale_publication_count": 0,
+        "cost": "unavailable",
+        "final_event_to_updated_answer_latency_ms_p50": 11.5635,
+        "final_event_to_updated_answer_latency_ms_p95": 13.668,
+        "formatting_only_retrieval_calls": 0,
+        "generation_calls": 9,
+        "generation_tokens": 1837,
+        "rejected_stale_result_count": 0,
+        "retrieval_calls": 12,
+        "retrieval_tokens": 103,
+        "retrieved_chunks": 36,
+        "superseded_request_count": 0
+      },
+      "semantic_claim_support": {
+        "content_hash_bound": true,
+        "independent_human_review_verified": false,
+        "pending_claim_count": 10,
+        "reviewed_claim_count": 0,
+        "reviewer_ids": [],
+        "semantic_support_rate": null,
+        "status": "NOT VERIFIED",
+        "support_rate": null,
+        "supported_claim_count": 0,
+        "uncertain_claim_count": 0,
+        "unsupported_claim_count": 0
+      },
+      "trace_completeness": 1.0,
+      "unaffected_claim_preservation_rate": 1.0,
+      "uncertainty_targeting_rate": 1.0,
+      "updated_answer_coverage": 0.625,
+      "updated_answer_coverage_turn_count": 4
+    }
+  },
+  "verification_status": "PARTIAL",
+  "workflow_status": "PASS"
+}

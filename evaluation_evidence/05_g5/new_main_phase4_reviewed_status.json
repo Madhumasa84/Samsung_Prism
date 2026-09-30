@@ -1,0 +1,178 @@
+{
+  "schema_version": "flowcontext.phase4-evaluation.v1",
+  "generated_at_utc": "2026-09-29T15:12:14.999783+00:00",
+  "case_count": 8,
+  "claim_review": {
+    "status": "NOT VERIFIED",
+    "reviewed_claim_count": 0,
+    "supported_claim_count": 0,
+    "pending_claim_count": 21,
+    "support_rate": null,
+    "content_hash_bound": true,
+    "reviewer_ids": [],
+    "independent_human_review_verified": false,
+    "by_strategy": {
+      "full": {
+        "status": "NOT VERIFIED",
+        "reviewed_claim_count": 0,
+        "supported_claim_count": 0,
+        "unsupported_claim_count": 0,
+        "uncertain_claim_count": 0,
+        "pending_claim_count": 11,
+        "support_rate": null,
+        "semantic_support_rate": null,
+        "reviewer_ids": [],
+        "content_hash_bound": true,
+        "independent_human_review_verified": false
+      },
+      "selective": {
+        "status": "NOT VERIFIED",
+        "reviewed_claim_count": 0,
+        "supported_claim_count": 0,
+        "unsupported_claim_count": 0,
+        "uncertain_claim_count": 0,
+        "pending_claim_count": 10,
+        "support_rate": null,
+        "semantic_support_rate": null,
+        "reviewer_ids": [],
+        "content_hash_bound": true,
+        "independent_human_review_verified": false
+      }
+    }
+  },
+  "cases": [
+    {
+      "case_id": "p4-diagnostic-overdecomposition-001",
+      "split": "held_out",
+      "evaluation_role": "diagnostic_regression",
+      "variant_family": "phase3_single_question_regression",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "not_evaluated",
+        "reviewer": null,
+        "notes": [
+          "Previously inspected Phase 3 held-out failure; historical scores remain in reports/phase3_evaluation_realtime.*."
+        ]
+      },
+      "semantic_claim_review_status": "NOT VERIFIED",
+      "independent_human_review_status": "not_verified"
+    },
+    {
+      "case_id": "p4-diagnostic-unanswerable-003",
+      "split": "held_out",
+      "evaluation_role": "diagnostic_regression",
+      "variant_family": "phase3_unanswerable_regression",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "not_evaluated",
+        "reviewer": null,
+        "notes": [
+          "Previously inspected unanswerable failure; no weak lexical answer is accepted."
+        ]
+      },
+      "semantic_claim_review_status": "NOT VERIFIED",
+      "independent_human_review_status": "not_verified"
+    },
+    {
+      "case_id": "p4-untouched-package-001",
+      "split": "held_out",
+      "evaluation_role": "untouched_generalization",
+      "variant_family": "p4_untouched_package",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "not_evaluated",
+        "reviewer": null,
+        "notes": []
+      },
+      "semantic_claim_review_status": "NOT VERIFIED",
+      "independent_human_review_status": "not_verified"
+    },
+    {
+      "case_id": "p4-untouched-add-question-002",
+      "split": "held_out",
+      "evaluation_role": "untouched_generalization",
+      "variant_family": "p4_untouched_add_question",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "not_evaluated",
+        "reviewer": null,
+        "notes": []
+      },
+      "semantic_claim_review_status": "NOT VERIFIED",
+      "independent_human_review_status": "not_verified"
+    },
+    {
+      "case_id": "p4-untouched-remove-003",
+      "split": "held_out",
+      "evaluation_role": "untouched_generalization",
+      "variant_family": "p4_untouched_remove",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "not_evaluated",
+        "reviewer": null,
+        "notes": []
+      },
+      "semantic_claim_review_status": "NOT VERIFIED",
+      "independent_human_review_status": "not_verified"
+    },
+    {
+      "case_id": "p4-untouched-entity-004",
+      "split": "held_out",
+      "evaluation_role": "untouched_generalization",
+      "variant_family": "p4_untouched_entity",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "not_evaluated",
+        "reviewer": null,
+        "notes": []
+      },
+      "semantic_claim_review_status": "NOT VERIFIED",
+      "independent_human_review_status": "not_verified"
+    },
+    {
+      "case_id": "p4-untouched-unanswerable-topic-005",
+      "split": "held_out",
+      "evaluation_role": "untouched_generalization",
+      "variant_family": "p4_untouched_unanswerable_topic",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "not_evaluated",
+        "reviewer": null,
+        "notes": []
+      },
+      "semantic_claim_review_status": "NOT VERIFIED",
+      "independent_human_review_status": "not_verified"
+    },
+    {
+      "case_id": "p4-untouched-conflict-006",
+      "split": "held_out",
+      "evaluation_role": "untouched_generalization",
+      "variant_family": "p4_untouched_conflict",
+      "label_review_status": {
+        "intent_labels": "provisional_generated",
+        "follow_up_labels": "provisional_generated",
+        "answerability_labels": "provisional_generated",
+        "semantic_claim_support": "not_evaluated",
+        "reviewer": null,
+        "notes": []
+      },
+      "semantic_claim_review_status": "NOT VERIFIED",
+      "independent_human_review_status": "not_verified"
+    }
+  ],
+  "overall": "Manual claim review status: NOT VERIFIED; 0/0 reviewed claims supported. Case labels remain provisional and independent human review is NOT VERIFIED."
+}

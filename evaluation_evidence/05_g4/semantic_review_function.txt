@@ -1,0 +1,176 @@
+def _metric_fraction(numerator: int, denominator: int) -> float | None:
+    return numerator / denominator if denominator else None
+
+
+def _citation_audit(state: Phase4SessionState, corpus: CorpusIndex) -> dict[str, Any]:
+    chunks = {chunk.chunk_id: chunk for chunk in corpus.chunks}
+    ids: list[str] = []
+    unknown: list[str] = []
+    invalid_excerpts: list[str] = []
+    for version in state.answer_versions:
+        for claim in version.answer.factual_claims:
+            for chunk_id in claim.supporting_chunk_ids:
+                ids.append(chunk_id)
+                chunk = chunks.get(chunk_id)
+                if chunk is None:
+                    unknown.append(chunk_id)
+            for chunk_id, excerpt in zip(claim.supporting_chunk_ids, claim.supporting_excerpts):
+                chunk = chunks.get(chunk_id)
+                if chunk is not None and excerpt not in chunk.text:
+                    invalid_excerpts.append(f"{claim.claim_id}:{chunk_id}")
+    return {
+        "citation_id_count": len(ids),
+        "citation_ids_valid": not unknown and not invalid_excerpts,
+        "unknown_citation_ids": sorted(set(unknown)),
+        "invalid_excerpts": sorted(set(invalid_excerpts)),
+        "structural_only": True,
+    }
+
+
+def _semantic_review_status(state: Phase4SessionState) -> dict[str, Any]:
+    records = [record for record in state.claim_records if record.status == "current"]
+    machine_marked = [record for record in records if record.semantic_support_status != "unreviewed"]
+    return {
+        "status": "human_review_pending",
+        "reviewed_claim_count": 0,
+        "machine_marked_claim_count": len(machine_marked),
+        "current_claim_count": len(records),
+        "semantic_support_metric": None,
+        "reason": "No human semantic claim review was performed during this run.",
+    }
+
+
+def _sha256_text(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _sha256_json(value: Any) -> str:
+    payload = json.dumps(
+        value,
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _reviewer_identity_is_explicit(value: str | None) -> bool:
+    normalized = (value or "").strip().casefold()
+    return bool(normalized) and normalized not in _GENERIC_REVIEWER_IDS
+
+
+def _review_content_hashes(
+    *,
+    claim_text: str,
+    supporting_chunk_ids: str,
+    supporting_passages: str,
+    source_locations: str,
+) -> dict[str, str]:
+    """Hash the exact claim and support material persisted in the review CSV.
+
+    The CSV stores flattened fields for portability. Hashing those exact
+    serialized values lets the loader detect both a changed current claim and
+    a hand-edited review row whose old hash was left in place.
+    """
+
+    claim_text_sha256 = _sha256_text(claim_text)
+    supporting_passages_sha256 = _sha256_json(
+        {
+            "supporting_chunk_ids": supporting_chunk_ids,
+            "supporting_passages": supporting_passages,
+            "source_locations": source_locations,
+        }
+    )
+    return {
+        "claim_text_sha256": claim_text_sha256,
+        "supporting_passages_sha256": supporting_passages_sha256,
+        "review_content_sha256": _sha256_json(
+            {
+                "claim_text_sha256": claim_text_sha256,
+                "supporting_passages_sha256": supporting_passages_sha256,
+            }
+        ),
+    }
+
+
+def _review_entry_matches_content(
+    entry: dict[str, str],
+    *,
+    claim_text: str,
+    supporting_chunk_ids: str,
+    supporting_passages: str,
+    source_locations: str,
+) -> bool:
+    expected = _review_content_hashes(
+        claim_text=claim_text,
+        supporting_chunk_ids=supporting_chunk_ids,
+        supporting_passages=supporting_passages,
+        source_locations=source_locations,
+    )
+    stored = _review_content_hashes(
+        claim_text=entry.get("claim_text", ""),
+        supporting_chunk_ids=entry.get("supporting_chunk_ids", ""),
+        supporting_passages=entry.get("supporting_passages", ""),
+        source_locations=entry.get("source_locations", ""),
+    )
+    return (
+        all(entry.get(key) == value for key, value in expected.items())
+        and all(entry.get(key) == value for key, value in stored.items())
+    )
+
+
+def _review_summary(rows: Sequence[dict[str, str]]) -> dict[str, Any]:
+    """Summarize one strategy's content-bound review rows only."""
+
+    reviewed = [
+        row
+        for row in rows
+        if row.get("semantic_support_verdict") in _CLAIM_REVIEW_VERDICTS
+        and _reviewer_identity_is_explicit(row.get("reviewer"))
+    ]
+    pending = len(rows) - len(reviewed)
+    supported = [row for row in reviewed if row.get("semantic_support_verdict") == "supported"]
+    support_rate = len(supported) / len(reviewed) if reviewed else None
+    status = (
+        "NOT VERIFIED"
+        if not reviewed or pending
+        else "PASS"
+        if support_rate is not None and support_rate >= 0.85
+        else "FAIL"
+    )
+    reviewers = sorted(
+        {
+            row["reviewer"].strip()
+            for row in reviewed
+            if row.get("reviewer", "").strip()
+        }
+    )
+    return {
+        "status": status,
+        "reviewed_claim_count": len(reviewed),
+        "supported_claim_count": len(supported),
+        "unsupported_claim_count": sum(
+            row.get("semantic_support_verdict") == "unsupported" for row in reviewed
+        ),
+        "uncertain_claim_count": sum(
+            row.get("semantic_support_verdict") == "uncertain" for row in reviewed
+        ),
+        "pending_claim_count": pending,
+        "support_rate": support_rate,
+        "semantic_support_rate": support_rate,
+        "reviewer_ids": reviewers,
+        "content_hash_bound": True,
+        "independent_human_review_verified": False,
+    }
+
+
+def _status_text(state: Phase4SessionState) -> str:
+    answer = state.current_answer
+    return answer.answer.uncertainty.casefold() if answer is not None else ""
+
+
+async def _run_strategy(
+    case: Phase4EvaluationCase,
+    *,
+    corpus: CorpusIndex,
+    settings: Settings,

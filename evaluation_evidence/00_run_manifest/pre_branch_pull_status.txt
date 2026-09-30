@@ -1,0 +1,7 @@
+ M data/evaluation/phase4_label_review_status.json
+ M pyproject.toml
+ M reports/phase3_evaluation_realtime.json
+ M reports/phase3_evaluation_realtime.md
+ M reports/phase4_real_e2e.json
+ M uv.lock
+?? evaluation_evidence/

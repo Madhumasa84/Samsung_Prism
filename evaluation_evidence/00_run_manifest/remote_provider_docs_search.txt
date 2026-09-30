@@ -1,0 +1,39 @@
+9:[![Generation Backend](https://img.shields.io/badge/generation-mock%20by%20default-lightgrey.svg)](#real-llm--provider-integration-optional)
+12:> When speaking to a conventional AI assistant, the system waits until the user completely stops talking before initiating document retrieval and response generation—causing noticeable turn-taking latency. Furthermore, when the user provides a follow-up constraint or requests a reformat (*"summarize that as bullet points"*), typical systems discard previous computation and re-retrieve the entire corpus from scratch.
+17:> 3. **Fails closed on weak evidence**: Preserves provenance, rejects unsupported provider claims, and abstains when the available evidence is insufficient. Semantic entailment still requires governed review.
+33:- [Real LLM / Provider Integration (Optional)](#real-llm--provider-integration-optional)
+45:Standard Retrieval-Augmented Generation (RAG) pipelines operate on a rigid sequential cycle: speech completes, full query parsing begins, corpus retrieval executes, and answer generation runs from zero. In conversational voice and live transcript applications, this sequential bottleneck introduces high latency, excessive token consumption, and context fragmentation.
+47:**FlowContext** is an engineering prototype for the **Samsung PRISM Theme 4 (Live RAG)** concept. The repository implements the transcript replay, retrieval, generation, and session-state layers; audio capture, ASR, HTTP serving, UI, and production persistence are outside this codebase:
+119:| **Dense Vector Retrieval Smoke** | `MEASURED**` | Pinned `sentence-transformers/all-MiniLM-L6-v2` (384-dim); integrated live generation remains unverified | [`src/flowcontext/embeddings.py`](src/flowcontext/embeddings.py) |
+127:| **Real LLM & Provider Integration** | `NOT VERIFIED` | Generic OpenAI-compatible provider adapter exists; ships **disabled by default** (mock backend). Live credentials, provider compatibility, and integrated real-model generation require an external run — see [Real LLM / Provider Integration](#real-llm--provider-integration-optional) | [`src/flowcontext/generation.py`](src/flowcontext/generation.py) |
+170:- **Targeted Uncertainty**: When an information need cannot be resolved by retrieved evidence, FlowContext explicitly flags that specific sub-intent as unresolved rather than attempting speculative generation.
+207:# 2. Offline core pipeline smoke check (mock generation backend)
+238:## Real LLM / Provider Integration (Optional)
+240:**By default, FlowContext ships fully offline with a deterministic mock generation backend**
+241:(`generation_provider: flowcontext.mock`). `flowcontext config-check` reports
+242:`generation_api_key_configured: false` and `flowcontext smoke` reports `"backend": "mock"`
+243:until this section is followed. No vendor-specific provider (Sarvam or otherwise) is
+244:hard-coded anywhere in this repository — there is exactly one generation adapter, and it is a
+245:generic **OpenAI-compatible** `/v1/chat/completions` client (see
+246:[`src/flowcontext/generation.py`](src/flowcontext/generation.py)). Any provider that exposes
+247:an OpenAI-compatible chat-completions endpoint (Sarvam included) can be wired in through that
+248:same adapter — there is no separate Sarvam SDK or Sarvam-specific code path.
+250:To point the generic adapter at a real provider, set the following environment variables
+251:before invoking the CLI. **The API key variable name is configurable** — the app reads the key
+252:from whichever environment variable `FLOWCONTEXT_GENERATION_API_KEY_ENV` names; it does not
+253:hard-code `FLOWCONTEXT_GENERATION_API_KEY`, but that is the conventional default used below:
+256:export FLOWCONTEXT_GENERATION_BACKEND=openai_compatible
+257:export FLOWCONTEXT_GENERATION_PROVIDER=<provider-name>          # e.g. sarvam
+258:export FLOWCONTEXT_GENERATION_MODEL=<model-name>                # e.g. sarvam-m
+259:export FLOWCONTEXT_GENERATION_BASE_URL=https://<provider-endpoint>/v1
+260:export FLOWCONTEXT_GENERATION_API_KEY_ENV=FLOWCONTEXT_GENERATION_API_KEY
+261:export FLOWCONTEXT_GENERATION_API_KEY=<secret-in-process-environment-only>
+273:diagnostics. See [`docs/evaluation.md`](docs/evaluation.md#real-provider-verification) for the
+274:full real-provider verification walkthrough and interpretation of `audit_status` /
+276:actually executed against a live provider** — the `Real LLM & Provider Integration` row in the
+353:when official assets, semantic review, or a live provider are missing.
+368:| **Rapid Correction Race** | [`phase4-race.jsonl`](examples/replay/phase4-race.jsonl) | Cancels in-flight generation when user modifies speech before delivery | [`reports/phase4_replay_race.json`](reports/phase4_replay_race.json) |
+385:| `dense-smoke` | Embeddings | Validates offline dense vector embedding generation | `flowcontext dense-smoke --local-files-only` |
+400:│   ├── generation.py            # Structured grounded answer synthesis & repair loops
+441:3. **Robust Uncertainty Handling**: Unsupported provider claims are rejected at the application boundary; unresolved intents trigger explicit abstention or targeted clarification requests. This is not a proof of semantic zero hallucination.
+442:4. **Security & Data Privacy**: Session state is bounded and local by default. API keys are read from environment variables and excluded from traces; persistence, retention, encryption, and deletion policy remain deployment responsibilities.

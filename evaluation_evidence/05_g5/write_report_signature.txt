@@ -1,0 +1,3 @@
+(path: 'Path', report: 'dict[str, Any]', review_path: 'Path | None' = None) -> 'Path'
+
+['def write_phase4_evaluation_report(', '    path: Path,', '    report: dict[str, Any],', '    review_path: Path | None = None,', ') -> Path:', '    """Write JSON and Markdown reports plus the pending claim review sheet."""', '', '    atomic_write_text(path, json.dumps(report, indent=2, ensure_ascii=False) + "\\n")']

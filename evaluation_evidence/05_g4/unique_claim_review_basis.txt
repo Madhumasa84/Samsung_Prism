@@ -1,0 +1,32 @@
+
+CASE: p4-diagnostic-overdecomposition-001 
+CLAIM: Synthetic fixture catering options: the standard package includes vegetarian and non-vegetarian lunch, tea, and coffee. Dietary requests should be submitted with the booking. 
+CHUNKS: synthetic.catering-options#chunk-0000 
+STRUCTURAL: true 
+CLAIM_HASH: e876b0f7c2a9ea3ffa5fc574280a173561d8469b4e9363ae47f9495b96e520d8 
+PASSAGE_HASH: 34fe203477c98b4ea4af7f3d1f06f5f8bcfa1f220a6ddd4f6cb4cf3107099eaa 
+REVIEW_HASH: e5348074abdf78b5fa60d23b737528ee39008bc053a8cb3a3afcd2a5985550b5
+
+CASE: p4-untouched-add-question-002 
+CLAIM: Venue B in Pune accommodates up to 40 attendees and includes a projector. Availability must be confirmed separately. 
+CHUNKS: synthetic.venue-options#chunk-0001 
+STRUCTURAL: true 
+CLAIM_HASH: 0145de16b3e0d411a75468cc49fd0209adf253b54fabde7bb81344987d0c9d52 
+PASSAGE_HASH: 7f8f5795156df4be84dd20f2be97bd5510316b244ba6ea067d84ca308ccc7f65 
+REVIEW_HASH: ff1153eb6731d577e010e05f36512c5eb3f8fd879fee9a63a6b09e15a559f14d
+
+CASE: p4-untouched-entity-004 
+CLAIM: Venue A in Pune accommodates up to 30 attendees. Venue A includes a projector and a small breakout room. 
+CHUNKS: synthetic.venue-options#chunk-0000 
+STRUCTURAL: true 
+CLAIM_HASH: 480d6ed1ee59c2182242f66059dbd2f44b0d1458023d0f62b8128cba542e2339 
+PASSAGE_HASH: e3f389b3672f6f0b301f5eac59d21266968dbbc60ee928fce658a8d4a1d227b6 
+REVIEW_HASH: 20a0ba548be50d3a87e81b589bdc2ac40a909dae9cbe292c31ab223978d0e288
+
+CASE: p4-untouched-conflict-006 
+CLAIM: Synthetic fixture cancellation policy: cancel a workshop booking at least 7 calendar days before the event for a full refund. Cancellations fewer than 7 days before the event are refundable only according to the booking terms. 
+CHUNKS: synthetic.cancellation-policy#chunk-0000 
+STRUCTURAL: true 
+CLAIM_HASH: 85f2b58557b88ddd81b72860ba2ca0e659ce323832357126e4b38a0ab379f870 
+PASSAGE_HASH: b53bdb389e5b4ddf7932e03d2a552e25ef81c36aeaa48e220ac6629450628e79 
+REVIEW_HASH: 9cb6a009eaa71b74495d5e52c1068cb1ed89cece82e1d6aee5b4880840736d84

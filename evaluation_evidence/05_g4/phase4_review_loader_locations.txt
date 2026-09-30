@@ -1,0 +1,41 @@
+275:    label_review_status: Phase4LabelReviewStatus = Field(default_factory=Phase4LabelReviewStatus)
+609:def _semantic_review_status(state: Phase4SessionState) -> dict[str, Any]:
+614:        "reviewed_claim_count": 0,
+729:        "reviewed_claim_count": len(reviewed),
+737:        "pending_claim_count": pending,
+742:        "independent_human_review_verified": False,
+1105:            "semantic_support": _semantic_review_status(after),
+1287:        "intent_labels": Counter(case.label_review_status.intent_labels for case in cases),
+1288:        "follow_up_labels": Counter(case.label_review_status.follow_up_labels for case in cases),
+1289:        "answerability_labels": Counter(case.label_review_status.answerability_labels for case in cases),
+1290:        "semantic_claim_support": Counter(case.label_review_status.semantic_claim_support for case in cases),
+1294:            case.label_review_status.semantic_claim_support == "human_reviewed" for case in cases
+1425:            "reviewed_claim_count": sum(
+1426:                turn["semantic_support"]["reviewed_claim_count"] for turn in turns
+1623:                "label_review_status": case.label_review_status.model_dump(mode="json"),
+1695:        "label_review_status": _label_review_summary(cases),
+1929:    review_path = review_path or path.with_name(path.stem + "_claim_review.csv")
+1977:    report["claim_review_sheet"] = str(review_path)
+1995:    review_pending = sum(summary["pending_claim_count"] for summary in review_by_strategy.values())
+1997:    overall_review_status = (
+2004:    report["claim_review"] = {
+2005:        "status": overall_review_status,
+2006:        "reviewed_claim_count": len(reviewed_rows),
+2008:        "pending_claim_count": review_pending,
+2018:        "independent_human_review_verified": False,
+2021:    report["capability_status"]["semantic_support"] = overall_review_status
+2043:    if reviewed_rows and overall_review_status in {"PASS", "FAIL"}:
+2044:        reviewer_text = ", ".join(report["claim_review"]["reviewer_ids"])
+2106:    claim_review: dict[str, Any] | None = None,
+2110:    review = claim_review or {
+2112:        "reviewed_claim_count": 0,
+2114:        "pending_claim_count": 0,
+2118:        "independent_human_review_verified": False,
+2120:    review_status = str(review.get("status", "NOT VERIFIED"))
+2126:        "claim_review": review,
+2133:                "label_review_status": case.label_review_status.model_dump(mode="json"),
+2134:                "semantic_claim_review_status": review_status,
+2135:                "independent_human_review_status": (
+2137:                    if review.get("independent_human_review_verified")
+2144:            f"Manual claim review status: {review_status}; "
+2145:            f"{review.get('supported_claim_count', 0)}/{review.get('reviewed_claim_count', 0)} reviewed claims supported. "

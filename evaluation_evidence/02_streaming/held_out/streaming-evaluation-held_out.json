@@ -1,0 +1,2837 @@
+{
+  "schema_version": "flowcontext.phase2.v1",
+  "report_version": "flowcontext.streaming-evaluation.v1",
+  "evaluation_label": "phase2-streaming-local-audit",
+  "asset_status": "synthetic_fixture",
+  "selected_split": "held_out",
+  "development_case_count": 0,
+  "held_out_case_count": 9,
+  "measured_case_count": 9,
+  "labels_status": "provisional_generated",
+  "competition_performance_claim": false,
+  "passed": true,
+  "created_at_utc": "2026-09-27T12:51:15.230393+00:00",
+  "code_revision": "0190d6cbaa5e9d98a410d8523b50b4db3de5604d",
+  "configuration": {
+    "backend": "dense",
+    "top_k": 5,
+    "execution_mode": "realtime",
+    "generation_backend": "mock",
+    "generation_provider": "flowcontext.mock",
+    "generation_model": "mock-grounded-v1",
+    "streaming_policy": {
+      "schema_version": "flowcontext.phase2.v1",
+      "debounce_source_s": 0.35,
+      "min_query_chars": 8,
+      "min_topic_terms": 1,
+      "min_new_content_terms": 1,
+      "retrieve_on_correction": true,
+      "retrieve_on_constraint_change": true,
+      "duplicate_query_suppression": true,
+      "final_decision_bypasses_debounce": true
+    },
+    "scheduler": {
+      "schema_version": "flowcontext.phase2.v1",
+      "max_concurrency": 2,
+      "max_pending_requests": 4,
+      "request_timeout_s": 5.0,
+      "max_retries": 0,
+      "retry_backoff_s": 0.05,
+      "max_total_requests": 16,
+      "final_wait_timeout_s": 5.0,
+      "cancel_on_supersession": true
+    },
+    "case_splits": [
+      "held_out"
+    ],
+    "run_id_prefix": "streaming-evaluation"
+  },
+  "corpus_id": "corpus-3762c90f2912589e",
+  "index_id": "index-fa8362c61a50335b",
+  "model_identities": {
+    "retrieval": "dense:sentence-transformers",
+    "generation": "mock-grounded-v1"
+  },
+  "execution_mode": "realtime",
+  "warm_cold_condition": "single process; one shared index/retriever; provider configuration reused; case execution is bounded and declared concurrency groups run concurrently",
+  "environment": {
+    "python_version": "3.11.16",
+    "python_implementation": "CPython",
+    "platform": "macOS-27.0-arm64-arm-64bit",
+    "os_name": "posix",
+    "executable": "/Users/karthikeya/Desktop/Samsung_Prism/.venv/bin/python"
+  },
+  "hardware": {
+    "machine": "arm64",
+    "cpu_count": "10",
+    "gpu": "not_detected_by_phase1"
+  },
+  "guide_early_retrieval_target": 0.8,
+  "guide_early_retrieval_target_met": true,
+  "false_trigger_threshold": "not specified by the guide",
+  "metrics": {
+    "early_retrieval_numerator": 6.0,
+    "early_retrieval_denominator": 6.0,
+    "early_retrieval_rate_eligible": 1.0,
+    "valid_evidence_before_finalization_numerator": 3.0,
+    "valid_evidence_before_finalization_denominator": 6.0,
+    "valid_evidence_ready_before_finalization_rate": 0.5,
+    "useful_early_result_reuse_numerator": 3.0,
+    "useful_early_result_reuse_denominator": 6.0,
+    "useful_early_result_reuse_rate": 0.5,
+    "false_retrieval_trigger_count": 0.0,
+    "false_retrieval_trigger_denominator": 2.0,
+    "premature_trigger_count": 0.0,
+    "premature_trigger_denominator": 1.0,
+    "streaming_total_retrieval_calls": 10.0,
+    "streaming_retrieval_calls_per_utterance": 1.1111111111111112,
+    "baseline_total_retrieval_calls": 7.0,
+    "baseline_retrieval_calls_per_utterance": 0.7777777777777778,
+    "stale_result_acceptance_count": 0.0,
+    "trace_complete_count": 9.0,
+    "trace_sample_count": 9.0,
+    "error_count": 0.0,
+    "error_case_count": 0.0,
+    "streaming_quality_successful_denominator": 7.0,
+    "streaming_end_to_end_completed_count": 9.0,
+    "streaming_end_to_end_case_count": 9.0,
+    "streaming_final_evidence_recall_at_5_mean": 1.0,
+    "baseline_final_evidence_recall_at_5_mean": 1.0,
+    "baseline_quality_successful_denominator": 7.0,
+    "baseline_end_to_end_completed_count": 9.0,
+    "baseline_end_to_end_case_count": 9.0,
+    "eligible_case_count": 6.0,
+    "eligible_early_start_count": 6.0,
+    "guide_target_met": 1.0,
+    "measured_case_count": 9.0,
+    "measured_trace_complete_count": 9.0
+  },
+  "sections": {
+    "fixture": {
+      "schema_version": "flowcontext.phase2.v1",
+      "section_id": "fixture",
+      "status": "measured",
+      "result_group": "synthetic lexical/mock fixture cases",
+      "asset_status": "synthetic_fixture",
+      "corpus_id": "corpus-3762c90f2912589e",
+      "index_id": "index-fa8362c61a50335b",
+      "corpus_source_kind": "synthetic_fixture",
+      "retrieval_backend": "dense",
+      "generation_backend": "mock",
+      "generation_model": "mock-grounded-v1",
+      "execution_mode": "realtime",
+      "case_count": 9,
+      "case_results": [
+        {
+          "schema_version": "flowcontext.phase2.v1",
+          "case_id": "stream-heldout-paraphrase-venue",
+          "split": "held_out",
+          "scenario_group": "heldout_venue_paraphrase",
+          "asset_status": "synthetic_fixture",
+          "labels_status": "provisional_generated",
+          "baseline": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "baseline",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 15,
+            "final_query": "Which Pune venue can fit 30 people?",
+            "final_decision": "RETRIEVE",
+            "decision_reasons": [],
+            "retrieval_started_early": false,
+            "valid_evidence_ready_before_finalization": false,
+            "early_evidence_reused": false,
+            "retrieval_call_count": 1,
+            "scheduled_request_count": 1,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [
+              "synthetic.venue-options#chunk-0000",
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "expected_final_evidence_chunk_ids": [
+              "synthetic.venue-options#chunk-0000"
+            ],
+            "retrieved_ids": [
+              "synthetic.venue-options#chunk-0000",
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "relevant_ids": [
+              "synthetic.venue-options#chunk-0000"
+            ],
+            "request_status": "completed",
+            "request_statuses": [
+              "completed"
+            ],
+            "request_queries": [
+              "Which Pune venue can fit 30 people?"
+            ],
+            "request_details": [
+              {
+                "request_id": null,
+                "query": "Which Pune venue can fit 30 people?",
+                "status": "completed",
+                "is_final": true,
+                "accepted": true,
+                "stale": false,
+                "hit_ids": [
+                  "synthetic.venue-options#chunk-0000",
+                  "synthetic.venue-options#chunk-0001"
+                ]
+              }
+            ],
+            "reuse_decision": "baseline_final_only",
+            "reuse_validation": {
+              "decision": "rejected",
+              "final_query": "Which Pune venue can fit 30 people?",
+              "final_intent_ids": [
+                "intent-6cd7eebbfa"
+              ],
+              "hit_ids": [
+                "synthetic.venue-options#chunk-0000",
+                "synthetic.venue-options#chunk-0001"
+              ],
+              "duplicate_hit_ids": false,
+              "malformed_hit_ids": [],
+              "unknown_intent_ids": [],
+              "intent_query_term_overlap": {
+                "intent-6cd7eebbfa": 3
+              },
+              "intent_alignment": {
+                "intent-6cd7eebbfa": {
+                  "aligned": false,
+                  "reason": "no candidate hit",
+                  "semantic_support": "not_evaluated"
+                }
+              },
+              "covered_intent_ids": [],
+              "missing_intent_ids": [
+                "intent-6cd7eebbfa"
+              ],
+              "complete_intent_coverage": false,
+              "lexical_relevance_proxy": false,
+              "semantic_support": "not_evaluated",
+              "reason": "chunk IDs or weak lexical overlap do not establish aligned evidence for any final intent"
+            },
+            "scoring_denominator": 1,
+            "quality_scored": true,
+            "quality_exclusion_reason": null,
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {
+              "recall_at_1": 1.0,
+              "recall_at_3": 1.0,
+              "recall_at_5": 1.0
+            },
+            "final_evidence_mrr": 1.0,
+            "answer_latency_from_final_event_delivery_ms": 12.982042011572048,
+            "full_interaction_duration_ms": 414.7332909924444,
+            "controller_overhead_ms": 0.0,
+            "timing_sample_count": 1,
+            "generation_status": "success",
+            "generation_usage": {
+              "input_tokens": 44,
+              "output_tokens": 154,
+              "total_tokens": 198,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 7,
+              "output_tokens": 0,
+              "total_tokens": 7,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "streaming": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "streaming",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 17,
+            "final_query": "Which Pune venue can fit 30 people?",
+            "final_decision": "SKIP",
+            "decision_reasons": [
+              "meaningful_partial_query",
+              "duplicate_query_suppressed"
+            ],
+            "retrieval_started_early": true,
+            "valid_evidence_ready_before_finalization": true,
+            "early_evidence_reused": true,
+            "retrieval_call_count": 1,
+            "scheduled_request_count": 1,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [
+              "synthetic.venue-options#chunk-0000",
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "expected_final_evidence_chunk_ids": [
+              "synthetic.venue-options#chunk-0000"
+            ],
+            "retrieved_ids": [
+              "synthetic.venue-options#chunk-0000",
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "relevant_ids": [
+              "synthetic.venue-options#chunk-0000"
+            ],
+            "request_status": "completed",
+            "request_statuses": [
+              "completed"
+            ],
+            "request_queries": [
+              "Which Pune venue can fit 30 people"
+            ],
+            "request_details": [
+              {
+                "request_id": "stream-heldout-paraphrase-venue-session-u1-retrieval-0001-784d1c3ea34a",
+                "decision_id": "stream-heldout-paraphrase-venue-session-u1-decision-0001",
+                "transcript_revision": 1,
+                "retrieval_revision": 1,
+                "query": "Which Pune venue can fit 30 people",
+                "status": "completed",
+                "accepted": true,
+                "stale": false,
+                "is_final": false,
+                "attempts": 1,
+                "hit_ids": [
+                  "synthetic.venue-options#chunk-0000",
+                  "synthetic.venue-options#chunk-0001"
+                ],
+                "source_time_s": 0.0,
+                "scheduled_time_s": 0.0006945000204723328,
+                "actual_started_time_s": 0.0008967090107034892,
+                "actual_completed_time_s": 0.021047999995062128,
+                "evidence_ready_time_s": 0.021047999995062128,
+                "error": null
+              }
+            ],
+            "reuse_decision": "accepted_early_reuse",
+            "reuse_validation": {
+              "decision": "appropriate",
+              "final_query": "Which Pune venue can fit 30 people?",
+              "final_intent_ids": [],
+              "hit_ids": [
+                "synthetic.venue-options#chunk-0000",
+                "synthetic.venue-options#chunk-0001"
+              ],
+              "duplicate_hit_ids": false,
+              "malformed_hit_ids": [],
+              "query_term_overlap_by_hit": {
+                "synthetic.venue-options#chunk-0000": 3,
+                "synthetic.venue-options#chunk-0001": 2
+              },
+              "alignment_decisions": [
+                {
+                  "chunk_id": "synthetic.venue-options#chunk-0000",
+                  "selected": true,
+                  "reason": "single_query_alignment",
+                  "alignment": {
+                    "aligned": true,
+                    "query_terms": [
+                      "30",
+                      "fit",
+                      "people",
+                      "pune",
+                      "venue"
+                    ],
+                    "passage_terms": [
+                      "30",
+                      "accommodat",
+                      "attende",
+                      "breakout",
+                      "projector",
+                      "pune",
+                      "room",
+                      "small",
+                      "up",
+                      "venue"
+                    ],
+                    "matched_terms": [
+                      "30",
+                      "pune",
+                      "venue"
+                    ],
+                    "coverage": 0.6,
+                    "missing_constraints": [],
+                    "reason": "passage covers multiple answer-bearing query concepts",
+                    "retrieval_score_used": false,
+                    "citation_validity_used": false,
+                    "semantic_support": "not_evaluated"
+                  }
+                },
+                {
+                  "chunk_id": "synthetic.venue-options#chunk-0001",
+                  "selected": true,
+                  "reason": "single_query_alignment",
+                  "alignment": {
+                    "aligned": true,
+                    "query_terms": [
+                      "30",
+                      "fit",
+                      "people",
+                      "pune",
+                      "venue"
+                    ],
+                    "passage_terms": [
+                      "40",
+                      "accommodat",
+                      "attende",
+                      "availability",
+                      "b",
+                      "confirm",
+                      "must",
+                      "projector",
+                      "pune",
+                      "separately",
+                      "up",
+                      "venue"
+                    ],
+                    "matched_terms": [
+                      "pune",
+                      "venue"
+                    ],
+                    "coverage": 0.4,
+                    "missing_constraints": [],
+                    "reason": "passage covers multiple answer-bearing query concepts",
+                    "retrieval_score_used": false,
+                    "citation_validity_used": false,
+                    "semantic_support": "not_evaluated"
+                  }
+                }
+              ],
+              "lexical_relevance_proxy": true,
+              "semantic_support": "not_evaluated",
+              "reason": "non-empty evidence passes conservative alignment for the complete single retrieval query"
+            },
+            "scoring_denominator": 1,
+            "quality_scored": true,
+            "quality_exclusion_reason": null,
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {
+              "recall_at_1": 1.0,
+              "recall_at_3": 1.0,
+              "recall_at_5": 1.0
+            },
+            "final_evidence_mrr": 1.0,
+            "answer_latency_from_final_event_delivery_ms": 4.544291994534433,
+            "full_interaction_duration_ms": 418.29375000088476,
+            "controller_overhead_ms": 0.3704999980982393,
+            "timing_sample_count": 1,
+            "generation_status": "success",
+            "generation_usage": {
+              "input_tokens": 44,
+              "output_tokens": 154,
+              "total_tokens": 198,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 7,
+              "output_tokens": 0,
+              "total_tokens": 7,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "expected_behavior_met": true,
+          "failure_flags": [],
+          "notes": [
+            "labels are provisional generated engineering labels; no human verification was performed",
+            "semantic claim support is not evaluated by this harness"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase2.v1",
+          "case_id": "stream-heldout-final-cancellation",
+          "split": "held_out",
+          "scenario_group": "heldout_final_only_cancellation",
+          "asset_status": "synthetic_fixture",
+          "labels_status": "provisional_generated",
+          "baseline": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "baseline",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 15,
+            "final_query": "Can you explain cancellation refunds?",
+            "final_decision": "RETRIEVE",
+            "decision_reasons": [],
+            "retrieval_started_early": false,
+            "valid_evidence_ready_before_finalization": false,
+            "early_evidence_reused": false,
+            "retrieval_call_count": 1,
+            "scheduled_request_count": 1,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [
+              "synthetic.cancellation-policy#chunk-0000"
+            ],
+            "expected_final_evidence_chunk_ids": [
+              "synthetic.cancellation-policy#chunk-0000"
+            ],
+            "retrieved_ids": [
+              "synthetic.cancellation-policy#chunk-0000"
+            ],
+            "relevant_ids": [
+              "synthetic.cancellation-policy#chunk-0000"
+            ],
+            "request_status": "completed",
+            "request_statuses": [
+              "completed"
+            ],
+            "request_queries": [
+              "Can you explain cancellation refunds?"
+            ],
+            "request_details": [
+              {
+                "request_id": null,
+                "query": "Can you explain cancellation refunds?",
+                "status": "completed",
+                "is_final": true,
+                "accepted": true,
+                "stale": false,
+                "hit_ids": [
+                  "synthetic.cancellation-policy#chunk-0000"
+                ]
+              }
+            ],
+            "reuse_decision": "baseline_final_only",
+            "reuse_validation": {
+              "decision": "appropriate",
+              "final_query": "Can you explain cancellation refunds?",
+              "final_intent_ids": [
+                "intent-14e1b06b52"
+              ],
+              "hit_ids": [
+                "synthetic.cancellation-policy#chunk-0000"
+              ],
+              "duplicate_hit_ids": false,
+              "malformed_hit_ids": [],
+              "unknown_intent_ids": [],
+              "intent_query_term_overlap": {
+                "intent-14e1b06b52": 2
+              },
+              "intent_alignment": {
+                "intent-14e1b06b52": {
+                  "aligned": true,
+                  "query_terms": [
+                    "cancellation",
+                    "refund"
+                  ],
+                  "passage_terms": [
+                    "7",
+                    "accord",
+                    "before",
+                    "book",
+                    "calendar",
+                    "cancel",
+                    "cancellation",
+                    "day",
+                    "event",
+                    "fewer",
+                    "fixture",
+                    "full",
+                    "least",
+                    "only",
+                    "policy",
+                    "refund",
+                    "refundable",
+                    "synthetic",
+                    "term",
+                    "than",
+                    "workshop"
+                  ],
+                  "matched_terms": [
+                    "cancellation",
+                    "refund"
+                  ],
+                  "coverage": 1.0,
+                  "missing_constraints": [],
+                  "reason": "all short-query concepts are present",
+                  "retrieval_score_used": false,
+                  "citation_validity_used": false,
+                  "semantic_support": "not_evaluated"
+                }
+              },
+              "covered_intent_ids": [
+                "intent-14e1b06b52"
+              ],
+              "missing_intent_ids": [],
+              "complete_intent_coverage": true,
+              "lexical_relevance_proxy": true,
+              "semantic_support": "not_evaluated",
+              "reason": "non-empty evidence passes conservative alignment for at least one final intent"
+            },
+            "scoring_denominator": 1,
+            "quality_scored": true,
+            "quality_exclusion_reason": null,
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {
+              "recall_at_1": 1.0,
+              "recall_at_3": 1.0,
+              "recall_at_5": 1.0
+            },
+            "final_evidence_mrr": 1.0,
+            "answer_latency_from_final_event_delivery_ms": 14.829207997536287,
+            "full_interaction_duration_ms": 216.289541014703,
+            "controller_overhead_ms": 0.0,
+            "timing_sample_count": 1,
+            "generation_status": "success",
+            "generation_usage": {
+              "input_tokens": 41,
+              "output_tokens": 125,
+              "total_tokens": 166,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 5,
+              "output_tokens": 0,
+              "total_tokens": 5,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "streaming": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "streaming",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 16,
+            "final_query": "Can you explain cancellation refunds?",
+            "final_decision": "RETRIEVE",
+            "decision_reasons": [
+              "partial_query_too_short",
+              "final_complete_query"
+            ],
+            "retrieval_started_early": false,
+            "valid_evidence_ready_before_finalization": false,
+            "early_evidence_reused": false,
+            "retrieval_call_count": 1,
+            "scheduled_request_count": 1,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [
+              "synthetic.cancellation-policy#chunk-0000"
+            ],
+            "expected_final_evidence_chunk_ids": [
+              "synthetic.cancellation-policy#chunk-0000"
+            ],
+            "retrieved_ids": [
+              "synthetic.cancellation-policy#chunk-0000"
+            ],
+            "relevant_ids": [
+              "synthetic.cancellation-policy#chunk-0000"
+            ],
+            "request_status": "completed",
+            "request_statuses": [
+              "completed"
+            ],
+            "request_queries": [
+              "Can you explain cancellation refunds?"
+            ],
+            "request_details": [
+              {
+                "request_id": "stream-heldout-final-cancellation-session-u1-retrieval-0001-5f9e2c329587",
+                "decision_id": "stream-heldout-final-cancellation-session-u1-decision-0002",
+                "transcript_revision": 2,
+                "retrieval_revision": 1,
+                "query": "Can you explain cancellation refunds?",
+                "status": "completed",
+                "accepted": true,
+                "stale": false,
+                "is_final": true,
+                "attempts": 1,
+                "hit_ids": [
+                  "synthetic.cancellation-policy#chunk-0000"
+                ],
+                "source_time_s": 0.2,
+                "scheduled_time_s": 0.21426449998398311,
+                "actual_started_time_s": 0.21441508299903944,
+                "actual_completed_time_s": 0.22234508299152367,
+                "evidence_ready_time_s": 0.22234508299152367,
+                "error": null
+              }
+            ],
+            "reuse_decision": "no_early_request",
+            "reuse_validation": {},
+            "scoring_denominator": 1,
+            "quality_scored": true,
+            "quality_exclusion_reason": null,
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {
+              "recall_at_1": 1.0,
+              "recall_at_3": 1.0,
+              "recall_at_5": 1.0
+            },
+            "final_evidence_mrr": 1.0,
+            "answer_latency_from_final_event_delivery_ms": 8.861417009029537,
+            "full_interaction_duration_ms": 223.00470800837502,
+            "controller_overhead_ms": 0.09124900680035353,
+            "timing_sample_count": 1,
+            "generation_status": "success",
+            "generation_usage": {
+              "input_tokens": 41,
+              "output_tokens": 125,
+              "total_tokens": 166,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 5,
+              "output_tokens": 0,
+              "total_tokens": 5,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "expected_behavior_met": true,
+          "failure_flags": [],
+          "notes": [
+            "labels are provisional generated engineering labels; no human verification was performed",
+            "semantic claim support is not evaluated by this harness"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase2.v1",
+          "case_id": "stream-heldout-incremental-catering",
+          "split": "held_out",
+          "scenario_group": "heldout_incremental_catering",
+          "asset_status": "synthetic_fixture",
+          "labels_status": "provisional_generated",
+          "baseline": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "baseline",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 17,
+            "final_query": "Tell me about catering options.",
+            "final_decision": "RETRIEVE",
+            "decision_reasons": [],
+            "retrieval_started_early": false,
+            "valid_evidence_ready_before_finalization": false,
+            "early_evidence_reused": false,
+            "retrieval_call_count": 1,
+            "scheduled_request_count": 1,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [
+              "synthetic.catering-options#chunk-0000"
+            ],
+            "expected_final_evidence_chunk_ids": [
+              "synthetic.catering-options#chunk-0000"
+            ],
+            "retrieved_ids": [
+              "synthetic.catering-options#chunk-0000"
+            ],
+            "relevant_ids": [
+              "synthetic.catering-options#chunk-0000"
+            ],
+            "request_status": "completed",
+            "request_statuses": [
+              "completed"
+            ],
+            "request_queries": [
+              "Tell me about catering options."
+            ],
+            "request_details": [
+              {
+                "request_id": null,
+                "query": "Tell me about catering options.",
+                "status": "completed",
+                "is_final": true,
+                "accepted": true,
+                "stale": false,
+                "hit_ids": [
+                  "synthetic.catering-options#chunk-0000"
+                ]
+              }
+            ],
+            "reuse_decision": "baseline_final_only",
+            "reuse_validation": {
+              "decision": "appropriate",
+              "final_query": "Tell me about catering options.",
+              "final_intent_ids": [
+                "intent-ce106d13ec"
+              ],
+              "hit_ids": [
+                "synthetic.catering-options#chunk-0000"
+              ],
+              "duplicate_hit_ids": false,
+              "malformed_hit_ids": [],
+              "unknown_intent_ids": [],
+              "intent_query_term_overlap": {
+                "intent-ce106d13ec": 2
+              },
+              "intent_alignment": {
+                "intent-ce106d13ec": {
+                  "aligned": true,
+                  "query_terms": [
+                    "cater",
+                    "option"
+                  ],
+                  "passage_terms": [
+                    "book",
+                    "cater",
+                    "coffee",
+                    "dietary",
+                    "fixture",
+                    "lunch",
+                    "non",
+                    "option",
+                    "package",
+                    "request",
+                    "standard",
+                    "submitt",
+                    "synthetic",
+                    "tea",
+                    "vegetarian"
+                  ],
+                  "matched_terms": [
+                    "cater",
+                    "option"
+                  ],
+                  "coverage": 1.0,
+                  "missing_constraints": [],
+                  "reason": "all short-query concepts are present",
+                  "retrieval_score_used": false,
+                  "citation_validity_used": false,
+                  "semantic_support": "not_evaluated"
+                }
+              },
+              "covered_intent_ids": [
+                "intent-ce106d13ec"
+              ],
+              "missing_intent_ids": [],
+              "complete_intent_coverage": true,
+              "lexical_relevance_proxy": true,
+              "semantic_support": "not_evaluated",
+              "reason": "non-empty evidence passes conservative alignment for at least one final intent"
+            },
+            "scoring_denominator": 1,
+            "quality_scored": true,
+            "quality_exclusion_reason": null,
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {
+              "recall_at_1": 1.0,
+              "recall_at_3": 1.0,
+              "recall_at_5": 1.0
+            },
+            "final_evidence_mrr": 1.0,
+            "answer_latency_from_final_event_delivery_ms": 12.09145798929967,
+            "full_interaction_duration_ms": 814.8584580048919,
+            "controller_overhead_ms": 0.0,
+            "timing_sample_count": 1,
+            "generation_status": "success",
+            "generation_usage": {
+              "input_tokens": 29,
+              "output_tokens": 101,
+              "total_tokens": 130,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 5,
+              "output_tokens": 0,
+              "total_tokens": 5,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "streaming": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "streaming",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 22,
+            "final_query": "Tell me about catering options.",
+            "final_decision": "RETRIEVE",
+            "decision_reasons": [
+              "incomplete_phrase",
+              "meaningful_partial_query",
+              "final_new_topic_information"
+            ],
+            "retrieval_started_early": true,
+            "valid_evidence_ready_before_finalization": false,
+            "early_evidence_reused": false,
+            "retrieval_call_count": 2,
+            "scheduled_request_count": 2,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [
+              "synthetic.catering-options#chunk-0000"
+            ],
+            "expected_final_evidence_chunk_ids": [
+              "synthetic.catering-options#chunk-0000"
+            ],
+            "retrieved_ids": [
+              "synthetic.catering-options#chunk-0000"
+            ],
+            "relevant_ids": [
+              "synthetic.catering-options#chunk-0000"
+            ],
+            "request_status": "completed",
+            "request_statuses": [
+              "completed",
+              "completed"
+            ],
+            "request_queries": [
+              "Tell me about catering",
+              "Tell me about catering options."
+            ],
+            "request_details": [
+              {
+                "request_id": "stream-heldout-incremental-catering-session-u1-retrieval-0001-58df1c4802ce",
+                "decision_id": "stream-heldout-incremental-catering-session-u1-decision-0002",
+                "transcript_revision": 2,
+                "retrieval_revision": 1,
+                "query": "Tell me about catering",
+                "status": "completed",
+                "accepted": true,
+                "stale": false,
+                "is_final": false,
+                "attempts": 1,
+                "hit_ids": [
+                  "synthetic.catering-options#chunk-0000"
+                ],
+                "source_time_s": 0.45,
+                "scheduled_time_s": 0.45176666698534973,
+                "actual_started_time_s": 0.4519699169904925,
+                "actual_completed_time_s": 0.47040116699645296,
+                "evidence_ready_time_s": 0.47040116699645296,
+                "error": null
+              },
+              {
+                "request_id": "stream-heldout-incremental-catering-session-u1-retrieval-0002-30d29608b930",
+                "decision_id": "stream-heldout-incremental-catering-session-u1-decision-0003",
+                "transcript_revision": 3,
+                "retrieval_revision": 2,
+                "query": "Tell me about catering options.",
+                "status": "completed",
+                "accepted": true,
+                "stale": false,
+                "is_final": true,
+                "attempts": 1,
+                "hit_ids": [
+                  "synthetic.catering-options#chunk-0000"
+                ],
+                "source_time_s": 0.8,
+                "scheduled_time_s": 0.8146184169745538,
+                "actual_started_time_s": 0.8152612089761533,
+                "actual_completed_time_s": 0.8219218339945655,
+                "evidence_ready_time_s": 0.8219218339945655,
+                "error": null
+              }
+            ],
+            "reuse_decision": "final_query_changed_no_reuse",
+            "reuse_validation": {
+              "decision": "appropriate",
+              "final_query": "Tell me about catering options.",
+              "final_intent_ids": [
+                "intent-ce106d13ec"
+              ],
+              "hit_ids": [
+                "synthetic.catering-options#chunk-0000"
+              ],
+              "duplicate_hit_ids": false,
+              "malformed_hit_ids": [],
+              "unknown_intent_ids": [],
+              "intent_query_term_overlap": {
+                "intent-ce106d13ec": 2
+              },
+              "intent_alignment": {
+                "intent-ce106d13ec": {
+                  "aligned": true,
+                  "query_terms": [
+                    "cater",
+                    "option"
+                  ],
+                  "passage_terms": [
+                    "book",
+                    "cater",
+                    "coffee",
+                    "dietary",
+                    "fixture",
+                    "lunch",
+                    "non",
+                    "option",
+                    "package",
+                    "request",
+                    "standard",
+                    "submitt",
+                    "synthetic",
+                    "tea",
+                    "vegetarian"
+                  ],
+                  "matched_terms": [
+                    "cater",
+                    "option"
+                  ],
+                  "coverage": 1.0,
+                  "missing_constraints": [],
+                  "reason": "all short-query concepts are present",
+                  "retrieval_score_used": false,
+                  "citation_validity_used": false,
+                  "semantic_support": "not_evaluated"
+                }
+              },
+              "covered_intent_ids": [
+                "intent-ce106d13ec"
+              ],
+              "missing_intent_ids": [],
+              "complete_intent_coverage": true,
+              "lexical_relevance_proxy": true,
+              "semantic_support": "not_evaluated",
+              "reason": "non-empty evidence passes conservative alignment for at least one final intent"
+            },
+            "scoring_denominator": 1,
+            "quality_scored": true,
+            "quality_exclusion_reason": null,
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {
+              "recall_at_1": 1.0,
+              "recall_at_3": 1.0,
+              "recall_at_5": 1.0
+            },
+            "final_evidence_mrr": 1.0,
+            "answer_latency_from_final_event_delivery_ms": 7.970208011101931,
+            "full_interaction_duration_ms": 822.4415419972502,
+            "controller_overhead_ms": 0.2946670283563435,
+            "timing_sample_count": 1,
+            "generation_status": "success",
+            "generation_usage": {
+              "input_tokens": 29,
+              "output_tokens": 101,
+              "total_tokens": 130,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 9,
+              "output_tokens": 0,
+              "total_tokens": 9,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "expected_behavior_met": true,
+          "failure_flags": [],
+          "notes": [
+            "labels are provisional generated engineering labels; no human verification was performed",
+            "semantic claim support is not evaluated by this harness"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase2.v1",
+          "case_id": "stream-heldout-cumulative-catering",
+          "split": "held_out",
+          "scenario_group": "heldout_cumulative_catering",
+          "asset_status": "synthetic_fixture",
+          "labels_status": "provisional_generated",
+          "baseline": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "baseline",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 17,
+            "final_query": "Tell me about catering options.",
+            "final_decision": "RETRIEVE",
+            "decision_reasons": [],
+            "retrieval_started_early": false,
+            "valid_evidence_ready_before_finalization": false,
+            "early_evidence_reused": false,
+            "retrieval_call_count": 1,
+            "scheduled_request_count": 1,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [
+              "synthetic.catering-options#chunk-0000"
+            ],
+            "expected_final_evidence_chunk_ids": [
+              "synthetic.catering-options#chunk-0000"
+            ],
+            "retrieved_ids": [
+              "synthetic.catering-options#chunk-0000"
+            ],
+            "relevant_ids": [
+              "synthetic.catering-options#chunk-0000"
+            ],
+            "request_status": "completed",
+            "request_statuses": [
+              "completed"
+            ],
+            "request_queries": [
+              "Tell me about catering options."
+            ],
+            "request_details": [
+              {
+                "request_id": null,
+                "query": "Tell me about catering options.",
+                "status": "completed",
+                "is_final": true,
+                "accepted": true,
+                "stale": false,
+                "hit_ids": [
+                  "synthetic.catering-options#chunk-0000"
+                ]
+              }
+            ],
+            "reuse_decision": "baseline_final_only",
+            "reuse_validation": {
+              "decision": "appropriate",
+              "final_query": "Tell me about catering options.",
+              "final_intent_ids": [
+                "intent-ce106d13ec"
+              ],
+              "hit_ids": [
+                "synthetic.catering-options#chunk-0000"
+              ],
+              "duplicate_hit_ids": false,
+              "malformed_hit_ids": [],
+              "unknown_intent_ids": [],
+              "intent_query_term_overlap": {
+                "intent-ce106d13ec": 2
+              },
+              "intent_alignment": {
+                "intent-ce106d13ec": {
+                  "aligned": true,
+                  "query_terms": [
+                    "cater",
+                    "option"
+                  ],
+                  "passage_terms": [
+                    "book",
+                    "cater",
+                    "coffee",
+                    "dietary",
+                    "fixture",
+                    "lunch",
+                    "non",
+                    "option",
+                    "package",
+                    "request",
+                    "standard",
+                    "submitt",
+                    "synthetic",
+                    "tea",
+                    "vegetarian"
+                  ],
+                  "matched_terms": [
+                    "cater",
+                    "option"
+                  ],
+                  "coverage": 1.0,
+                  "missing_constraints": [],
+                  "reason": "all short-query concepts are present",
+                  "retrieval_score_used": false,
+                  "citation_validity_used": false,
+                  "semantic_support": "not_evaluated"
+                }
+              },
+              "covered_intent_ids": [
+                "intent-ce106d13ec"
+              ],
+              "missing_intent_ids": [],
+              "complete_intent_coverage": true,
+              "lexical_relevance_proxy": true,
+              "semantic_support": "not_evaluated",
+              "reason": "non-empty evidence passes conservative alignment for at least one final intent"
+            },
+            "scoring_denominator": 1,
+            "quality_scored": true,
+            "quality_exclusion_reason": null,
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {
+              "recall_at_1": 1.0,
+              "recall_at_3": 1.0,
+              "recall_at_5": 1.0
+            },
+            "final_evidence_mrr": 1.0,
+            "answer_latency_from_final_event_delivery_ms": 13.444499985780567,
+            "full_interaction_duration_ms": 416.13933301414363,
+            "controller_overhead_ms": 0.0,
+            "timing_sample_count": 1,
+            "generation_status": "success",
+            "generation_usage": {
+              "input_tokens": 29,
+              "output_tokens": 101,
+              "total_tokens": 130,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 5,
+              "output_tokens": 0,
+              "total_tokens": 5,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "streaming": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "streaming",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 19,
+            "final_query": "Tell me about catering options.",
+            "final_decision": "SKIP",
+            "decision_reasons": [
+              "meaningful_partial_query",
+              "duplicate_query_suppressed",
+              "duplicate_query_suppressed"
+            ],
+            "retrieval_started_early": true,
+            "valid_evidence_ready_before_finalization": true,
+            "early_evidence_reused": true,
+            "retrieval_call_count": 1,
+            "scheduled_request_count": 1,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [
+              "synthetic.catering-options#chunk-0000"
+            ],
+            "expected_final_evidence_chunk_ids": [
+              "synthetic.catering-options#chunk-0000"
+            ],
+            "retrieved_ids": [
+              "synthetic.catering-options#chunk-0000"
+            ],
+            "relevant_ids": [
+              "synthetic.catering-options#chunk-0000"
+            ],
+            "request_status": "completed",
+            "request_statuses": [
+              "completed"
+            ],
+            "request_queries": [
+              "Tell me about catering options"
+            ],
+            "request_details": [
+              {
+                "request_id": "stream-heldout-cumulative-catering-session-u1-retrieval-0001-79a2ede4e124",
+                "decision_id": "stream-heldout-cumulative-catering-session-u1-decision-0001",
+                "transcript_revision": 1,
+                "retrieval_revision": 1,
+                "query": "Tell me about catering options",
+                "status": "completed",
+                "accepted": true,
+                "stale": false,
+                "is_final": false,
+                "attempts": 1,
+                "hit_ids": [
+                  "synthetic.catering-options#chunk-0000"
+                ],
+                "source_time_s": 0.0,
+                "scheduled_time_s": 0.00014866600395180285,
+                "actual_started_time_s": 0.00019616601639427245,
+                "actual_completed_time_s": 0.005000375007512048,
+                "evidence_ready_time_s": 0.005000375007512048,
+                "error": null
+              }
+            ],
+            "reuse_decision": "accepted_early_reuse",
+            "reuse_validation": {
+              "decision": "appropriate",
+              "final_query": "Tell me about catering options.",
+              "final_intent_ids": [],
+              "hit_ids": [
+                "synthetic.catering-options#chunk-0000"
+              ],
+              "duplicate_hit_ids": false,
+              "malformed_hit_ids": [],
+              "query_term_overlap_by_hit": {
+                "synthetic.catering-options#chunk-0000": 2
+              },
+              "alignment_decisions": [
+                {
+                  "chunk_id": "synthetic.catering-options#chunk-0000",
+                  "selected": true,
+                  "reason": "single_query_alignment",
+                  "alignment": {
+                    "aligned": true,
+                    "query_terms": [
+                      "cater",
+                      "option"
+                    ],
+                    "passage_terms": [
+                      "book",
+                      "cater",
+                      "coffee",
+                      "dietary",
+                      "fixture",
+                      "lunch",
+                      "non",
+                      "option",
+                      "package",
+                      "request",
+                      "standard",
+                      "submitt",
+                      "synthetic",
+                      "tea",
+                      "vegetarian"
+                    ],
+                    "matched_terms": [
+                      "cater",
+                      "option"
+                    ],
+                    "coverage": 1.0,
+                    "missing_constraints": [],
+                    "reason": "all short-query concepts are present",
+                    "retrieval_score_used": false,
+                    "citation_validity_used": false,
+                    "semantic_support": "not_evaluated"
+                  }
+                }
+              ],
+              "lexical_relevance_proxy": true,
+              "semantic_support": "not_evaluated",
+              "reason": "non-empty evidence passes conservative alignment for the complete single retrieval query"
+            },
+            "scoring_denominator": 1,
+            "quality_scored": true,
+            "quality_exclusion_reason": null,
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {
+              "recall_at_1": 1.0,
+              "recall_at_3": 1.0,
+              "recall_at_5": 1.0
+            },
+            "final_evidence_mrr": 1.0,
+            "answer_latency_from_final_event_delivery_ms": 1.3619590026792139,
+            "full_interaction_duration_ms": 416.7182499950286,
+            "controller_overhead_ms": 0.24362499243579805,
+            "timing_sample_count": 1,
+            "generation_status": "success",
+            "generation_usage": {
+              "input_tokens": 29,
+              "output_tokens": 101,
+              "total_tokens": 130,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 5,
+              "output_tokens": 0,
+              "total_tokens": 5,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "expected_behavior_met": true,
+          "failure_flags": [],
+          "notes": [
+            "labels are provisional generated engineering labels; no human verification was performed",
+            "semantic claim support is not evaluated by this harness"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase2.v1",
+          "case_id": "stream-heldout-correction-entity",
+          "split": "held_out",
+          "scenario_group": "heldout_correction_entity",
+          "asset_status": "synthetic_fixture",
+          "labels_status": "provisional_generated",
+          "baseline": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "baseline",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 15,
+            "final_query": "Actually, tell me about Venue B in Pune.",
+            "final_decision": "RETRIEVE",
+            "decision_reasons": [],
+            "retrieval_started_early": false,
+            "valid_evidence_ready_before_finalization": false,
+            "early_evidence_reused": false,
+            "retrieval_call_count": 1,
+            "scheduled_request_count": 1,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [
+              "synthetic.venue-options#chunk-0000",
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "expected_final_evidence_chunk_ids": [
+              "synthetic.venue-options#chunk-0000"
+            ],
+            "retrieved_ids": [
+              "synthetic.venue-options#chunk-0000",
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "relevant_ids": [
+              "synthetic.venue-options#chunk-0000"
+            ],
+            "request_status": "completed",
+            "request_statuses": [
+              "completed"
+            ],
+            "request_queries": [
+              "Actually, tell me about Venue B in Pune."
+            ],
+            "request_details": [
+              {
+                "request_id": null,
+                "query": "Actually, tell me about Venue B in Pune.",
+                "status": "completed",
+                "is_final": true,
+                "accepted": true,
+                "stale": false,
+                "hit_ids": [
+                  "synthetic.venue-options#chunk-0000",
+                  "synthetic.venue-options#chunk-0001"
+                ]
+              }
+            ],
+            "reuse_decision": "baseline_final_only",
+            "reuse_validation": {
+              "decision": "rejected",
+              "final_query": "Actually, tell me about Venue B in Pune.",
+              "final_intent_ids": [
+                "intent-4aa3fef8a4"
+              ],
+              "hit_ids": [
+                "synthetic.venue-options#chunk-0000",
+                "synthetic.venue-options#chunk-0001"
+              ],
+              "duplicate_hit_ids": false,
+              "malformed_hit_ids": [],
+              "unknown_intent_ids": [],
+              "intent_query_term_overlap": {
+                "intent-4aa3fef8a4": 3
+              },
+              "intent_alignment": {
+                "intent-4aa3fef8a4": {
+                  "aligned": false,
+                  "reason": "no candidate hit",
+                  "semantic_support": "not_evaluated"
+                }
+              },
+              "covered_intent_ids": [],
+              "missing_intent_ids": [
+                "intent-4aa3fef8a4"
+              ],
+              "complete_intent_coverage": false,
+              "lexical_relevance_proxy": false,
+              "semantic_support": "not_evaluated",
+              "reason": "chunk IDs or weak lexical overlap do not establish aligned evidence for any final intent"
+            },
+            "scoring_denominator": 1,
+            "quality_scored": true,
+            "quality_exclusion_reason": null,
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {
+              "recall_at_1": 1.0,
+              "recall_at_3": 1.0,
+              "recall_at_5": 1.0
+            },
+            "final_evidence_mrr": 1.0,
+            "answer_latency_from_final_event_delivery_ms": 18.670709017897025,
+            "full_interaction_duration_ms": 220.07145898533054,
+            "controller_overhead_ms": 0.0,
+            "timing_sample_count": 1,
+            "generation_status": "success",
+            "generation_usage": {
+              "input_tokens": 45,
+              "output_tokens": 154,
+              "total_tokens": 199,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 7,
+              "output_tokens": 0,
+              "total_tokens": 7,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "streaming": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "streaming",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 20,
+            "final_query": "Actually, tell me about Venue B in Pune.",
+            "final_decision": "RETRIEVE",
+            "decision_reasons": [
+              "meaningful_partial_query",
+              "explicit_correction"
+            ],
+            "retrieval_started_early": true,
+            "valid_evidence_ready_before_finalization": false,
+            "early_evidence_reused": false,
+            "retrieval_call_count": 2,
+            "scheduled_request_count": 2,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [
+              "synthetic.venue-options#chunk-0000",
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "expected_final_evidence_chunk_ids": [
+              "synthetic.venue-options#chunk-0000"
+            ],
+            "retrieved_ids": [
+              "synthetic.venue-options#chunk-0000",
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "relevant_ids": [
+              "synthetic.venue-options#chunk-0000"
+            ],
+            "request_status": "completed",
+            "request_statuses": [
+              "completed",
+              "completed"
+            ],
+            "request_queries": [
+              "Tell me about Venue A",
+              "Actually, tell me about Venue B in Pune."
+            ],
+            "request_details": [
+              {
+                "request_id": "stream-heldout-correction-entity-session-u1-retrieval-0001-075f522ef536",
+                "decision_id": "stream-heldout-correction-entity-session-u1-decision-0001",
+                "transcript_revision": 1,
+                "retrieval_revision": 1,
+                "query": "Tell me about Venue A",
+                "status": "completed",
+                "accepted": true,
+                "stale": false,
+                "is_final": false,
+                "attempts": 1,
+                "hit_ids": [
+                  "synthetic.venue-options#chunk-0000",
+                  "synthetic.venue-options#chunk-0001"
+                ],
+                "source_time_s": 0.0,
+                "scheduled_time_s": 0.00017045799177139997,
+                "actual_started_time_s": 0.0002286669914610684,
+                "actual_completed_time_s": 0.008124499989207834,
+                "evidence_ready_time_s": 0.008124499989207834,
+                "error": null
+              },
+              {
+                "request_id": "stream-heldout-correction-entity-session-u1-retrieval-0002-f91e32134431",
+                "decision_id": "stream-heldout-correction-entity-session-u1-decision-0002",
+                "transcript_revision": 2,
+                "retrieval_revision": 2,
+                "query": "Actually, tell me about Venue B in Pune.",
+                "status": "completed",
+                "accepted": true,
+                "stale": false,
+                "is_final": true,
+                "attempts": 1,
+                "hit_ids": [
+                  "synthetic.venue-options#chunk-0000",
+                  "synthetic.venue-options#chunk-0001"
+                ],
+                "source_time_s": 0.2,
+                "scheduled_time_s": 0.2197730419866275,
+                "actual_started_time_s": 0.22078366699861363,
+                "actual_completed_time_s": 0.2289353329979349,
+                "evidence_ready_time_s": 0.2289353329979349,
+                "error": null
+              }
+            ],
+            "reuse_decision": "final_query_changed_no_reuse",
+            "reuse_validation": {
+              "decision": "rejected",
+              "final_query": "Actually, tell me about Venue B in Pune.",
+              "final_intent_ids": [
+                "intent-4aa3fef8a4"
+              ],
+              "hit_ids": [
+                "synthetic.venue-options#chunk-0000",
+                "synthetic.venue-options#chunk-0001"
+              ],
+              "duplicate_hit_ids": false,
+              "malformed_hit_ids": [],
+              "unknown_intent_ids": [],
+              "intent_query_term_overlap": {
+                "intent-4aa3fef8a4": 3
+              },
+              "intent_alignment": {
+                "intent-4aa3fef8a4": {
+                  "aligned": false,
+                  "reason": "no candidate hit",
+                  "semantic_support": "not_evaluated"
+                }
+              },
+              "covered_intent_ids": [],
+              "missing_intent_ids": [
+                "intent-4aa3fef8a4"
+              ],
+              "complete_intent_coverage": false,
+              "lexical_relevance_proxy": false,
+              "semantic_support": "not_evaluated",
+              "reason": "chunk IDs or weak lexical overlap do not establish aligned evidence for any final intent"
+            },
+            "scoring_denominator": 1,
+            "quality_scored": true,
+            "quality_exclusion_reason": null,
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {
+              "recall_at_1": 1.0,
+              "recall_at_3": 1.0,
+              "recall_at_5": 1.0
+            },
+            "final_evidence_mrr": 1.0,
+            "answer_latency_from_final_event_delivery_ms": 10.00862501678057,
+            "full_interaction_duration_ms": 229.62716699112207,
+            "controller_overhead_ms": 0.130291999084875,
+            "timing_sample_count": 1,
+            "generation_status": "success",
+            "generation_usage": {
+              "input_tokens": 45,
+              "output_tokens": 154,
+              "total_tokens": 199,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 11,
+              "output_tokens": 0,
+              "total_tokens": 11,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "expected_behavior_met": true,
+          "failure_flags": [],
+          "notes": [
+            "labels are provisional generated engineering labels; no human verification was performed",
+            "semantic claim support is not evaluated by this harness"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase2.v1",
+          "case_id": "stream-heldout-correction-quantity",
+          "split": "held_out",
+          "scenario_group": "heldout_correction_quantity",
+          "asset_status": "synthetic_fixture",
+          "labels_status": "provisional_generated",
+          "baseline": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "baseline",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 15,
+            "final_query": "Sorry, find a venue for 40 people in Pune.",
+            "final_decision": "RETRIEVE",
+            "decision_reasons": [],
+            "retrieval_started_early": false,
+            "valid_evidence_ready_before_finalization": false,
+            "early_evidence_reused": false,
+            "retrieval_call_count": 1,
+            "scheduled_request_count": 1,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [
+              "synthetic.venue-options#chunk-0000",
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "expected_final_evidence_chunk_ids": [
+              "synthetic.venue-options#chunk-0000"
+            ],
+            "retrieved_ids": [
+              "synthetic.venue-options#chunk-0000",
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "relevant_ids": [
+              "synthetic.venue-options#chunk-0000"
+            ],
+            "request_status": "completed",
+            "request_statuses": [
+              "completed"
+            ],
+            "request_queries": [
+              "Sorry, find a venue for 40 people in Pune."
+            ],
+            "request_details": [
+              {
+                "request_id": null,
+                "query": "Sorry, find a venue for 40 people in Pune.",
+                "status": "completed",
+                "is_final": true,
+                "accepted": true,
+                "stale": false,
+                "hit_ids": [
+                  "synthetic.venue-options#chunk-0000",
+                  "synthetic.venue-options#chunk-0001"
+                ]
+              }
+            ],
+            "reuse_decision": "baseline_final_only",
+            "reuse_validation": {
+              "decision": "rejected",
+              "final_query": "Sorry, find a venue for 40 people in Pune.",
+              "final_intent_ids": [
+                "intent-d4c1ef4b4b"
+              ],
+              "hit_ids": [
+                "synthetic.venue-options#chunk-0000",
+                "synthetic.venue-options#chunk-0001"
+              ],
+              "duplicate_hit_ids": false,
+              "malformed_hit_ids": [],
+              "unknown_intent_ids": [],
+              "intent_query_term_overlap": {
+                "intent-d4c1ef4b4b": 3
+              },
+              "intent_alignment": {
+                "intent-d4c1ef4b4b": {
+                  "aligned": false,
+                  "reason": "no candidate hit",
+                  "semantic_support": "not_evaluated"
+                }
+              },
+              "covered_intent_ids": [],
+              "missing_intent_ids": [
+                "intent-d4c1ef4b4b"
+              ],
+              "complete_intent_coverage": false,
+              "lexical_relevance_proxy": false,
+              "semantic_support": "not_evaluated",
+              "reason": "chunk IDs or weak lexical overlap do not establish aligned evidence for any final intent"
+            },
+            "scoring_denominator": 1,
+            "quality_scored": true,
+            "quality_exclusion_reason": null,
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {
+              "recall_at_1": 1.0,
+              "recall_at_3": 1.0,
+              "recall_at_5": 1.0
+            },
+            "final_evidence_mrr": 1.0,
+            "answer_latency_from_final_event_delivery_ms": 13.927332998719066,
+            "full_interaction_duration_ms": 215.3470840130467,
+            "controller_overhead_ms": 0.0,
+            "timing_sample_count": 1,
+            "generation_status": "success",
+            "generation_usage": {
+              "input_tokens": 46,
+              "output_tokens": 154,
+              "total_tokens": 200,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 6,
+              "output_tokens": 0,
+              "total_tokens": 6,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "streaming": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "streaming",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 19,
+            "final_query": "Sorry, find a venue for 40 people in Pune.",
+            "final_decision": "RETRIEVE",
+            "decision_reasons": [
+              "meaningful_partial_query",
+              "explicit_correction"
+            ],
+            "retrieval_started_early": true,
+            "valid_evidence_ready_before_finalization": false,
+            "early_evidence_reused": false,
+            "retrieval_call_count": 2,
+            "scheduled_request_count": 2,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [
+              "synthetic.venue-options#chunk-0000",
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "expected_final_evidence_chunk_ids": [
+              "synthetic.venue-options#chunk-0000"
+            ],
+            "retrieved_ids": [
+              "synthetic.venue-options#chunk-0000",
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "relevant_ids": [
+              "synthetic.venue-options#chunk-0000"
+            ],
+            "request_status": "completed",
+            "request_statuses": [
+              "completed",
+              "completed"
+            ],
+            "request_queries": [
+              "Find a venue for 20 people",
+              "Sorry, find a venue for 40 people in Pune."
+            ],
+            "request_details": [
+              {
+                "request_id": "stream-heldout-correction-quantity-session-u1-retrieval-0001-3b177a6b4e2d",
+                "decision_id": "stream-heldout-correction-quantity-session-u1-decision-0001",
+                "transcript_revision": 1,
+                "retrieval_revision": 1,
+                "query": "Find a venue for 20 people",
+                "status": "completed",
+                "accepted": true,
+                "stale": false,
+                "is_final": false,
+                "attempts": 1,
+                "hit_ids": [],
+                "source_time_s": 0.0,
+                "scheduled_time_s": 0.00019566601258702576,
+                "actual_started_time_s": 0.00025645800633355975,
+                "actual_completed_time_s": 0.007481375010684133,
+                "evidence_ready_time_s": null,
+                "error": null
+              },
+              {
+                "request_id": "stream-heldout-correction-quantity-session-u1-retrieval-0002-0c05deeda799",
+                "decision_id": "stream-heldout-correction-quantity-session-u1-decision-0002",
+                "transcript_revision": 2,
+                "retrieval_revision": 2,
+                "query": "Sorry, find a venue for 40 people in Pune.",
+                "status": "completed",
+                "accepted": true,
+                "stale": false,
+                "is_final": true,
+                "attempts": 1,
+                "hit_ids": [
+                  "synthetic.venue-options#chunk-0000",
+                  "synthetic.venue-options#chunk-0001"
+                ],
+                "source_time_s": 0.2,
+                "scheduled_time_s": 0.21508654099307023,
+                "actual_started_time_s": 0.21596287499414757,
+                "actual_completed_time_s": 0.2232907500001602,
+                "evidence_ready_time_s": 0.2232907500001602,
+                "error": null
+              }
+            ],
+            "reuse_decision": "final_query_changed_no_reuse",
+            "reuse_validation": {},
+            "scoring_denominator": 1,
+            "quality_scored": true,
+            "quality_exclusion_reason": null,
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {
+              "recall_at_1": 1.0,
+              "recall_at_3": 1.0,
+              "recall_at_5": 1.0
+            },
+            "final_evidence_mrr": 1.0,
+            "answer_latency_from_final_event_delivery_ms": 9.064915997441858,
+            "full_interaction_duration_ms": 223.994166997727,
+            "controller_overhead_ms": 0.13345800107344985,
+            "timing_sample_count": 1,
+            "generation_status": "success",
+            "generation_usage": {
+              "input_tokens": 46,
+              "output_tokens": 154,
+              "total_tokens": 200,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 10,
+              "output_tokens": 0,
+              "total_tokens": 10,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "expected_behavior_met": true,
+          "failure_flags": [],
+          "notes": [
+            "labels are provisional generated engineering labels; no human verification was performed",
+            "semantic claim support is not evaluated by this harness"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase2.v1",
+          "case_id": "stream-heldout-greeting",
+          "split": "held_out",
+          "scenario_group": "heldout_greeting",
+          "asset_status": "synthetic_fixture",
+          "labels_status": "provisional_generated",
+          "baseline": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "baseline",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 8,
+            "final_query": "Good morning!",
+            "final_decision": "SKIP",
+            "decision_reasons": [
+              "greeting_no_retrieval"
+            ],
+            "retrieval_started_early": false,
+            "valid_evidence_ready_before_finalization": false,
+            "early_evidence_reused": false,
+            "retrieval_call_count": 0,
+            "scheduled_request_count": 0,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [],
+            "expected_final_evidence_chunk_ids": [],
+            "retrieved_ids": [],
+            "relevant_ids": [],
+            "request_status": "not_scheduled",
+            "request_statuses": [],
+            "request_queries": [],
+            "request_details": [],
+            "reuse_decision": "no_retrieval_policy",
+            "reuse_validation": {},
+            "scoring_denominator": 0,
+            "quality_scored": false,
+            "quality_exclusion_reason": "no relevance labels",
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {},
+            "final_evidence_mrr": null,
+            "answer_latency_from_final_event_delivery_ms": 0.036667013773694634,
+            "full_interaction_duration_ms": 0.14187500346451998,
+            "controller_overhead_ms": 0.0,
+            "timing_sample_count": 1,
+            "generation_status": "skipped",
+            "generation_usage": {
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "total_tokens": 0,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "total_tokens": 0,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "streaming": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "streaming",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 9,
+            "final_query": "Good morning!",
+            "final_decision": "SKIP",
+            "decision_reasons": [
+              "greeting_no_retrieval"
+            ],
+            "retrieval_started_early": false,
+            "valid_evidence_ready_before_finalization": false,
+            "early_evidence_reused": false,
+            "retrieval_call_count": 0,
+            "scheduled_request_count": 0,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [],
+            "expected_final_evidence_chunk_ids": [],
+            "retrieved_ids": [],
+            "relevant_ids": [],
+            "request_status": "not_scheduled",
+            "request_statuses": [],
+            "request_queries": [],
+            "request_details": [],
+            "reuse_decision": "no_early_request",
+            "reuse_validation": {},
+            "scoring_denominator": 0,
+            "quality_scored": false,
+            "quality_exclusion_reason": "no relevance labels",
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {},
+            "final_evidence_mrr": null,
+            "answer_latency_from_final_event_delivery_ms": 0.05512501229532063,
+            "full_interaction_duration_ms": 0.2535840030759573,
+            "controller_overhead_ms": 0.02866602153517306,
+            "timing_sample_count": 1,
+            "generation_status": "skipped",
+            "generation_usage": {
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "total_tokens": 0,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "total_tokens": 0,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "expected_behavior_met": true,
+          "failure_flags": [],
+          "notes": [
+            "labels are provisional generated engineering labels; no human verification was performed",
+            "semantic claim support is not evaluated by this harness"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase2.v1",
+          "case_id": "stream-heldout-format-context",
+          "split": "held_out",
+          "scenario_group": "heldout_formatting_with_context",
+          "asset_status": "synthetic_fixture",
+          "labels_status": "provisional_generated",
+          "baseline": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "baseline",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 8,
+            "final_query": "Put that in bullets.",
+            "final_decision": "SKIP",
+            "decision_reasons": [
+              "formatting_with_previous_answer_context"
+            ],
+            "retrieval_started_early": false,
+            "valid_evidence_ready_before_finalization": false,
+            "early_evidence_reused": false,
+            "retrieval_call_count": 0,
+            "scheduled_request_count": 0,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [],
+            "expected_final_evidence_chunk_ids": [],
+            "retrieved_ids": [],
+            "relevant_ids": [],
+            "request_status": "not_scheduled",
+            "request_statuses": [],
+            "request_queries": [],
+            "request_details": [],
+            "reuse_decision": "no_retrieval_policy",
+            "reuse_validation": {},
+            "scoring_denominator": 0,
+            "quality_scored": false,
+            "quality_exclusion_reason": "no relevance labels",
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {},
+            "final_evidence_mrr": null,
+            "answer_latency_from_final_event_delivery_ms": 0.04350001108832657,
+            "full_interaction_duration_ms": 0.1385000068694353,
+            "controller_overhead_ms": 0.0,
+            "timing_sample_count": 1,
+            "generation_status": "skipped",
+            "generation_usage": {
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "total_tokens": 0,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "total_tokens": 0,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "streaming": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "streaming",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 9,
+            "final_query": "Put that in bullets.",
+            "final_decision": "SKIP",
+            "decision_reasons": [
+              "formatting_with_previous_answer_context"
+            ],
+            "retrieval_started_early": false,
+            "valid_evidence_ready_before_finalization": false,
+            "early_evidence_reused": false,
+            "retrieval_call_count": 0,
+            "scheduled_request_count": 0,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [],
+            "expected_final_evidence_chunk_ids": [],
+            "retrieved_ids": [],
+            "relevant_ids": [],
+            "request_status": "not_scheduled",
+            "request_statuses": [],
+            "request_queries": [],
+            "request_details": [],
+            "reuse_decision": "no_early_request",
+            "reuse_validation": {},
+            "scoring_denominator": 0,
+            "quality_scored": false,
+            "quality_exclusion_reason": "no relevance labels",
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {},
+            "final_evidence_mrr": null,
+            "answer_latency_from_final_event_delivery_ms": 0.04691601498052478,
+            "full_interaction_duration_ms": 0.23849998251534998,
+            "controller_overhead_ms": 0.02258300082758069,
+            "timing_sample_count": 1,
+            "generation_status": "skipped",
+            "generation_usage": {
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "total_tokens": 0,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 0,
+              "output_tokens": 0,
+              "total_tokens": 0,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "expected_behavior_met": true,
+          "failure_flags": [],
+          "notes": [
+            "labels are provisional generated engineering labels; no human verification was performed",
+            "semantic claim support is not evaluated by this harness"
+          ]
+        },
+        {
+          "schema_version": "flowcontext.phase2.v1",
+          "case_id": "stream-heldout-concurrent",
+          "split": "held_out",
+          "scenario_group": "heldout_concurrent_session",
+          "asset_status": "synthetic_fixture",
+          "labels_status": "provisional_generated",
+          "baseline": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "baseline",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 15,
+            "final_query": "Which venue in Pune?",
+            "final_decision": "RETRIEVE",
+            "decision_reasons": [],
+            "retrieval_started_early": false,
+            "valid_evidence_ready_before_finalization": false,
+            "early_evidence_reused": false,
+            "retrieval_call_count": 1,
+            "scheduled_request_count": 1,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [
+              "synthetic.venue-options#chunk-0000",
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "expected_final_evidence_chunk_ids": [
+              "synthetic.venue-options#chunk-0000"
+            ],
+            "retrieved_ids": [
+              "synthetic.venue-options#chunk-0000",
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "relevant_ids": [
+              "synthetic.venue-options#chunk-0000"
+            ],
+            "request_status": "completed",
+            "request_statuses": [
+              "completed"
+            ],
+            "request_queries": [
+              "Which venue in Pune?"
+            ],
+            "request_details": [
+              {
+                "request_id": null,
+                "query": "Which venue in Pune?",
+                "status": "completed",
+                "is_final": true,
+                "accepted": true,
+                "stale": false,
+                "hit_ids": [
+                  "synthetic.venue-options#chunk-0000",
+                  "synthetic.venue-options#chunk-0001"
+                ]
+              }
+            ],
+            "reuse_decision": "baseline_final_only",
+            "reuse_validation": {
+              "decision": "appropriate",
+              "final_query": "Which venue in Pune?",
+              "final_intent_ids": [
+                "intent-07f2a70e45"
+              ],
+              "hit_ids": [
+                "synthetic.venue-options#chunk-0000",
+                "synthetic.venue-options#chunk-0001"
+              ],
+              "duplicate_hit_ids": false,
+              "malformed_hit_ids": [],
+              "unknown_intent_ids": [],
+              "intent_query_term_overlap": {
+                "intent-07f2a70e45": 2
+              },
+              "intent_alignment": {
+                "intent-07f2a70e45": {
+                  "aligned": true,
+                  "query_terms": [
+                    "pune",
+                    "venue"
+                  ],
+                  "passage_terms": [
+                    "30",
+                    "accommodat",
+                    "attende",
+                    "breakout",
+                    "projector",
+                    "pune",
+                    "room",
+                    "small",
+                    "up",
+                    "venue"
+                  ],
+                  "matched_terms": [
+                    "pune",
+                    "venue"
+                  ],
+                  "coverage": 1.0,
+                  "missing_constraints": [],
+                  "reason": "all short-query concepts are present",
+                  "retrieval_score_used": false,
+                  "citation_validity_used": false,
+                  "semantic_support": "not_evaluated"
+                }
+              },
+              "covered_intent_ids": [
+                "intent-07f2a70e45"
+              ],
+              "missing_intent_ids": [],
+              "complete_intent_coverage": true,
+              "lexical_relevance_proxy": true,
+              "semantic_support": "not_evaluated",
+              "reason": "non-empty evidence passes conservative alignment for at least one final intent"
+            },
+            "scoring_denominator": 1,
+            "quality_scored": true,
+            "quality_exclusion_reason": null,
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {
+              "recall_at_1": 1.0,
+              "recall_at_3": 1.0,
+              "recall_at_5": 1.0
+            },
+            "final_evidence_mrr": 1.0,
+            "answer_latency_from_final_event_delivery_ms": 18.48975001485087,
+            "full_interaction_duration_ms": 269.8490830080118,
+            "controller_overhead_ms": 0.0,
+            "timing_sample_count": 1,
+            "generation_status": "success",
+            "generation_usage": {
+              "input_tokens": 41,
+              "output_tokens": 154,
+              "total_tokens": 195,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 3,
+              "output_tokens": 0,
+              "total_tokens": 3,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "streaming": {
+            "schema_version": "flowcontext.phase2.v1",
+            "mode": "streaming",
+            "execution_mode": "realtime",
+            "run_status": "completed",
+            "trace_complete": true,
+            "missing_trace_events": [],
+            "trace_event_count": 17,
+            "final_query": "Which venue in Pune?",
+            "final_decision": "SKIP",
+            "decision_reasons": [
+              "meaningful_partial_query",
+              "duplicate_query_suppressed"
+            ],
+            "retrieval_started_early": true,
+            "valid_evidence_ready_before_finalization": true,
+            "early_evidence_reused": true,
+            "retrieval_call_count": 1,
+            "scheduled_request_count": 1,
+            "superseded_request_count": 0,
+            "cancelled_request_count": 0,
+            "timed_out_request_count": 0,
+            "retrieval_error_count": 0,
+            "stale_result_discard_count": 0,
+            "stale_result_accepted_count": 0,
+            "final_evidence_chunk_ids": [
+              "synthetic.venue-options#chunk-0000",
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "expected_final_evidence_chunk_ids": [
+              "synthetic.venue-options#chunk-0000"
+            ],
+            "retrieved_ids": [
+              "synthetic.venue-options#chunk-0000",
+              "synthetic.venue-options#chunk-0001"
+            ],
+            "relevant_ids": [
+              "synthetic.venue-options#chunk-0000"
+            ],
+            "request_status": "completed",
+            "request_statuses": [
+              "completed"
+            ],
+            "request_queries": [
+              "Which venue in Pune"
+            ],
+            "request_details": [
+              {
+                "request_id": "stream-heldout-concurrent-session-u1-retrieval-0001-54240f51f26a",
+                "decision_id": "stream-heldout-concurrent-session-u1-decision-0001",
+                "transcript_revision": 1,
+                "retrieval_revision": 1,
+                "query": "Which venue in Pune",
+                "status": "completed",
+                "accepted": true,
+                "stale": false,
+                "is_final": false,
+                "attempts": 1,
+                "hit_ids": [
+                  "synthetic.venue-options#chunk-0000",
+                  "synthetic.venue-options#chunk-0001"
+                ],
+                "source_time_s": 0.0,
+                "scheduled_time_s": 0.00011550000635907054,
+                "actual_started_time_s": 0.00016004100325517356,
+                "actual_completed_time_s": 0.006410083005903289,
+                "evidence_ready_time_s": 0.006410083005903289,
+                "error": null
+              }
+            ],
+            "reuse_decision": "accepted_early_reuse",
+            "reuse_validation": {
+              "decision": "appropriate",
+              "final_query": "Which venue in Pune?",
+              "final_intent_ids": [],
+              "hit_ids": [
+                "synthetic.venue-options#chunk-0000",
+                "synthetic.venue-options#chunk-0001"
+              ],
+              "duplicate_hit_ids": false,
+              "malformed_hit_ids": [],
+              "query_term_overlap_by_hit": {
+                "synthetic.venue-options#chunk-0000": 2,
+                "synthetic.venue-options#chunk-0001": 2
+              },
+              "alignment_decisions": [
+                {
+                  "chunk_id": "synthetic.venue-options#chunk-0000",
+                  "selected": true,
+                  "reason": "single_query_alignment",
+                  "alignment": {
+                    "aligned": true,
+                    "query_terms": [
+                      "pune",
+                      "venue"
+                    ],
+                    "passage_terms": [
+                      "30",
+                      "accommodat",
+                      "attende",
+                      "breakout",
+                      "projector",
+                      "pune",
+                      "room",
+                      "small",
+                      "up",
+                      "venue"
+                    ],
+                    "matched_terms": [
+                      "pune",
+                      "venue"
+                    ],
+                    "coverage": 1.0,
+                    "missing_constraints": [],
+                    "reason": "all short-query concepts are present",
+                    "retrieval_score_used": false,
+                    "citation_validity_used": false,
+                    "semantic_support": "not_evaluated"
+                  }
+                },
+                {
+                  "chunk_id": "synthetic.venue-options#chunk-0001",
+                  "selected": true,
+                  "reason": "single_query_alignment",
+                  "alignment": {
+                    "aligned": true,
+                    "query_terms": [
+                      "pune",
+                      "venue"
+                    ],
+                    "passage_terms": [
+                      "40",
+                      "accommodat",
+                      "attende",
+                      "availability",
+                      "b",
+                      "confirm",
+                      "must",
+                      "projector",
+                      "pune",
+                      "separately",
+                      "up",
+                      "venue"
+                    ],
+                    "matched_terms": [
+                      "pune",
+                      "venue"
+                    ],
+                    "coverage": 1.0,
+                    "missing_constraints": [],
+                    "reason": "all short-query concepts are present",
+                    "retrieval_score_used": false,
+                    "citation_validity_used": false,
+                    "semantic_support": "not_evaluated"
+                  }
+                }
+              ],
+              "lexical_relevance_proxy": true,
+              "semantic_support": "not_evaluated",
+              "reason": "non-empty evidence passes conservative alignment for the complete single retrieval query"
+            },
+            "scoring_denominator": 1,
+            "quality_scored": true,
+            "quality_exclusion_reason": null,
+            "end_to_end_success": true,
+            "final_evidence_recall_at_k": {
+              "recall_at_1": 1.0,
+              "recall_at_3": 1.0,
+              "recall_at_5": 1.0
+            },
+            "final_evidence_mrr": 1.0,
+            "answer_latency_from_final_event_delivery_ms": 1.6250830085482448,
+            "full_interaction_duration_ms": 270.60412502032705,
+            "controller_overhead_ms": 0.11283301864750683,
+            "timing_sample_count": 1,
+            "generation_status": "success",
+            "generation_usage": {
+              "input_tokens": 41,
+              "output_tokens": 154,
+              "total_tokens": 195,
+              "estimated": true
+            },
+            "retrieval_usage": {
+              "input_tokens": 3,
+              "output_tokens": 0,
+              "total_tokens": 3,
+              "estimated": true
+            },
+            "generation_cost": "unavailable",
+            "cost_availability": "unavailable",
+            "errors": [],
+            "trace_timeline": []
+          },
+          "expected_behavior_met": true,
+          "failure_flags": [],
+          "notes": [
+            "labels are provisional generated engineering labels; no human verification was performed",
+            "semantic claim support is not evaluated by this harness",
+            "paired in concurrent session group stream-heldout-concurrent"
+          ]
+        }
+      ],
+      "metrics": {
+        "early_retrieval_numerator": 6.0,
+        "early_retrieval_denominator": 6.0,
+        "early_retrieval_rate_eligible": 1.0,
+        "valid_evidence_before_finalization_numerator": 3.0,
+        "valid_evidence_before_finalization_denominator": 6.0,
+        "valid_evidence_ready_before_finalization_rate": 0.5,
+        "useful_early_result_reuse_numerator": 3.0,
+        "useful_early_result_reuse_denominator": 6.0,
+        "useful_early_result_reuse_rate": 0.5,
+        "false_retrieval_trigger_count": 0.0,
+        "false_retrieval_trigger_denominator": 2.0,
+        "premature_trigger_count": 0.0,
+        "premature_trigger_denominator": 1.0,
+        "streaming_total_retrieval_calls": 10.0,
+        "streaming_retrieval_calls_per_utterance": 1.1111111111111112,
+        "baseline_total_retrieval_calls": 7.0,
+        "baseline_retrieval_calls_per_utterance": 0.7777777777777778,
+        "stale_result_acceptance_count": 0.0,
+        "trace_complete_count": 9.0,
+        "trace_sample_count": 9.0,
+        "error_count": 0.0,
+        "error_case_count": 0.0,
+        "streaming_quality_successful_denominator": 7.0,
+        "streaming_end_to_end_completed_count": 9.0,
+        "streaming_end_to_end_case_count": 9.0,
+        "streaming_final_evidence_recall_at_5_mean": 1.0,
+        "baseline_final_evidence_recall_at_5_mean": 1.0,
+        "baseline_quality_successful_denominator": 7.0,
+        "baseline_end_to_end_completed_count": 9.0,
+        "baseline_end_to_end_case_count": 9.0
+      },
+      "timing": {
+        "baseline_answer_latency_from_final_event_delivery_ms": {
+          "execution_mode": "realtime",
+          "sample_count": 9,
+          "p50_ms": 13.444499985780567,
+          "p95_ms": 18.598325416678563,
+          "latency_comparable_to_realtime": true,
+          "interpretation": "observed realtime replay timing"
+        },
+        "streaming_answer_latency_from_final_event_delivery_ms": {
+          "execution_mode": "realtime",
+          "sample_count": 9,
+          "p50_ms": 4.544291994534433,
+          "p95_ms": 9.631141409045085,
+          "latency_comparable_to_realtime": true,
+          "interpretation": "observed realtime replay timing"
+        },
+        "streaming_full_interaction_duration_ms": {
+          "execution_mode": "realtime",
+          "sample_count": 9,
+          "p50_ms": 229.62716699112207,
+          "p95_ms": 660.7824251987039,
+          "latency_comparable_to_realtime": true,
+          "interpretation": "observed realtime replay timing"
+        },
+        "streaming_controller_overhead_ms": {
+          "execution_mode": "realtime",
+          "sample_count": 9,
+          "p50_ms": 0.130291999084875,
+          "p95_ms": 0.340166810201481,
+          "latency_comparable_to_realtime": true,
+          "interpretation": "observed realtime replay timing"
+        }
+      },
+      "usage": {
+        "baseline_generation_tokens": 1218,
+        "streaming_generation_tokens": 1218,
+        "baseline_retrieval_tokens": 38,
+        "streaming_retrieval_tokens": 50,
+        "generation_cost": "unavailable",
+        "cost_availability": "unavailable"
+      },
+      "cost_availability": "unavailable",
+      "trace_coverage": {
+        "streaming_trace_complete": 9,
+        "streaming_trace_samples": 9,
+        "baseline_trace_complete": 9,
+        "baseline_trace_samples": 9
+      },
+      "limitations": [
+        "Synthetic fixture and provisional generated labels; not an official benchmark.",
+        "Semantic claim support and answer usefulness were not human-reviewed.",
+        "Realtime timing is local process observation, not competitive performance."
+      ]
+    },
+    "simulated_delay": {
+      "schema_version": "flowcontext.phase2.v1",
+      "section_id": "simulated_delay",
+      "status": "measured",
+      "result_group": "synthetic fixture cases with bounded simulated retrieval behavior",
+      "asset_status": "synthetic_fixture",
+      "corpus_id": "corpus-3762c90f2912589e",
+      "index_id": "index-fa8362c61a50335b",
+      "corpus_source_kind": "synthetic_fixture",
+      "retrieval_backend": "dense",
+      "generation_backend": "mock",
+      "generation_model": "mock-grounded-v1",
+      "execution_mode": "realtime",
+      "case_count": 0,
+      "case_results": [],
+      "metrics": {
+        "early_retrieval_numerator": 0.0,
+        "early_retrieval_denominator": 0.0,
+        "early_retrieval_rate_eligible": 0.0,
+        "valid_evidence_before_finalization_numerator": 0.0,
+        "valid_evidence_before_finalization_denominator": 0.0,
+        "valid_evidence_ready_before_finalization_rate": 0.0,
+        "useful_early_result_reuse_numerator": 0.0,
+        "useful_early_result_reuse_denominator": 0.0,
+        "useful_early_result_reuse_rate": 0.0,
+        "false_retrieval_trigger_count": 0.0,
+        "false_retrieval_trigger_denominator": 0.0,
+        "premature_trigger_count": 0.0,
+        "premature_trigger_denominator": 0.0,
+        "streaming_total_retrieval_calls": 0.0,
+        "streaming_retrieval_calls_per_utterance": 0.0,
+        "baseline_total_retrieval_calls": 0.0,
+        "baseline_retrieval_calls_per_utterance": 0.0,
+        "stale_result_acceptance_count": 0.0,
+        "trace_complete_count": 0.0,
+        "trace_sample_count": 0.0,
+        "error_count": 0.0,
+        "error_case_count": 0.0,
+        "streaming_quality_successful_denominator": 0.0,
+        "streaming_end_to_end_completed_count": 0.0,
+        "streaming_end_to_end_case_count": 0.0,
+        "baseline_quality_successful_denominator": 0.0,
+        "baseline_end_to_end_completed_count": 0.0,
+        "baseline_end_to_end_case_count": 0.0
+      },
+      "timing": {
+        "baseline_answer_latency_from_final_event_delivery_ms": {
+          "execution_mode": "realtime",
+          "sample_count": 0,
+          "p50_ms": null,
+          "p95_ms": null,
+          "latency_comparable_to_realtime": true,
+          "interpretation": "observed realtime replay timing"
+        },
+        "streaming_answer_latency_from_final_event_delivery_ms": {
+          "execution_mode": "realtime",
+          "sample_count": 0,
+          "p50_ms": null,
+          "p95_ms": null,
+          "latency_comparable_to_realtime": true,
+          "interpretation": "observed realtime replay timing"
+        },
+        "streaming_full_interaction_duration_ms": {
+          "execution_mode": "realtime",
+          "sample_count": 0,
+          "p50_ms": null,
+          "p95_ms": null,
+          "latency_comparable_to_realtime": true,
+          "interpretation": "observed realtime replay timing"
+        },
+        "streaming_controller_overhead_ms": {
+          "execution_mode": "realtime",
+          "sample_count": 0,
+          "p50_ms": null,
+          "p95_ms": null,
+          "latency_comparable_to_realtime": true,
+          "interpretation": "observed realtime replay timing"
+        }
+      },
+      "usage": {
+        "baseline_generation_tokens": 0,
+        "streaming_generation_tokens": 0,
+        "baseline_retrieval_tokens": 0,
+        "streaming_retrieval_tokens": 0,
+        "generation_cost": "unavailable",
+        "cost_availability": "not_applicable"
+      },
+      "cost_availability": "not_applicable",
+      "trace_coverage": {
+        "streaming_trace_complete": 0,
+        "streaming_trace_samples": 0,
+        "baseline_trace_complete": 0,
+        "baseline_trace_samples": 0
+      },
+      "limitations": [
+        "Synthetic fixture and provisional generated labels; not an official benchmark.",
+        "Semantic claim support and answer usefulness were not human-reviewed.",
+        "Realtime timing is local process observation, not competitive performance."
+      ]
+    },
+    "real_backend": {
+      "schema_version": "flowcontext.phase2.v1",
+      "section_id": "real_backend",
+      "status": "not_verified",
+      "result_group": "real retrieval/generation backend validation",
+      "asset_status": "unknown",
+      "corpus_id": null,
+      "index_id": null,
+      "corpus_source_kind": "unknown",
+      "retrieval_backend": null,
+      "generation_backend": null,
+      "generation_model": null,
+      "execution_mode": null,
+      "case_count": 0,
+      "case_results": [],
+      "metrics": {},
+      "timing": {},
+      "usage": {},
+      "cost_availability": "not_available",
+      "trace_coverage": {},
+      "limitations": [
+        "No real dense/provider-backed Phase 2 run was executed.",
+        "Real backend unavailability is not replaced with a mock result."
+      ]
+    },
+    "official_assets": {
+      "schema_version": "flowcontext.phase2.v1",
+      "section_id": "official_assets",
+      "status": "not_verified",
+      "result_group": "organiser corpus, labels, and benchmark assets",
+      "asset_status": "unknown",
+      "corpus_id": null,
+      "index_id": null,
+      "corpus_source_kind": "unknown",
+      "retrieval_backend": null,
+      "generation_backend": null,
+      "generation_model": null,
+      "execution_mode": null,
+      "case_count": 0,
+      "case_results": [],
+      "metrics": {},
+      "timing": {},
+      "usage": {},
+      "cost_availability": "not_available",
+      "trace_coverage": {},
+      "limitations": [
+        "Official corpus, replay set, labels, thresholds, and scoring harness are absent.",
+        "No official benchmark result is claimed."
+      ]
+    }
+  },
+  "duplicate_suppression_comparison": {
+    "status": "not_run",
+    "case_id": null,
+    "duplicate_suppression_enabled": true,
+    "coalescing_enabled": true,
+    "resource_bound": {
+      "max_total_requests": 16,
+      "max_concurrency": 2,
+      "max_pending_requests": 4
+    }
+  },
+  "official_assets_available": false,
+  "limitations": [
+    "This is a local engineering audit over synthetic fixture data, not an official benchmark.",
+    "All measured labels are provisional_generated; no human verification was performed.",
+    "Final evidence quality uses chunk-ID retrieval labels and does not evaluate semantic claim support.",
+    "The guide does not specify a numerical false-trigger threshold; the report does not invent one.",
+    "Real dense retrieval, real generation, and official assets remain unverified."
+  ]
+}

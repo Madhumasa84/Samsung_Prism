@@ -1,0 +1,41 @@
+{
+  "checks": {
+    "config_valid": true,
+    "generation_citations_validated": true,
+    "invalid_contract_rejected": true,
+    "lexical_fixture_evaluation_passed": true,
+    "lexical_fixture_indexed": true,
+    "lexical_hits_resolve_to_source": true,
+    "mock_dense_fixture_check": true,
+    "mock_generation_completed": true,
+    "streaming_controller_completed": true,
+    "streaming_early_retrieval_observed": true,
+    "streaming_final_decision_recorded": true,
+    "streaming_trace_complete": true
+  },
+  "competition_performance_claim": false,
+  "dense_backend": {
+    "reason": null,
+    "status": "available_for_dense_smoke"
+  },
+  "fixture_backend": "lexical",
+  "mock_backend": "hash_embedding",
+  "mode": "offline",
+  "phase2": {
+    "early_evidence_reused": false,
+    "early_retrieval_count": 1,
+    "execution_mode": "accelerated",
+    "generation": {
+      "backend": "mock",
+      "model": "flowcontext.mock:mock-grounded-v1",
+      "status": "success"
+    },
+    "mode": "streaming_controller_async_scheduler",
+    "retrieval_attempt_count": 1,
+    "retrieval_started_early": true,
+    "scheduled_request_count": 1,
+    "unnecessary_retrieval_count": 0,
+    "valid_evidence_ready_before_finalization": false
+  },
+  "status": "PASS"
+}

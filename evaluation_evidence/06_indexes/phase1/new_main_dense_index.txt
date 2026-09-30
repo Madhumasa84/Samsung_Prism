@@ -1,0 +1,29 @@
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 10814.66it/s]
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+{
+  "build_fingerprint": "fa8362c61a50335b658c642c3878a72d7569283a89b8f8cb24ff28e211acd9f5",
+  "chunking": {
+    "max_chars": 1200,
+    "overlap_chars": 0,
+    "strategy": "paragraph_then_word_window"
+  },
+  "chunks": 4,
+  "documents": 3,
+  "embedding": {
+    "backend": "dense",
+    "dimensions": 384,
+    "download_required": true,
+    "license": "apache-2.0",
+    "model_card_url": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2",
+    "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+    "normalize": true,
+    "provider": "sentence-transformers",
+    "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+  },
+  "index_id": "index-fa8362c61a50335b",
+  "indexing_seconds": 5.136118,
+  "output": "artifacts/corpus-index.json",
+  "selected_backend": "dense",
+  "source_fingerprint": "3762c90f2912589e2bed44f3311ad369f406264c89ccefbb90b8561e76c2a234",
+  "status": "up_to_date"
+}
