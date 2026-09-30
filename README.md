@@ -54,7 +54,7 @@
 
 Standard Retrieval-Augmented Generation (RAG) pipelines operate on a rigid sequential cycle: speech completes, full query parsing begins, corpus retrieval executes, and answer generation runs from zero. In conversational voice and live transcript applications, this sequential bottleneck introduces high latency, excessive token consumption, and context fragmentation.
 
-**FlowContext** is an engineering prototype for the **Samsung PRISM Theme 4 (Live RAG)** concept. The repository implements the transcript replay, retrieval, generation, and session-state layers; audio capture, ASR, HTTP serving, UI, and production persistence are outside this codebase:
+**FlowContext** is an engineering prototype for the **Samsung PRISM Theme 4 (Live RAG)** concept. The repository implements transcript replay, retrieval, generation, session state, and a Streamlit demonstration interface. Audio capture, speech recognition, and production persistence are outside the current scope:
 
 - **Speculative Latency Hiding**: Consumes incremental transcript events and issues bounded early retrieval queries on stable partial hypotheses.
 - **Dense and lexical retrieval**: Supports pinned local dense embeddings plus a deterministic lexical-overlap diagnostic backend; the lexical backend is not BM25.
